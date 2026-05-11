@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from '../utils/toast';
 import {
   Calendar,
   Coffee,
@@ -234,7 +235,7 @@ const StaffManagement: React.FC = () => {
               <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
                 <FileText size={18} /> CSV Bulk Upload
               </button>
-              <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('New staff registration form opening...', 'info')}>
                 <UserPlus size={18} /> Add Staff
               </button>
             </div>
@@ -296,7 +297,7 @@ const StaffManagement: React.FC = () => {
                             <>
                               <td>{s.shift}</td>
                               <td><span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`}>{s.status}</span></td>
-                              <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>View Logs</button></td>
+                              <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Duty logs for ${s.name} loading...`, 'info')}>View Logs</button></td>
                             </>
                           ) : (
                             <>
@@ -375,7 +376,7 @@ const StaffManagement: React.FC = () => {
                           <td>{l.type}</td>
                           <td>{l.duration}</td>
                           <td><span className={`status-badge ${l.status === 'Approved' ? 'status-active' : 'status-pending'}`}>{l.status}</span></td>
-                          <td><button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Review</button></td>
+                          <td><button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Reviewing leave request for ${l.name}`, 'info')}>Review</button></td>
                         </tr>
                       ))}
                       {filteredLeave.length === 0 && (
@@ -434,7 +435,7 @@ const StaffManagement: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                           <Clock size={16} />{r.date}
                         </div>
-                        <button style={{ color: 'var(--secondary-color)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }}>View Detail</button>
+                        <button style={{ color: 'var(--secondary-color)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => toast(`Viewing details for ${r.title}`, 'info')}>View Detail</button>
                       </div>
                     </div>
                   ))}

@@ -30,6 +30,7 @@ import OperationManagement from './components/OperationManagement';
 import HospitalCalendar from './components/HospitalCalendar';
 import CSVImportModal from './components/CSVImportModal';
 import ListFilterControl from './components/ListFilterControl';
+import { toast } from './utils/toast';
 
 type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier';
 
@@ -108,7 +109,7 @@ function App() {
             )}
 
             {(role === 'Admin' || role === 'Doctor') && (
-              <li className="nav-item">
+              <li className="nav-item" onClick={() => toast('Encounters module coming soon', 'info')}>
                 <Activity size={20} /><span>Encounters</span>
               </li>
             )}
@@ -149,7 +150,7 @@ function App() {
               </li>
             )}
 
-            <li className="nav-item">
+            <li className="nav-item" onClick={() => toast('Settings panel coming soon', 'info')}>
               <Settings size={20} /><span>Settings</span>
             </li>
           </ul>

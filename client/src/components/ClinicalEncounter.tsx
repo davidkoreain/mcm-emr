@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '../utils/toast';
 import { 
   Clipboard, 
   BookOpen, 
@@ -114,7 +115,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
           <div className="imaging-pacs">
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
                <h3>Medical Image Gallery</h3>
-               <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+               <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('Upload dialog opening...', 'info')}>
                   <Plus size={18} /> Upload Image/Video
                </button>
             </div>
@@ -124,7 +125,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                     <div style={{ position: 'relative', height: '180px', background: '#000' }}>
                        <img src={img.thumb} alt={img.title} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8 }} />
                        <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', gap: '0.5rem' }}>
-                          <button style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '4px', padding: '4px', color: 'white', cursor: 'pointer' }}>
+                          <button style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '4px', padding: '4px', color: 'white', cursor: 'pointer' }} onClick={() => toast('Opening full-screen viewer...', 'info')}>
                              <Maximize2 size={16} />
                           </button>
                        </div>
@@ -139,7 +140,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                        <div style={{ fontWeight: '600', fontSize: '0.9rem', marginBottom: '0.5rem' }}>{img.title}</div>
                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{img.date}</span>
-                          <button style={{ border: 'none', background: 'none', color: '#3b82f6', cursor: 'pointer' }}><Download size={16} /></button>
+                          <button style={{ border: 'none', background: 'none', color: '#3b82f6', cursor: 'pointer' }} onClick={() => toast('Image download started', 'success')}><Download size={16} /></button>
                        </div>
                     </div>
                  </div>
@@ -168,7 +169,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                            <div>{hist.meds}</div>
                         </div>
                         <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-                           <button style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#3b82f6', border: 'none', background: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }}>
+                           <button style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#3b82f6', border: 'none', background: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }} onClick={() => toast(`Prescription for ${hist.diagnosis} sent to pharmacy`, 'success')}>
                               Repeat Prescription <ChevronRight size={14} />
                            </button>
                         </div>

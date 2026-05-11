@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Package, ClipboardList, AlertTriangle, FileText, Plus } from 'lucide-react';
+import { toast } from '../utils/toast';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
 
@@ -138,7 +139,7 @@ const PharmacyManagement: React.FC = () => {
                 >
                   <FileText size={18} /> Bulk CSV Import
                 </button>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('New drug entry form opening...', 'info')}>
                   <Plus size={18} /> Add Drug
                 </button>
               </div>
@@ -170,7 +171,7 @@ const PharmacyManagement: React.FC = () => {
                       </td>
                       <td>{d.price}</td>
                       <td>
-                        <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                        <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Stock update form for ${d.name} opening...`, 'info')}>
                           Update Stock
                         </button>
                       </td>
@@ -242,7 +243,7 @@ const PharmacyManagement: React.FC = () => {
                       </td>
                       <td>
                         {p.status === 'Pending' && (
-                          <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                          <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`${p.drug} dispensed to ${p.patient}`, 'success')}>
                             Dispense
                           </button>
                         )}

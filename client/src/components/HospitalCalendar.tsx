@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '../utils/toast';
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -40,9 +41,9 @@ const HospitalCalendar: React.FC = () => {
             {currentMonth}
           </h2>
           <div style={{ display: 'flex', gap: '0.25rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
-            <button className="btn-icon"><ChevronLeft size={20} /></button>
-            <button className="btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }}>Today</button>
-            <button className="btn-icon"><ChevronRight size={20} /></button>
+            <button className="btn-icon" onClick={() => toast('Previous month', 'info')}><ChevronLeft size={20} /></button>
+            <button className="btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }} onClick={() => toast('Showing today: May 2026', 'info')}>Today</button>
+            <button className="btn-icon" onClick={() => toast('Next month', 'info')}><ChevronRight size={20} /></button>
           </div>
         </div>
 
@@ -72,11 +73,11 @@ const HospitalCalendar: React.FC = () => {
             <FileText size={18} />
             CSV Import
           </button>
-          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('Filter panel opening...', 'info')}>
             <Filter size={18} />
             Filters
           </button>
-          <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('New event form opening...', 'info')}>
             <Plus size={18} />
             Add Event
           </button>

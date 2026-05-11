@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '../utils/toast';
 import { 
   ShieldCheck, 
   Cpu, 
@@ -71,7 +72,7 @@ const AIComplianceManager: React.FC = () => {
                 <Database size={20} />
                 Legal Knowledge Base
               </h3>
-              <button className="btn-primary">
+              <button className="btn-primary" onClick={() => toast('Law text added to knowledge base', 'success')}>
                 <Plus size={18} />
                 Add Law Text
               </button>
@@ -89,8 +90,8 @@ const AIComplianceManager: React.FC = () => {
                   </div>
                   <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: '1.6' }}>{law.summary}</p>
                   <div style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem', display: 'flex', gap: '1rem' }}>
-                    <button className="btn-secondary" style={{ fontSize: '0.8rem' }}>Edit Text</button>
-                    <button className="btn-secondary" style={{ fontSize: '0.8rem' }}>Sync with LLM</button>
+                    <button className="btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => toast('Law text editor opening...', 'info')}>Edit Text</button>
+                    <button className="btn-secondary" style={{ fontSize: '0.8rem' }} onClick={() => toast('Syncing with local LLM...', 'info')}>Sync with LLM</button>
                   </div>
                 </div>
               ))}
@@ -190,7 +191,7 @@ const AIComplianceManager: React.FC = () => {
                       <p style={{ color: '#166534' }}>&gt; 200 OK: Ollama is running on localhost</p>
                    </div>
                 </div>
-                <button className="btn-primary">Save Configuration</button>
+                <button className="btn-primary" onClick={() => toast('AI configuration saved', 'success')}>Save Configuration</button>
              </div>
           </div>
         )}

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Beaker, Clipboard } from 'lucide-react';
+import { toast } from '../utils/toast';
 import ListFilterControl from './ListFilterControl';
 
 const LabManagement: React.FC = () => {
@@ -131,7 +132,7 @@ const LabManagement: React.FC = () => {
                       </td>
                       <td>{order.time}</td>
                       <td>
-                        <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                        <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast('Lab result entry form opening...', 'info')}>
                           Enter Results
                         </button>
                       </td>
@@ -208,7 +209,7 @@ const LabManagement: React.FC = () => {
                         </span>
                       </td>
                       <td>
-                        <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>
+                        <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast('Lab report loading...', 'info')}>
                           View Report
                         </button>
                       </td>

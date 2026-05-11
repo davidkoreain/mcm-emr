@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from '../utils/toast';
 import {
   Bed,
   User,
@@ -166,8 +167,8 @@ const InpatientManagement: React.FC = () => {
           </div>
 
           <div style={{ background: '#f8fafc', padding: '1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
-            <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Clipboard size={18} /> Full Chart</button>
-            <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Save size={18} /> Update Record</button>
+            <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('Full patient chart loading...', 'info')}><Clipboard size={18} /> Full Chart</button>
+            <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('Patient record updated', 'success')}><Save size={18} /> Update Record</button>
           </div>
         </div>
       </div>
@@ -314,13 +315,13 @@ const InpatientManagement: React.FC = () => {
               <div className="stat-card" style={{ padding: '1.5rem' }}>
                 <h3 style={{ marginBottom: '1rem', borderBottom: '1px solid #eee', paddingBottom: '0.5rem' }}>Quick Actions</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <button className="btn-secondary" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
+                  <button className="btn-secondary" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between' }} onClick={() => toast('Daily vitals entry form opening...', 'info')}>
                     <span>Daily Vitals</span><ChevronRight size={18} />
                   </button>
-                  <button className="btn-secondary" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
+                  <button className="btn-secondary" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between' }} onClick={() => toast('Medication administration record opening...', 'info')}>
                     <span>Administer Meds</span><ChevronRight size={18} />
                   </button>
-                  <button className="btn-secondary" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between' }}>
+                  <button className="btn-secondary" style={{ textAlign: 'left', display: 'flex', justifyContent: 'space-between' }} onClick={() => toast('Nursing note saved successfully', 'success')}>
                     <span>Nursing Note</span><ChevronRight size={18} />
                   </button>
                 </div>

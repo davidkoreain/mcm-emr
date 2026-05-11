@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toast } from '../utils/toast';
 import { 
   Scissors, 
   Calendar, 
@@ -77,12 +78,12 @@ const OperationManagement: React.FC = () => {
                     <Search size={18} />
                     <input type="text" placeholder="Search surgery or patient..." />
                   </div>
-                  <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('Room filter panel opening...', 'info')}>
                     <Filter size={18} />
                     Filter Rooms
                   </button>
                 </div>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('Surgery booking form opening...', 'info')}>
                   <Plus size={18} />
                   Book Surgery
                 </button>
@@ -118,7 +119,7 @@ const OperationManagement: React.FC = () => {
                           </span>
                         </td>
                         <td>
-                          <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Manage</button>
+                          <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Managing ${sc.surgery} – ${sc.patient}`, 'info')}>Manage</button>
                         </td>
                       </tr>
                     ))}
@@ -144,7 +145,7 @@ const OperationManagement: React.FC = () => {
                      </div>
                    ))}
                 </div>
-                <button className="btn-secondary" style={{ width: '100%', marginTop: '1rem' }}>Assign More Staff</button>
+                <button className="btn-secondary" style={{ width: '100%', marginTop: '1rem' }} onClick={() => toast('Staff assignment panel opening...', 'info')}>Assign More Staff</button>
              </div>
 
              <div className="stat-card" style={{ padding: '1.5rem' }}>
@@ -165,7 +166,7 @@ const OperationManagement: React.FC = () => {
                      </div>
                    ))}
                 </div>
-                <button className="btn-secondary" style={{ width: '100%', marginTop: '1rem' }}>Request Equipment (Asset DB)</button>
+                <button className="btn-secondary" style={{ width: '100%', marginTop: '1rem' }} onClick={() => toast('Equipment request submitted to Asset DB', 'success')}>Request Equipment (Asset DB)</button>
              </div>
           </div>
         ) : (
@@ -196,15 +197,15 @@ const OperationManagement: React.FC = () => {
                            <td>{u.qty}</td>
                            <td>{u.unit}</td>
                            <td><span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{u.source}</span></td>
-                           <td><button style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}>Remove</button></td>
+                           <td><button style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }} onClick={() => toast(`${u.item} removed from supply list`, 'warning')}>Remove</button></td>
                          </tr>
                        ))}
                      </tbody>
                    </table>
                 </div>
                 <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                   <button className="btn-secondary">Add Item</button>
-                   <button className="btn-primary">Finalize Usage & Deduct Inventory</button>
+                   <button className="btn-secondary" onClick={() => toast('Add supply item form opening...', 'info')}>Add Item</button>
+                   <button className="btn-primary" onClick={() => toast('Supply usage finalized and inventory updated', 'success')}>Finalize Usage & Deduct Inventory</button>
                 </div>
              </div>
           </div>

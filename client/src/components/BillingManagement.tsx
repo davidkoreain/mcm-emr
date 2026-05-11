@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { CreditCard, FileText, ShieldCheck } from 'lucide-react';
+import { toast } from '../utils/toast';
 import ListFilterControl from './ListFilterControl';
 
 const BillingManagement: React.FC = () => {
@@ -185,7 +186,7 @@ const BillingManagement: React.FC = () => {
                           <div style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Amount Due</div>
                           <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary-color)' }}>{patientPay.toFixed(2)} ETB</div>
                         </div>
-                        <button className="btn-primary" style={{ padding: '0.75rem 1.5rem' }}>
+                        <button className="btn-primary" style={{ padding: '0.75rem 1.5rem' }} onClick={() => toast('Payment processed successfully', 'success')}>
                           Process Payment
                         </button>
                       </div>

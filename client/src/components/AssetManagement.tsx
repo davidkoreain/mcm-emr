@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { toast } from '../utils/toast';
 import {
   Monitor,
   Wrench,
@@ -173,7 +174,7 @@ const AssetManagement: React.FC = () => {
                 <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
                   <FileText size={18} /> CSV Import
                 </button>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('New asset registration form opening...', 'info')}>
                   <Plus size={18} /> Add Asset
                 </button>
               </div>
@@ -212,8 +213,8 @@ const AssetManagement: React.FC = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }}>Details</button>
-                      <button className="btn-primary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }}>
+                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }} onClick={() => toast(`Viewing details for ${asset.name}`, 'info')}>Details</button>
+                      <button className="btn-primary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }} onClick={() => toast(`Maintenance request logged for ${asset.name}`, 'success')}>
                         {asset.status === 'Maintenance Required' ? <AlertTriangle size={13} /> : null} Maintain
                       </button>
                     </div>
@@ -275,7 +276,7 @@ const AssetManagement: React.FC = () => {
                           {log.status}
                         </span>
                       </td>
-                      <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}>Update</button></td>
+                      <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Updating maintenance record for ${log.asset}`, 'info')}>Update</button></td>
                     </tr>
                   ))}
                   {filteredMaint.length === 0 && (
