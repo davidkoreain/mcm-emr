@@ -28,6 +28,7 @@ import AssetManagement from './components/AssetManagement';
 import AIComplianceManager from './components/AIComplianceManager';
 import OperationManagement from './components/OperationManagement';
 import HospitalCalendar from './components/HospitalCalendar';
+import DoctorDashboard from './components/DoctorDashboard';
 import CSVImportModal from './components/CSVImportModal';
 import ListFilterControl from './components/ListFilterControl';
 import { toast } from './utils/toast';
@@ -205,7 +206,9 @@ function App() {
           />
         )}
 
-        {view === 'dashboard' ? (
+        {view === 'dashboard' && role === 'Doctor' ? (
+          <DoctorDashboard />
+        ) : view === 'dashboard' ? (
           <>
             <section className="stats-grid">
               <div className="stat-card">

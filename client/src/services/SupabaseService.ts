@@ -144,6 +144,23 @@ export class SupabaseService implements IDBService {
     if (error) throw new Error(error.message);
   }
 
+  async updatePatient(mrn: string, changes: Partial<Patient>): Promise<void> {
+    const row: Record<string, unknown> = {};
+    if (changes.status !== undefined) row.status = changes.status;
+    if (changes.visitType !== undefined) row.visit_type = changes.visitType;
+    if (changes.time !== undefined) row.time = changes.time;
+    if (changes.registeredAt !== undefined) row.registered_at = changes.registeredAt;
+    if (changes.gender !== undefined) row.gender = changes.gender;
+    if (changes.dob !== undefined) row.dob = changes.dob;
+    if (changes.phone !== undefined) row.phone = changes.phone;
+    if (changes.city !== undefined) row.city = changes.city;
+    if (changes.woreda !== undefined) row.woreda = changes.woreda;
+    if (changes.kebele !== undefined) row.kebele = changes.kebele;
+    if (changes.vitals !== undefined) row.vitals = changes.vitals;
+    const { error } = await this.client.from('patients').update(row).eq('mrn', mrn);
+    if (error) throw new Error(error.message);
+  }
+
   async appendVitals(mrn: string, vitals: VitalsRecord): Promise<void> {
     const { data, error: fetchErr } = await this.client
       .from('patients').select('vitals').eq('mrn', mrn).single();

@@ -18,6 +18,10 @@ export class LocalService implements IDBService {
     this.patients = [...this.patients, p];
   }
 
+  async updatePatient(mrn: string, changes: Partial<Patient>) {
+    this.patients = this.patients.map(p => p.mrn === mrn ? { ...p, ...changes } : p);
+  }
+
   async appendVitals(mrn: string, vitals: VitalsRecord) {
     this.patients = this.patients.map(p =>
       p.mrn === mrn ? { ...p, vitals: [...p.vitals, vitals] } : p

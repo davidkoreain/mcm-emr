@@ -94,6 +94,7 @@ type EMRContextType = {
   error: string | null;
   // patient mutations
   addPatient(p: Patient): Promise<void>;
+  updatePatient(mrn: string, changes: Partial<Patient>): Promise<void>;
   appendPatientVitals(mrn: string, vitals: VitalsRecord): Promise<void>;
   // staff mutations
   addStaff(s: Omit<StaffMember, 'id'>): Promise<void>;
@@ -129,6 +130,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPatients(prev => [...prev, p]);
   };
 
+  const updatePatient = async (mrn: string, changes: Partial<Patient>) => {
+    await db.updatePatient(mrn, changes);
+    setPatients(prev => prev.map(p => p.mrn === mrn ? { ...p, ...changes } : p));
+  };
+
   const appendPatientVitals = async (mrn: string, vitals: VitalsRecord) => {
     await db.appendVitals(mrn, vitals);
     setPatients(prev => prev.map(p => p.mrn === mrn ? { ...p, vitals: [...p.vitals, vitals] } : p));
@@ -150,7 +156,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   return (
-    <EMRContext.Provider value={{ patients, staffList, assets, loading, error, addPatient, appendPatientVitals, addStaff, addAsset, updateAsset }}>
+    <EMRContext.Provider value={{ patients, staffList, assets, loading, error, addPatient, updatePatient, appendPatientVitals, addStaff, addAsset, updateAsset }}>
       {children}
     </EMRContext.Provider>
   );

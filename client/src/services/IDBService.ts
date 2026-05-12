@@ -9,6 +9,7 @@ export interface IDBService {
   // patients
   fetchPatients(): Promise<Patient[]>;
   insertPatient(p: Patient): Promise<void>;
+  updatePatient(mrn: string, changes: Partial<Patient>): Promise<void>;
   appendVitals(mrn: string, vitals: VitalsRecord): Promise<void>;
   // staff
   fetchStaff(): Promise<StaffMember[]>;
