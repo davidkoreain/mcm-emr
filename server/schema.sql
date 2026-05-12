@@ -97,3 +97,37 @@ CREATE TABLE prescriptions (
     status VARCHAR(20) DEFAULT 'Pending' CHECK (status IN ('Pending', 'Dispensed', 'Cancelled')),
     prescribed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Staff Table
+CREATE TABLE staff (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name VARCHAR(100) NOT NULL,
+    role VARCHAR(50),
+    shift VARCHAR(20) DEFAULT 'Day',
+    status VARCHAR(20) DEFAULT 'On Duty',
+    education TEXT,
+    license VARCHAR(100),
+    experience TEXT,
+    surgeries JSONB DEFAULT '[]',
+    training JSONB DEFAULT '[]',
+    awards JSONB DEFAULT '[]',
+    photo_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Asset Management Table
+CREATE TABLE assets (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    serial VARCHAR(100),
+    qty INTEGER DEFAULT 1,
+    weight VARCHAR(50),
+    supplier VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'Functional',
+    location VARCHAR(100),
+    rfid_tag VARCHAR(100),
+    barcode VARCHAR(100),
+    photo_url TEXT,
+    added_at DATE DEFAULT CURRENT_DATE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);

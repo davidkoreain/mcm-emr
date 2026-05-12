@@ -293,7 +293,11 @@ const AssetManagement: React.FC = () => {
               {filteredAssets.map((asset) => (
                 <div key={asset.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ width: '100%', height: '160px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Monitor size={64} color="#cbd5e1" />
+                    {asset.photoUrl ? (
+                      <img src={asset.photoUrl} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <Monitor size={64} color="#cbd5e1" />
+                    )}
                   </div>
                   <div style={{ padding: '1.25rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>

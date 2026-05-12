@@ -22,7 +22,8 @@
  * CREATE TABLE assets (
  *   id TEXT PRIMARY KEY, name TEXT NOT NULL, serial TEXT DEFAULT '',
  *   qty INTEGER DEFAULT 1, weight TEXT DEFAULT '', supplier TEXT DEFAULT '',
- *   status TEXT DEFAULT 'Functional', location TEXT DEFAULT '', added_at TEXT DEFAULT ''
+ *   status TEXT DEFAULT 'Functional', location TEXT DEFAULT '', added_at TEXT DEFAULT '',
+ *   rfid_tag TEXT, barcode TEXT, photo_url TEXT
  * );
  * ─────────────────────────────────────────────────────────────────
  *
@@ -101,6 +102,7 @@ function rowToAsset(r: Record<string, unknown>): Asset {
     addedAt: (r.added_at as string) ?? '',
     rfidTag: (r.rfid_tag as string) || undefined,
     barcode: (r.barcode as string) || undefined,
+    photoUrl: (r.photo_url as string) || undefined,
   };
 }
 
@@ -111,6 +113,7 @@ function assetToRow(a: Asset) {
     location: a.location, added_at: a.addedAt,
     ...(a.rfidTag !== undefined && { rfid_tag: a.rfidTag }),
     ...(a.barcode !== undefined && { barcode: a.barcode }),
+    ...(a.photoUrl !== undefined && { photo_url: a.photoUrl }),
   };
 }
 
@@ -221,6 +224,7 @@ export class SupabaseService implements IDBService {
     if (changes.addedAt !== undefined) row.added_at = changes.addedAt;
     if (changes.rfidTag !== undefined) row.rfid_tag = changes.rfidTag;
     if (changes.barcode !== undefined) row.barcode = changes.barcode;
+    if (changes.photoUrl !== undefined) row.photo_url = changes.photoUrl;
     const { error } = await this.client.from('assets').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }

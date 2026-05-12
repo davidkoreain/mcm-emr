@@ -70,6 +70,7 @@ export type Asset = {
   addedAt: string;
   rfidTag?: string;
   barcode?: string;
+  photoUrl?: string;
 };
 
 const DEMO_MEDS: MedOrder[] = [
@@ -99,9 +100,9 @@ export const initialPatients: Patient[] = [
 ];
 
 export const initialAssets: Asset[] = [
-  { id: 'AST-001', name: 'GE Healthcare MRI System',        serial: 'GE99283-X',   qty: 1,  weight: '1200kg', supplier: 'GE Healthcare Ethiopia', status: 'Functional',           location: 'Radiology Dept',  addedAt: '2025-01-10', rfidTag: 'RF-A001-MRI',  barcode: '8934567890001' },
-  { id: 'AST-002', name: 'Ventilator - Puritan Bennett 980', serial: 'PB-2026-044', qty: 5,  weight: '45kg',   supplier: 'Medtronic Africa',        status: 'Maintenance Required', location: 'ICU',             addedAt: '2025-03-15', rfidTag: 'RF-A002-VNT',  barcode: '8934567890002' },
-  { id: 'AST-003', name: 'Patient Monitor B40',             serial: 'M-1122-A',    qty: 12, weight: '4.5kg',  supplier: 'Philips Medical',         status: 'Functional',           location: 'General Ward A',  addedAt: '2024-11-20', rfidTag: 'RF-A003-MON',  barcode: '8934567890003' },
+  { id: 'AST-001', name: 'GE Healthcare MRI System',        serial: 'GE99283-X',   qty: 1,  weight: '1200kg', supplier: 'GE Healthcare Ethiopia', status: 'Functional',           location: 'Radiology Dept',  addedAt: '2025-01-10', rfidTag: 'RF-A001-MRI',  barcode: '8934567890001', photoUrl: '/mri_thumb.png' },
+  { id: 'AST-002', name: 'Ventilator - Puritan Bennett 980', serial: 'PB-2026-044', qty: 5,  weight: '45kg',   supplier: 'Medtronic Africa',        status: 'Maintenance Required', location: 'ICU',             addedAt: '2025-03-15', rfidTag: 'RF-A002-VNT',  barcode: '8934567890002', photoUrl: '/ventilator_thumb.png' },
+  { id: 'AST-003', name: 'Patient Monitor B40',             serial: 'M-1122-A',    qty: 12, weight: '4.5kg',  supplier: 'Philips Medical',         status: 'Functional',           location: 'General Ward A',  addedAt: '2024-11-20', rfidTag: 'RF-A003-MON',  barcode: '8934567890003', photoUrl: '/monitor_thumb.png' },
   { id: 'AST-004', name: 'ECG Machine 12-Lead',             serial: 'ECG-3301',    qty: 3,  weight: '8kg',    supplier: 'GE Healthcare Ethiopia', status: 'Functional',           location: 'Cardiology Dept', addedAt: '2025-06-05', rfidTag: 'RF-A004-ECG',  barcode: '8934567890004' },
   { id: 'AST-005', name: 'Infusion Pump Set',               serial: 'INF-7890',    qty: 20, weight: '1.2kg',  supplier: 'B. Braun Ethiopia',       status: 'Maintenance Required', location: 'ICU',             addedAt: '2025-08-10', rfidTag: 'RF-A005-INF',  barcode: '8934567890005' },
   { id: 'AST-045', name: 'Laparoscopic Tower',              serial: 'LAP-2045-X',  qty: 1,  weight: '85kg',   supplier: 'Karl Storz',              status: 'In Use (OT 1)',        location: 'OT Suite',        addedAt: '2024-08-15', rfidTag: 'RF-A045-LAP',  barcode: '8934567890045' },
