@@ -29,6 +29,8 @@ import AIComplianceManager from './components/AIComplianceManager';
 import OperationManagement from './components/OperationManagement';
 import HospitalCalendar from './components/HospitalCalendar';
 import DoctorDashboard from './components/DoctorDashboard';
+import NurseDashboard from './components/NurseDashboard';
+import Avatar from './components/Avatar';
 import CSVImportModal from './components/CSVImportModal';
 import ListFilterControl from './components/ListFilterControl';
 import { toast } from './utils/toast';
@@ -208,6 +210,8 @@ function App() {
 
         {view === 'dashboard' && role === 'Doctor' ? (
           <DoctorDashboard />
+        ) : view === 'dashboard' && role === 'Nurse' ? (
+          <NurseDashboard />
         ) : view === 'dashboard' ? (
           <>
             <section className="stats-grid">
@@ -249,7 +253,12 @@ function App() {
                   <tbody>
                     {patients.slice(0, 3).map((p) => (
                       <tr key={p.mrn}>
-                        <td>{p.name}</td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <Avatar name={p.name} photoUrl={p.photoUrl} size={28} />
+                            {p.name}
+                          </div>
+                        </td>
                         <td>{p.amharic}</td>
                         <td>{p.visitType}</td>
                         <td>
@@ -394,8 +403,13 @@ function App() {
                 <tbody>
                   {filteredPatients.map((p) => (
                     <tr key={p.mrn}>
-                      <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.mrn}</td>
-                      <td><strong>{p.name}</strong></td>
+                      <td style={{ fontSize: '0.78rem', fontFamily: 'monospace', fontWeight: '600', color: '#2563eb' }}>{p.mrn}</td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                          <Avatar name={p.name} photoUrl={p.photoUrl} size={30} />
+                          <strong>{p.name}</strong>
+                        </div>
+                      </td>
                       <td>{p.amharic}</td>
                       <td>{p.visitType}</td>
                       <td>

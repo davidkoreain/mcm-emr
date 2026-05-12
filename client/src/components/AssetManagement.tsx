@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Monitor, Wrench, Trash2, Plus, AlertTriangle, MapPin, Scale, FileText, Truck, X } from 'lucide-react';
+import { Monitor, Wrench, Trash2, Plus, AlertTriangle, MapPin, Scale, FileText, Truck, X, Wifi, Tag } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
 import { useEMR, type Asset } from '../context/EMRContext';
@@ -20,7 +20,7 @@ const lossRecords: LossRecord[] = [
   { id: 3, asset: 'Pulse Oximeter', type: 'Damage', reason: 'Liquid spill', date: '2026-05-02', action: 'Sent for repair' },
 ];
 
-const emptyAsset = { name: '', serial: '', qty: '1', weight: '', supplier: '', status: 'Functional', location: '' };
+const emptyAsset = { name: '', serial: '', qty: '1', weight: '', supplier: '', status: 'Functional', location: '', rfidTag: '', barcode: '' };
 
 const AssetManagement: React.FC = () => {
   const { assets, addAsset, updateAsset } = useEMR();
@@ -112,6 +112,8 @@ const AssetManagement: React.FC = () => {
       qty: parseInt(newAsset.qty) || 1, weight: newAsset.weight.trim() || 'N/A',
       supplier: newAsset.supplier.trim(), status: newAsset.status,
       location: newAsset.location.trim(), addedAt: new Date().toISOString().split('T')[0],
+      ...(newAsset.rfidTag.trim() && { rfidTag: newAsset.rfidTag.trim() }),
+      ...(newAsset.barcode.trim() && { barcode: newAsset.barcode.trim() }),
     };
     addAsset(entry);
     setAddAssetModal(false);
@@ -142,6 +144,8 @@ const AssetManagement: React.FC = () => {
                 { label: 'Location', value: detailModal.location },
                 { label: 'Status', value: detailModal.status },
                 { label: 'Added', value: detailModal.addedAt },
+                ...(detailModal.rfidTag ? [{ label: 'RFID Tag', value: detailModal.rfidTag }] : []),
+                ...(detailModal.barcode ? [{ label: 'Barcode', value: detailModal.barcode }] : []),
               ].map(({ label, value }) => (
                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
                   <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '600' }}>{label}</span>
@@ -230,6 +234,8 @@ const AssetManagement: React.FC = () => {
                 { label: 'Weight', key: 'weight', placeholder: 'e.g. 4.5kg' },
                 { label: 'Supplier', key: 'supplier', placeholder: 'e.g. Philips Medical' },
                 { label: 'Location / Department', key: 'location', placeholder: 'e.g. General Ward B' },
+                { label: 'RFID Tag (optional)', key: 'rfidTag', placeholder: 'e.g. RF-A099-XXX' },
+                { label: 'Barcode (optional)', key: 'barcode', placeholder: 'e.g. 8934567890099' },
               ].map(({ label, key, placeholder, type }) => (
                 <div key={key}>
                   <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>{label}</label>
@@ -301,11 +307,25 @@ const AssetManagement: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><MapPin size={14} color="var(--text-secondary)" /><span>{asset.location}</span></div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><Scale size={14} color="var(--text-secondary)" /><span>{asset.weight}</span></div>
                     </div>
-                    <div style={{ background: '#f8fafc', padding: '0.6rem', borderRadius: '0.4rem', marginBottom: '1rem' }}>
+                    <div style={{ background: '#f8fafc', padding: '0.6rem', borderRadius: '0.4rem', marginBottom: '0.6rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                         <Truck size={12} /> Supplier: {asset.supplier}
                       </div>
                     </div>
+                    {(asset.rfidTag || asset.barcode) && (
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                        {asset.rfidTag && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: '600', color: '#6366f1', background: '#eef2ff', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', border: '1px solid #c7d2fe' }}>
+                            <Wifi size={10} /> {asset.rfidTag}
+                          </span>
+                        )}
+                        {asset.barcode && (
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: '600', color: '#374151', background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', border: '1px solid #e2e8f0' }}>
+                            <Tag size={10} /> {asset.barcode}
+                          </span>
+                        )}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                       <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }} onClick={() => setDetailModal(asset)}>Details</button>
                       <button className="btn-primary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }} onClick={() => { setMaintainForm({ task: '', technician: '' }); setMaintainModal(asset); }}>

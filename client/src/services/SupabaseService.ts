@@ -33,7 +33,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../context/EMRContext';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -54,6 +54,9 @@ function rowToPatient(r: Record<string, unknown>): Patient {
     woreda: (r.woreda as string) ?? '',
     kebele: (r.kebele as string) ?? '',
     vitals: (r.vitals as VitalsRecord[]) ?? [],
+    medications: (r.medications as MedOrder[]) ?? [],
+    ward: (r.ward as string) ?? '',
+    photoUrl: (r.photo_url as string) || undefined,
   };
 }
 
@@ -63,7 +66,8 @@ function patientToRow(p: Patient) {
     visit_type: p.visitType, status: p.status, time: p.time,
     registered_at: p.registeredAt, gender: p.gender, dob: p.dob,
     phone: p.phone, city: p.city, woreda: p.woreda, kebele: p.kebele,
-    vitals: p.vitals,
+    vitals: p.vitals, medications: p.medications, ward: p.ward,
+    ...(p.photoUrl !== undefined && { photo_url: p.photoUrl }),
   };
 }
 
@@ -80,6 +84,7 @@ function rowToStaff(r: Record<string, unknown>): StaffMember {
     surgeries: (r.surgeries as string[]) ?? [],
     training: (r.training as string[]) ?? [],
     awards: (r.awards as string[]) ?? [],
+    photoUrl: (r.photo_url as string) || undefined,
   };
 }
 
@@ -94,6 +99,8 @@ function rowToAsset(r: Record<string, unknown>): Asset {
     status: (r.status as string) ?? 'Functional',
     location: (r.location as string) ?? '',
     addedAt: (r.added_at as string) ?? '',
+    rfidTag: (r.rfid_tag as string) || undefined,
+    barcode: (r.barcode as string) || undefined,
   };
 }
 
@@ -102,6 +109,8 @@ function assetToRow(a: Asset) {
     id: a.id, name: a.name, serial: a.serial, qty: a.qty,
     weight: a.weight, supplier: a.supplier, status: a.status,
     location: a.location, added_at: a.addedAt,
+    ...(a.rfidTag !== undefined && { rfid_tag: a.rfidTag }),
+    ...(a.barcode !== undefined && { barcode: a.barcode }),
   };
 }
 
@@ -157,6 +166,8 @@ export class SupabaseService implements IDBService {
     if (changes.woreda !== undefined) row.woreda = changes.woreda;
     if (changes.kebele !== undefined) row.kebele = changes.kebele;
     if (changes.vitals !== undefined) row.vitals = changes.vitals;
+    if (changes.medications !== undefined) row.medications = changes.medications;
+    if (changes.ward !== undefined) row.ward = changes.ward;
     const { error } = await this.client.from('patients').update(row).eq('mrn', mrn);
     if (error) throw new Error(error.message);
   }
@@ -208,6 +219,8 @@ export class SupabaseService implements IDBService {
     if (changes.qty !== undefined) row.qty = changes.qty;
     if (changes.supplier !== undefined) row.supplier = changes.supplier;
     if (changes.addedAt !== undefined) row.added_at = changes.addedAt;
+    if (changes.rfidTag !== undefined) row.rfid_tag = changes.rfidTag;
+    if (changes.barcode !== undefined) row.barcode = changes.barcode;
     const { error } = await this.client.from('assets').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Plus, X, CheckCircle, Stethoscope, FlaskConical, Scan, Pill } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
+import type { MedOrder } from '../context/EMRContext';
+import Avatar from './Avatar';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -134,7 +136,15 @@ const DoctorDashboard: React.FC = () => {
 
   const completeVisit = () => {
     if (!selectedMrn || !c || !c.diagnosis.trim() || !c.plan) return;
-    updatePatient(selectedMrn, { status: c.plan === 'Admit' ? 'Inpatient' : 'Completed' });
+    const medOrders: MedOrder[] = c.prescriptions.map(rx => ({
+      id: rx.id, drug: rx.drug, dose: rx.dose, frequency: rx.frequency,
+      duration: rx.duration, route: rx.route, prescribedAt: new Date().toISOString(),
+    }));
+    updatePatient(selectedMrn, {
+      status: c.plan === 'Admit' ? 'Inpatient' : 'Completed',
+      medications: medOrders,
+      ward: c.plan === 'Admit' ? c.ward : '',
+    });
     setSelectedMrn(null);
   };
 
@@ -230,12 +240,15 @@ const DoctorDashboard: React.FC = () => {
                   border: `1px solid ${active ? '#93c5fd' : '#e2e8f0'}`,
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.875rem' }}>{p.name}</div>
-                    <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{p.mrn} · {p.visitType} · {p.time}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', minWidth: 0 }}>
+                    <Avatar name={p.name} photoUrl={p.photoUrl} size={30} style={{ flexShrink: 0 }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: '600', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn} · {p.visitType}</div>
+                    </div>
                   </div>
-                  <span style={{ fontSize: '0.68rem', fontWeight: '700', padding: '0.2rem 0.5rem', borderRadius: '9999px', whiteSpace: 'nowrap', background: sc(p.status).bg, color: sc(p.status).text }}>
+                  <span style={{ fontSize: '0.65rem', fontWeight: '700', padding: '0.2rem 0.45rem', borderRadius: '9999px', whiteSpace: 'nowrap', background: sc(p.status).bg, color: sc(p.status).text, flexShrink: 0 }}>
                     {p.status}
                   </span>
                 </div>
@@ -257,22 +270,26 @@ const DoctorDashboard: React.FC = () => {
 
             {/* Patient header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9' }}>
-              <div>
-                <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>{selected.name}</h2>
-                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>
-                  {selected.mrn} · {selected.gender} · DOB: {selected.dob} · {selected.visitType}
+              <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                <Avatar name={selected.name} photoUrl={selected.photoUrl} size={46} />
+                <div>
+                  <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>{selected.name}</h2>
+                  <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>
+                    <span style={{ fontWeight: '600', color: '#2563eb' }}>{selected.mrn}</span>
+                    {' · '}{selected.gender} · DOB: {selected.dob} · {selected.visitType}
+                  </div>
+                  {selected.vitals.length > 0 && (() => {
+                    const v = selected.vitals[selected.vitals.length - 1];
+                    return (
+                      <div style={{ display: 'flex', gap: '0.75rem', fontSize: '0.75rem', color: '#475569', marginTop: '0.3rem', flexWrap: 'wrap' }}>
+                        {v.temperature  && <span>🌡 {v.temperature}°C</span>}
+                        {v.heartRate    && <span>❤️ {v.heartRate} bpm</span>}
+                        {v.bpSystolic  && <span>💉 {v.bpSystolic}/{v.bpDiastolic} mmHg</span>}
+                        {v.spo2        && <span>🫁 SpO2 {v.spo2}%</span>}
+                      </div>
+                    );
+                  })()}
                 </div>
-                {selected.vitals.length > 0 && (() => {
-                  const v = selected.vitals[selected.vitals.length - 1];
-                  return (
-                    <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#475569', marginTop: '0.3rem', flexWrap: 'wrap' }}>
-                      {v.temperature  && <span>🌡 {v.temperature}°C</span>}
-                      {v.heartRate    && <span>❤️ {v.heartRate} bpm</span>}
-                      {v.bpSystolic  && <span>💉 {v.bpSystolic}/{v.bpDiastolic} mmHg</span>}
-                      {v.spo2        && <span>🫁 SpO2 {v.spo2}%</span>}
-                    </div>
-                  );
-                })()}
               </div>
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <span style={{ padding: '0.3rem 0.75rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '700', background: sc(selected.status).bg, color: sc(selected.status).text }}>

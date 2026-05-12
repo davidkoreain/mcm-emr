@@ -6,6 +6,9 @@ import {
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
 import { useEMR, type StaffMember as Staff } from '../context/EMRContext';
+import Avatar from './Avatar';
+
+const fmtStaffId = (id: number) => `STF-${String(id).padStart(3, '0')}`;
 
 type LeaveRequest = { id: number; name: string; type: string; duration: string; status: string; date: string };
 type PerformanceRecord = { id: number; name: string; type: string; title: string; date: string };
@@ -92,12 +95,11 @@ const StaffManagement: React.FC = () => {
     <div className="staff-profile" style={{ background: 'white', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: '700' }}>
-            {staff.name.split(' ').map((n) => n[0]).join('')}
-          </div>
+          <Avatar name={staff.name} photoUrl={staff.photoUrl} size={80} />
           <div>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>{staff.name}</h2>
-            <p style={{ color: 'var(--primary-color)', fontWeight: '600' }}>{staff.role} | ID: STF-00{staff.id}</p>
+            <p style={{ color: 'var(--primary-color)', fontWeight: '600' }}>{staff.role}</p>
+            <p style={{ fontSize: '0.85rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700', marginTop: '0.2rem' }}>{fmtStaffId(staff.id)}</p>
           </div>
         </div>
         <button onClick={() => setSelectedStaff(null)} className="btn-secondary">Back to List</button>
@@ -343,14 +345,22 @@ const StaffManagement: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Staff Name</th><th>Role</th>
+                        <th>Staff</th><th>Role</th>
                         {activeTab === 'roster' ? <><th>Current Shift</th><th>Status</th><th>Duty Log</th></> : <><th>License</th><th>Experience</th><th>Full Portfolio</th></>}
                       </tr>
                     </thead>
                     <tbody>
                       {filteredRoster.map((s) => (
                         <tr key={s.id}>
-                          <td><strong>{s.name}</strong></td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                              <Avatar name={s.name} photoUrl={s.photoUrl} size={34} />
+                              <div>
+                                <div style={{ fontWeight: '600' }}>{s.name}</div>
+                                <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '600' }}>{fmtStaffId(s.id)}</div>
+                              </div>
+                            </div>
+                          </td>
                           <td>{s.role}</td>
                           {activeTab === 'roster' ? (
                             <>
