@@ -35,12 +35,13 @@ import CSVImportModal from './components/CSVImportModal';
 import ListFilterControl from './components/ListFilterControl';
 import { toast } from './utils/toast';
 import { useEMR } from './context/EMRContext';
+import RoleLogin from './components/RoleLogin';
 
 type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier';
 
 function App() {
   const { patients, loading, error } = useEMR();
-  const [role, setRole] = useState<UserRole>('Admin');
+  const [role, setRole] = useState<UserRole | null>(null);
   const [view, setView] = useState<'dashboard' | 'registration' | 'patientList' | 'vitals' | 'encounter' | 'inventory' | 'lab' | 'billing' | 'inpatient' | 'staff' | 'assets' | 'compliance' | 'surgery' | 'calendar'>('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
@@ -64,6 +65,10 @@ function App() {
       return a.name.localeCompare(b.name);
     });
   }, [patients, ptSearch, ptFilters, ptSort]);
+
+  if (!role) {
+    return <RoleLogin onLogin={(r) => { setRole(r); setView('dashboard'); }} />;
+  }
 
   return (
     <div className="app-container">
@@ -147,6 +152,10 @@ function App() {
             <li className="nav-item" onClick={() => toast('Settings panel coming soon', 'info')}>
               <Settings size={20} /><span>Settings</span>
             </li>
+
+            <li className="nav-item logout-item" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', color: '#f87171' }} onClick={() => setRole(null)}>
+              <LayoutDashboard size={20} /><span>Logout / Switch Role</span>
+            </li>
           </ul>
         </nav>
       </aside>
@@ -169,34 +178,7 @@ function App() {
             <input type="text" placeholder="Search patient..." />
           </div>
           <div className="header-actions">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginRight: '1rem' }}>
-              <span style={{ fontSize: '0.8rem', fontWeight: '600' }}>Role:</span>
-              <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as UserRole)}
-                style={{ padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #ddd' }}
-              >
-                <option value="Admin">Admin</option>
-                <option value="Doctor">Doctor</option>
-                <option value="Nurse">Nurse</option>
-                <option value="Pharmacist">Pharmacist</option>
-                <option value="LabTech">LabTech</option>
-                <option value="Cashier">Cashier</option>
-              </select>
-            </div>
-            <button onClick={() => setView('registration')}>
-              <PlusCircle size={20} />
-              New Patient
-            </button>
-            <button
-              className="btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              onClick={() => setShowCSVModal(true)}
-            >
-              <FileText size={20} />
-              CSV Import
-            </button>
-            <Bell size={24} color="#64748b" style={{ cursor: 'pointer' }} />
+            {/* Action buttons removed as requested */}
           </div>
         </header>
 
