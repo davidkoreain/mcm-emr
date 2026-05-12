@@ -5,21 +5,10 @@ import {
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
+import { useEMR, type StaffMember as Staff } from '../context/EMRContext';
 
 type LeaveRequest = { id: number; name: string; type: string; duration: string; status: string; date: string };
 type PerformanceRecord = { id: number; name: string; type: string; title: string; date: string };
-type Staff = {
-  id: number; name: string; role: string; shift: string; status: string;
-  education: string; license: string; experience: string;
-  surgeries: string[]; training: string[]; awards: string[];
-};
-
-const staffList: Staff[] = [
-  { id: 1, name: 'Dr. Solomon Tsegaye', role: 'Chief MD / Surgeon', shift: 'Day', status: 'On Duty', education: 'MD from Addis Ababa University, Specialization in General Surgery', license: 'ETH-MD-9982 (Valid until 2028)', experience: '15 years (MCM Hospital, Black Lion Hospital)', surgeries: ['Appendectomy (240)', 'Hernia Repair (180)', 'Hip Replacement (45)'], training: ['Advanced Trauma Life Support (ATLS)', 'Robotic Surgery Fundamentals'], awards: ['Physician of the Year 2026', 'Outstanding Surgeon 2024'] },
-  { id: 2, name: 'Nurse Martha Kassa', role: 'Head Nurse', shift: 'Night', status: 'Off Duty', education: 'BSc in Nursing from Jimma University', license: 'ETH-RN-4451 (Valid until 2027)', experience: "10 years (MCM Hospital, St. Paul's Hospital)", surgeries: ['Surgical Assisting (500+)', 'ICU Care Management'], training: ['Critical Care Nursing Certification', 'Hygiene Control Protocol'], awards: ['Excellence in Nursing 2025'] },
-  { id: 3, name: 'Dr. Fitsum Ayele', role: 'Internal Medicine', shift: 'Day', status: 'On Duty', education: 'MD, MSc Internal Medicine, AAU', license: 'ETH-MD-7721 (Valid until 2027)', experience: '8 years (MCM Hospital)', surgeries: ['Bronchoscopy (30)', 'Endoscopy (60)'], training: ['ACLS Certification', 'Diabetes Management CME'], awards: [] },
-  { id: 4, name: 'Nurse Tigist Hailu', role: 'Staff Nurse', shift: 'Night', status: 'On Duty', education: 'Diploma in Nursing, Mekelle University', license: 'ETH-RN-5520 (Valid until 2026)', experience: '5 years (MCM Hospital)', surgeries: ['Surgical Assisting (120+)'], training: ['Basic Life Support', 'Wound Care'], awards: [] },
-];
 
 const initialLeave: LeaveRequest[] = [
   { id: 1, name: 'Nurse Tigist Hailu', type: 'Annual Leave', duration: '5 days', status: 'Pending', date: '2026-05-10' },
@@ -37,6 +26,7 @@ const initialPerf: PerformanceRecord[] = [
 const emptyNewStaff = { name: '', role: '', shift: 'Day', status: 'On Duty', education: '', license: '', experience: '' };
 
 const StaffManagement: React.FC = () => {
+  const { staffList, setStaffList } = useEMR();
   const [activeTab, setActiveTab] = useState<'roster' | 'leave' | 'performance' | 'portfolio'>('roster');
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
@@ -66,7 +56,7 @@ const StaffManagement: React.FC = () => {
       return true;
     });
     return [...result].sort((a, b) => rosterSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
-  }, [rosterSearch, rosterFilters, rosterSort]);
+  }, [staffList, rosterSearch, rosterFilters, rosterSort]);
 
   const filteredLeave = useMemo(() => {
     let result = leaveRequests.filter((l) => {
@@ -285,7 +275,21 @@ const StaffManagement: React.FC = () => {
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
               <button className="btn-secondary" onClick={() => { setAddStaffModal(false); setNewStaff(emptyNewStaff); }}>Cancel</button>
               <button className="btn-primary" disabled={!newStaff.name.trim() || !newStaff.role.trim()}
-                onClick={() => { alert(`Staff member "${newStaff.name}" registered successfully.\n(Connect to server API to persist data.)`); setAddStaffModal(false); setNewStaff(emptyNewStaff); }}>
+                onClick={() => {
+                  setStaffList(prev => [...prev, {
+                    id: Date.now(),
+                    name: newStaff.name.trim(),
+                    role: newStaff.role.trim(),
+                    shift: newStaff.shift,
+                    status: newStaff.status,
+                    education: newStaff.education.trim() || 'Not specified',
+                    license: newStaff.license.trim() || 'Pending',
+                    experience: newStaff.experience.trim() || 'Not specified',
+                    surgeries: [], training: [], awards: [],
+                  }]);
+                  setAddStaffModal(false);
+                  setNewStaff(emptyNewStaff);
+                }}>
                 Register Staff
               </button>
             </div>

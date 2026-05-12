@@ -2,18 +2,10 @@ import React, { useState, useMemo } from 'react';
 import { Monitor, Wrench, Trash2, Plus, AlertTriangle, MapPin, Scale, FileText, Truck, X } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
+import { useEMR, type Asset } from '../context/EMRContext';
 
-type Asset = { id: string; name: string; serial: string; qty: number; weight: string; supplier: string; status: string; location: string; addedAt: string };
 type MaintenanceLog = { id: number; asset: string; task: string; technician: string; date: string; status: string };
 type LossRecord = { id: number; asset: string; type: string; reason: string; date: string; action: string };
-
-const initialAssets: Asset[] = [
-  { id: 'AST-001', name: 'GE Healthcare MRI System', serial: 'GE99283-X', qty: 1, weight: '1200kg', supplier: 'GE Healthcare Ethiopia', status: 'Functional', location: 'Radiology Dept', addedAt: '2025-01-10' },
-  { id: 'AST-002', name: 'Ventilator - Puritan Bennett 980', serial: 'PB-2026-044', qty: 5, weight: '45kg', supplier: 'Medtronic Africa', status: 'Maintenance Required', location: 'ICU', addedAt: '2025-03-15' },
-  { id: 'AST-003', name: 'Patient Monitor B40', serial: 'M-1122-A', qty: 12, weight: '4.5kg', supplier: 'Philips Medical', status: 'Functional', location: 'General Ward A', addedAt: '2024-11-20' },
-  { id: 'AST-004', name: 'ECG Machine 12-Lead', serial: 'ECG-3301', qty: 3, weight: '8kg', supplier: 'GE Healthcare Ethiopia', status: 'Functional', location: 'Cardiology Dept', addedAt: '2025-06-05' },
-  { id: 'AST-005', name: 'Infusion Pump Set', serial: 'INF-7890', qty: 20, weight: '1.2kg', supplier: 'B. Braun Ethiopia', status: 'Maintenance Required', location: 'ICU', addedAt: '2025-08-10' },
-];
 
 const initialMaint: MaintenanceLog[] = [
   { id: 1, asset: 'Ventilator - PB 980', task: 'Annual Calibration', technician: 'Engr. Dawit Bekele', date: '2026-04-10', status: 'Completed' },
@@ -31,9 +23,9 @@ const lossRecords: LossRecord[] = [
 const emptyAsset = { name: '', serial: '', qty: '1', weight: '', supplier: '', status: 'Functional', location: '' };
 
 const AssetManagement: React.FC = () => {
+  const { assets, setAssets } = useEMR();
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
   const [showCSVModal, setShowCSVModal] = useState(false);
-  const [assets, setAssets] = useState<Asset[]>(initialAssets);
   const [maintLogs, setMaintLogs] = useState<MaintenanceLog[]>(initialMaint);
   const [detailModal, setDetailModal] = useState<Asset | null>(null);
   const [maintainModal, setMaintainModal] = useState<Asset | null>(null);
