@@ -41,6 +41,8 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
       woreda: formData.address_woreda,
       kebele: formData.address_kebele,
       vitals: [],
+      medications: [],
+      ward: '',
     });
     onClose();
   };
