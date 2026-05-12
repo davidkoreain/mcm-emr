@@ -23,7 +23,7 @@ const lossRecords: LossRecord[] = [
 const emptyAsset = { name: '', serial: '', qty: '1', weight: '', supplier: '', status: 'Functional', location: '' };
 
 const AssetManagement: React.FC = () => {
-  const { assets, setAssets } = useEMR();
+  const { assets, addAsset, updateAsset } = useEMR();
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [maintLogs, setMaintLogs] = useState<MaintenanceLog[]>(initialMaint);
@@ -88,7 +88,7 @@ const AssetManagement: React.FC = () => {
       status: 'In Progress',
     };
     setMaintLogs((prev) => [newLog, ...prev]);
-    setAssets((prev) => prev.map((a) => a.id === maintainModal.id ? { ...a, status: 'Maintenance Required' } : a));
+    updateAsset(maintainModal.id, { status: 'Maintenance Required' });
     setMaintainModal(null);
     setMaintainForm({ task: '', technician: '' });
     setActiveTab('maintenance');
@@ -99,7 +99,7 @@ const AssetManagement: React.FC = () => {
     setMaintLogs((prev) => prev.map((m) => m.id === updateModal.id ? { ...m, status: newStatus } : m));
     if (newStatus === 'Completed') {
       const matchingAsset = assets.find((a) => updateModal.asset.includes(a.name.split(' ').slice(0, 2).join(' ')));
-      if (matchingAsset) setAssets((prev) => prev.map((a) => a.id === matchingAsset.id ? { ...a, status: 'Functional' } : a));
+      if (matchingAsset) updateAsset(matchingAsset.id, { status: 'Functional' });
     }
     setUpdateModal(null);
   };
@@ -113,7 +113,7 @@ const AssetManagement: React.FC = () => {
       supplier: newAsset.supplier.trim(), status: newAsset.status,
       location: newAsset.location.trim(), addedAt: new Date().toISOString().split('T')[0],
     };
-    setAssets((prev) => [...prev, entry]);
+    addAsset(entry);
     setAddAssetModal(false);
     setNewAsset(emptyAsset);
   };

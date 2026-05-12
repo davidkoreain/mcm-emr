@@ -26,7 +26,7 @@ const initialPerf: PerformanceRecord[] = [
 const emptyNewStaff = { name: '', role: '', shift: 'Day', status: 'On Duty', education: '', license: '', experience: '' };
 
 const StaffManagement: React.FC = () => {
-  const { staffList, setStaffList } = useEMR();
+  const { staffList, addStaff } = useEMR();
   const [activeTab, setActiveTab] = useState<'roster' | 'leave' | 'performance' | 'portfolio'>('roster');
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
@@ -276,8 +276,7 @@ const StaffManagement: React.FC = () => {
               <button className="btn-secondary" onClick={() => { setAddStaffModal(false); setNewStaff(emptyNewStaff); }}>Cancel</button>
               <button className="btn-primary" disabled={!newStaff.name.trim() || !newStaff.role.trim()}
                 onClick={() => {
-                  setStaffList(prev => [...prev, {
-                    id: Date.now(),
+                  addStaff({
                     name: newStaff.name.trim(),
                     role: newStaff.role.trim(),
                     shift: newStaff.shift,
@@ -286,7 +285,7 @@ const StaffManagement: React.FC = () => {
                     license: newStaff.license.trim() || 'Pending',
                     experience: newStaff.experience.trim() || 'Not specified',
                     surgeries: [], training: [], awards: [],
-                  }]);
+                  });
                   setAddStaffModal(false);
                   setNewStaff(emptyNewStaff);
                 }}>

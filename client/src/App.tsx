@@ -36,10 +36,10 @@ import { useEMR } from './context/EMRContext';
 type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier';
 
 function App() {
-  const { patients } = useEMR();
+  const { patients, loading, error } = useEMR();
   const [role, setRole] = useState<UserRole>('Admin');
   const [view, setView] = useState<'dashboard' | 'registration' | 'patientList' | 'vitals' | 'encounter' | 'inventory' | 'lab' | 'billing' | 'inpatient' | 'staff' | 'assets' | 'compliance' | 'surgery' | 'calendar'>('dashboard');
-  const [selectedPatient, setSelectedPatient] = useState<{ name: string; amharic: string } | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
 
   const [ptSearch, setPtSearch] = useState('');
@@ -150,6 +150,16 @@ function App() {
 
       {/* Main Content */}
       <main className="main-content">
+        {loading && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, fontSize: '1rem', color: '#475569' }}>
+            Loading EMR data…
+          </div>
+        )}
+        {error && (
+          <div style={{ background: '#fef2f2', color: '#dc2626', padding: '0.75rem 1rem', borderRadius: '0.5rem', margin: '1rem', fontSize: '0.875rem' }}>
+            DB error: {error}
+          </div>
+        )}
         <header className="header">
           <div className="search-bar">
             <Search size={20} color="var(--text-secondary)" />
@@ -257,6 +267,7 @@ function App() {
         ) : view === 'vitals' ? (
           <VitalsEntry
             patientName={selectedPatient?.name || ''}
+            mrn={selectedPatient?.mrn || ''}
             onClose={() => setView('dashboard')}
           />
         ) : view === 'encounter' ? (
@@ -285,7 +296,7 @@ function App() {
                         <td>{p.time}</td>
                         <td>
                           <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                            onClick={() => setSelectedPatient({ name: p.name, amharic: p.amharic })}>
+                            onClick={() => setSelectedPatient({ mrn: p.mrn, name: p.name, amharic: p.amharic })}>
                             Start Encounter
                           </button>
                         </td>
@@ -393,14 +404,14 @@ function App() {
                       <td>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                           <button
-                            onClick={() => { setSelectedPatient({ name: p.name, amharic: p.amharic }); setView('vitals'); }}
+                            onClick={() => { setSelectedPatient({ mrn: p.mrn, name: p.name, amharic: p.amharic }); setView('vitals'); }}
                             className="btn-primary"
                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'var(--accent-color)' }}
                           >
                             Vitals
                           </button>
                           <button
-                            onClick={() => { setSelectedPatient({ name: p.name, amharic: p.amharic }); setView('encounter'); }}
+                            onClick={() => { setSelectedPatient({ mrn: p.mrn, name: p.name, amharic: p.amharic }); setView('encounter'); }}
                             className="btn-primary"
                             style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
                           >

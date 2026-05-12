@@ -5,10 +5,11 @@ import { useEMR } from '../context/EMRContext';
 interface VitalsEntryProps {
   onClose: () => void;
   patientName: string;
+  mrn: string;
 }
 
-const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName }) => {
-  const { setPatients } = useEMR();
+const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName, mrn }) => {
+  const { appendPatientVitals } = useEMR();
   const [saved, setSaved] = useState(false);
   const [vitals, setVitals] = useState({
     temperature: '',
@@ -34,9 +35,7 @@ const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName }) => {
       spo2: vitals.spo2,
       recordedAt: new Date().toISOString(),
     };
-    setPatients(prev => prev.map(p =>
-      p.name === patientName ? { ...p, vitals: [...p.vitals, record] } : p
-    ));
+    appendPatientVitals(mrn, record);
     setSaved(true);
     setTimeout(onClose, 1200);
   };

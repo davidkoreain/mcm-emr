@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { db } from '../services';
 
 export type VitalsRecord = {
   temperature: string;
@@ -55,14 +56,15 @@ export type Asset = {
   addedAt: string;
 };
 
-const initialStaff: StaffMember[] = [
+// Exported so LocalService can use the same seed data
+export const initialStaff: StaffMember[] = [
   { id: 1, name: 'Dr. Solomon Tsegaye', role: 'Chief MD / Surgeon', shift: 'Day', status: 'On Duty', education: 'MD from Addis Ababa University, Specialization in General Surgery', license: 'ETH-MD-9982 (Valid until 2028)', experience: '15 years (MCM Hospital, Black Lion Hospital)', surgeries: ['Appendectomy (240)', 'Hernia Repair (180)', 'Hip Replacement (45)'], training: ['Advanced Trauma Life Support (ATLS)', 'Robotic Surgery Fundamentals'], awards: ['Physician of the Year 2026', 'Outstanding Surgeon 2024'] },
   { id: 2, name: 'Nurse Martha Kassa', role: 'Head Nurse', shift: 'Night', status: 'Off Duty', education: 'BSc in Nursing from Jimma University', license: 'ETH-RN-4451 (Valid until 2027)', experience: "10 years (MCM Hospital, St. Paul's Hospital)", surgeries: ['Surgical Assisting (500+)', 'ICU Care Management'], training: ['Critical Care Nursing Certification', 'Hygiene Control Protocol'], awards: ['Excellence in Nursing 2025'] },
   { id: 3, name: 'Dr. Fitsum Ayele', role: 'Internal Medicine', shift: 'Day', status: 'On Duty', education: 'MD, MSc Internal Medicine, AAU', license: 'ETH-MD-7721 (Valid until 2027)', experience: '8 years (MCM Hospital)', surgeries: ['Bronchoscopy (30)', 'Endoscopy (60)'], training: ['ACLS Certification', 'Diabetes Management CME'], awards: [] },
   { id: 4, name: 'Nurse Tigist Hailu', role: 'Staff Nurse', shift: 'Night', status: 'On Duty', education: 'Diploma in Nursing, Mekelle University', license: 'ETH-RN-5520 (Valid until 2026)', experience: '5 years (MCM Hospital)', surgeries: ['Surgical Assisting (120+)'], training: ['Basic Life Support', 'Wound Care'], awards: [] },
 ];
 
-const initialPatients: Patient[] = [
+export const initialPatients: Patient[] = [
   { mrn: 'MRN-2026-001', name: 'Abebe Bikila', amharic: 'አበበ ቢቂላ', visitType: 'OPD', status: 'In Progress', time: '10:30 AM', registeredAt: '2026-05-12', gender: 'Male', dob: '1990-03-15', phone: '+251911001001', city: 'Addis Ababa', woreda: '05', kebele: '12', vitals: [] },
   { mrn: 'MRN-2026-002', name: 'Mulu Worku', amharic: 'ሙሉ ወርቁ', visitType: 'Emergency', status: 'Waiting', time: '11:15 AM', registeredAt: '2026-05-12', gender: 'Female', dob: '1985-07-22', phone: '+251922002002', city: 'Addis Ababa', woreda: '03', kebele: '08', vitals: [] },
   { mrn: 'MRN-2026-003', name: 'Kassa Tessema', amharic: 'ካሳ ተሰማ', visitType: 'Follow-up', status: 'Consulting', time: '11:45 AM', registeredAt: '2026-05-11', gender: 'Male', dob: '1978-11-05', phone: '+251933003003', city: 'Addis Ababa', woreda: '07', kebele: '03', vitals: [] },
@@ -73,7 +75,7 @@ const initialPatients: Patient[] = [
   { mrn: 'MRN-2026-008', name: 'Hana Bekele', amharic: 'ሃና በቀለ', visitType: 'OPD', status: 'Consulting', time: '12:30 PM', registeredAt: '2026-05-06', gender: 'Female', dob: '2003-12-04', phone: '+251988008008', city: 'Addis Ababa', woreda: '02', kebele: '07', vitals: [] },
 ];
 
-const initialAssets: Asset[] = [
+export const initialAssets: Asset[] = [
   { id: 'AST-001', name: 'GE Healthcare MRI System', serial: 'GE99283-X', qty: 1, weight: '1200kg', supplier: 'GE Healthcare Ethiopia', status: 'Functional', location: 'Radiology Dept', addedAt: '2025-01-10' },
   { id: 'AST-002', name: 'Ventilator - Puritan Bennett 980', serial: 'PB-2026-044', qty: 5, weight: '45kg', supplier: 'Medtronic Africa', status: 'Maintenance Required', location: 'ICU', addedAt: '2025-03-15' },
   { id: 'AST-003', name: 'Patient Monitor B40', serial: 'M-1122-A', qty: 12, weight: '4.5kg', supplier: 'Philips Medical', status: 'Functional', location: 'General Ward A', addedAt: '2024-11-20' },
@@ -84,12 +86,20 @@ const initialAssets: Asset[] = [
 ];
 
 type EMRContextType = {
+  // state
   patients: Patient[];
-  setPatients: React.Dispatch<React.SetStateAction<Patient[]>>;
   staffList: StaffMember[];
-  setStaffList: React.Dispatch<React.SetStateAction<StaffMember[]>>;
   assets: Asset[];
-  setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
+  loading: boolean;
+  error: string | null;
+  // patient mutations
+  addPatient(p: Patient): Promise<void>;
+  appendPatientVitals(mrn: string, vitals: VitalsRecord): Promise<void>;
+  // staff mutations
+  addStaff(s: Omit<StaffMember, 'id'>): Promise<void>;
+  // asset mutations
+  addAsset(a: Asset): Promise<void>;
+  updateAsset(id: string, changes: Partial<Asset>): Promise<void>;
 };
 
 const EMRContext = createContext<EMRContextType | null>(null);
@@ -101,11 +111,46 @@ export const useEMR = (): EMRContextType => {
 };
 
 export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [patients, setPatients] = useState<Patient[]>(initialPatients);
-  const [staffList, setStaffList] = useState<StaffMember[]>(initialStaff);
-  const [assets, setAssets] = useState<Asset[]>(initialAssets);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [staffList, setStaffList] = useState<StaffMember[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    Promise.all([db.fetchPatients(), db.fetchStaff(), db.fetchAssets()])
+      .then(([p, s, a]) => { setPatients(p); setStaffList(s); setAssets(a); })
+      .catch(err => setError((err as Error).message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const addPatient = async (p: Patient) => {
+    await db.insertPatient(p);
+    setPatients(prev => [...prev, p]);
+  };
+
+  const appendPatientVitals = async (mrn: string, vitals: VitalsRecord) => {
+    await db.appendVitals(mrn, vitals);
+    setPatients(prev => prev.map(p => p.mrn === mrn ? { ...p, vitals: [...p.vitals, vitals] } : p));
+  };
+
+  const addStaff = async (s: Omit<StaffMember, 'id'>) => {
+    const newMember = await db.insertStaff(s);
+    setStaffList(prev => [...prev, newMember]);
+  };
+
+  const addAsset = async (a: Asset) => {
+    await db.insertAsset(a);
+    setAssets(prev => [...prev, a]);
+  };
+
+  const updateAsset = async (id: string, changes: Partial<Asset>) => {
+    await db.updateAsset(id, changes);
+    setAssets(prev => prev.map(a => a.id === id ? { ...a, ...changes } : a));
+  };
+
   return (
-    <EMRContext.Provider value={{ patients, setPatients, staffList, setStaffList, assets, setAssets }}>
+    <EMRContext.Provider value={{ patients, staffList, assets, loading, error, addPatient, appendPatientVitals, addStaff, addAsset, updateAsset }}>
       {children}
     </EMRContext.Provider>
   );

@@ -7,7 +7,7 @@ interface PatientRegistrationProps {
 }
 
 const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) => {
-  const { setPatients } = useEMR();
+  const { addPatient } = useEMR();
   const [formData, setFormData] = useState({
     mrn: '',
     first_name: '',
@@ -26,7 +26,7 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const dateStr = now.toISOString().slice(0, 10);
-    setPatients(prev => [...prev, {
+    addPatient({
       mrn: formData.mrn,
       name: `${formData.first_name} ${formData.last_name}`.trim(),
       amharic: formData.amharic_name,
@@ -41,7 +41,7 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
       woreda: formData.address_woreda,
       kebele: formData.address_kebele,
       vitals: [],
-    }]);
+    });
     onClose();
   };
 

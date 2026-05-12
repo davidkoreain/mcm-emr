@@ -34,7 +34,7 @@ const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, 
 const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '480px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' };
 
 const OperationManagement: React.FC = () => {
-  const { staffList, assets, setAssets } = useEMR();
+  const { staffList, assets, updateAsset } = useEMR();
 
   const [activeTab, setActiveTab] = useState<'schedule' | 'resources' | 'supplies'>('schedule');
   const [schedules, setSchedules] = useState<OTSchedule[]>(initialSchedules);
@@ -93,7 +93,7 @@ const OperationManagement: React.FC = () => {
     const asset = assets.find(a => a.id === assetId);
     if (!asset || otEquipment.some(e => e.id === assetId)) return;
     setOtEquipment(prev => [...prev, { name: asset.name, id: asset.id, status: 'Allocated' }]);
-    setAssets(prev => prev.map(a => a.id === assetId ? { ...a, status: 'In Use (OT)' } : a));
+    updateAsset(assetId, { status: 'In Use (OT)' });
   };
 
   const availableStaff = staffList.filter(s => !otTeam.some(t => t.name === s.name));
