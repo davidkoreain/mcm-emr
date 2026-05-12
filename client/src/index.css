@@ -74,14 +74,14 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.2rem;
-  padding: 0 0.5rem;
+  padding: 0 0.4rem;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
 }
 
 .nav-item {
-  padding: 0.75rem 0.85rem;
+  padding: 0.75rem 0.75rem 0.75rem 14px;
   border-radius: 0.5rem;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
@@ -90,14 +90,23 @@ body {
   gap: 0.75rem;
   color: #94a3b8;
   white-space: nowrap;
-  min-width: 0;
+  overflow: hidden;
+}
+
+/* Prevent icons from shrinking when sidebar is collapsed */
+.nav-item > svg {
   flex-shrink: 0;
+  width: 20px;
+  height: 20px;
 }
 
 .nav-item span {
   opacity: 0;
   transition: opacity 0.15s ease;
   font-size: 0.9rem;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar:hover .nav-item span {
