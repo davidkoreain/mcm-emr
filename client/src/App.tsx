@@ -109,7 +109,7 @@ function App() {
             )}
 
             {(role === 'Admin' || role === 'Doctor') && (
-              <li className="nav-item" onClick={() => toast('Encounters module coming soon', 'info')}>
+              <li className={`nav-item ${view === 'encounter' ? 'active' : ''}`} onClick={() => setView('encounter')}>
                 <Activity size={20} /><span>Encounters</span>
               </li>
             )}
@@ -269,10 +269,42 @@ function App() {
             onClose={() => setView('dashboard')}
           />
         ) : view === 'encounter' ? (
-          <ClinicalEncounter
-            patientName={selectedPatient?.name || ''}
-            onClose={() => setView('dashboard')}
-          />
+          selectedPatient ? (
+            <ClinicalEncounter
+              patientName={selectedPatient.name}
+              onClose={() => { setSelectedPatient(null); setView('encounter'); }}
+            />
+          ) : (
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.25rem' }}>Encounters — Select Patient</h2>
+              </div>
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr><th>MRN</th><th>Patient Name</th><th>Visit Type</th><th>Status</th><th>Time</th><th>Action</th></tr>
+                  </thead>
+                  <tbody>
+                    {allPatients.map(p => (
+                      <tr key={p.mrn}>
+                        <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.mrn}</td>
+                        <td><strong>{p.name}</strong><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.amharic}</div></td>
+                        <td>{p.visitType}</td>
+                        <td><span className={`status-badge ${p.status === 'Completed' ? 'status-active' : 'status-pending'}`}>{p.status}</span></td>
+                        <td>{p.time}</td>
+                        <td>
+                          <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                            onClick={() => setSelectedPatient({ name: p.name, amharic: p.amharic })}>
+                            Start Encounter
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
         ) : view === 'inventory' ? (
           <PharmacyManagement />
         ) : view === 'lab' ? (
