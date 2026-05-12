@@ -1,5 +1,34 @@
 import React, { createContext, useContext, useState } from 'react';
 
+export type VitalsRecord = {
+  temperature: string;
+  heartRate: string;
+  respiratoryRate: string;
+  bpSystolic: string;
+  bpDiastolic: string;
+  weightKg: string;
+  heightCm: string;
+  spo2: string;
+  recordedAt: string;
+};
+
+export type Patient = {
+  mrn: string;
+  name: string;
+  amharic: string;
+  visitType: string;
+  status: string;
+  time: string;
+  registeredAt: string;
+  gender: string;
+  dob: string;
+  phone: string;
+  city: string;
+  woreda: string;
+  kebele: string;
+  vitals: VitalsRecord[];
+};
+
 export type StaffMember = {
   id: number;
   name: string;
@@ -33,6 +62,17 @@ const initialStaff: StaffMember[] = [
   { id: 4, name: 'Nurse Tigist Hailu', role: 'Staff Nurse', shift: 'Night', status: 'On Duty', education: 'Diploma in Nursing, Mekelle University', license: 'ETH-RN-5520 (Valid until 2026)', experience: '5 years (MCM Hospital)', surgeries: ['Surgical Assisting (120+)'], training: ['Basic Life Support', 'Wound Care'], awards: [] },
 ];
 
+const initialPatients: Patient[] = [
+  { mrn: 'MRN-2026-001', name: 'Abebe Bikila', amharic: 'አበበ ቢቂላ', visitType: 'OPD', status: 'In Progress', time: '10:30 AM', registeredAt: '2026-05-12', gender: 'Male', dob: '1990-03-15', phone: '+251911001001', city: 'Addis Ababa', woreda: '05', kebele: '12', vitals: [] },
+  { mrn: 'MRN-2026-002', name: 'Mulu Worku', amharic: 'ሙሉ ወርቁ', visitType: 'Emergency', status: 'Waiting', time: '11:15 AM', registeredAt: '2026-05-12', gender: 'Female', dob: '1985-07-22', phone: '+251922002002', city: 'Addis Ababa', woreda: '03', kebele: '08', vitals: [] },
+  { mrn: 'MRN-2026-003', name: 'Kassa Tessema', amharic: 'ካሳ ተሰማ', visitType: 'Follow-up', status: 'Consulting', time: '11:45 AM', registeredAt: '2026-05-11', gender: 'Male', dob: '1978-11-05', phone: '+251933003003', city: 'Addis Ababa', woreda: '07', kebele: '03', vitals: [] },
+  { mrn: 'MRN-2026-004', name: 'Selam Adane', amharic: 'ሰላም አዳነ', visitType: 'OPD', status: 'Completed', time: '09:00 AM', registeredAt: '2026-05-10', gender: 'Female', dob: '2000-01-30', phone: '+251944004004', city: 'Addis Ababa', woreda: '01', kebele: '15', vitals: [] },
+  { mrn: 'MRN-2026-005', name: 'Tigist Hailu', amharic: 'ትግስት ኃይሉ', visitType: 'Inpatient', status: 'In Progress', time: '08:00 AM', registeredAt: '2026-05-09', gender: 'Female', dob: '1995-06-18', phone: '+251955005005', city: 'Addis Ababa', woreda: '10', kebele: '06', vitals: [] },
+  { mrn: 'MRN-2026-006', name: 'Biruk Alemu', amharic: 'ብሩክ አለሙ', visitType: 'Emergency', status: 'Completed', time: '07:30 AM', registeredAt: '2026-05-08', gender: 'Male', dob: '1992-09-11', phone: '+251966006006', city: 'Addis Ababa', woreda: '04', kebele: '09', vitals: [] },
+  { mrn: 'MRN-2026-007', name: 'Dawit Mesfin', amharic: 'ዳዊት መስፍን', visitType: 'Follow-up', status: 'Waiting', time: '12:00 PM', registeredAt: '2026-05-07', gender: 'Male', dob: '1988-02-28', phone: '+251977007007', city: 'Addis Ababa', woreda: '06', kebele: '11', vitals: [] },
+  { mrn: 'MRN-2026-008', name: 'Hana Bekele', amharic: 'ሃና በቀለ', visitType: 'OPD', status: 'Consulting', time: '12:30 PM', registeredAt: '2026-05-06', gender: 'Female', dob: '2003-12-04', phone: '+251988008008', city: 'Addis Ababa', woreda: '02', kebele: '07', vitals: [] },
+];
+
 const initialAssets: Asset[] = [
   { id: 'AST-001', name: 'GE Healthcare MRI System', serial: 'GE99283-X', qty: 1, weight: '1200kg', supplier: 'GE Healthcare Ethiopia', status: 'Functional', location: 'Radiology Dept', addedAt: '2025-01-10' },
   { id: 'AST-002', name: 'Ventilator - Puritan Bennett 980', serial: 'PB-2026-044', qty: 5, weight: '45kg', supplier: 'Medtronic Africa', status: 'Maintenance Required', location: 'ICU', addedAt: '2025-03-15' },
@@ -44,6 +84,8 @@ const initialAssets: Asset[] = [
 ];
 
 type EMRContextType = {
+  patients: Patient[];
+  setPatients: React.Dispatch<React.SetStateAction<Patient[]>>;
   staffList: StaffMember[];
   setStaffList: React.Dispatch<React.SetStateAction<StaffMember[]>>;
   assets: Asset[];
@@ -59,10 +101,11 @@ export const useEMR = (): EMRContextType => {
 };
 
 export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [patients, setPatients] = useState<Patient[]>(initialPatients);
   const [staffList, setStaffList] = useState<StaffMember[]>(initialStaff);
   const [assets, setAssets] = useState<Asset[]>(initialAssets);
   return (
-    <EMRContext.Provider value={{ staffList, setStaffList, assets, setAssets }}>
+    <EMRContext.Provider value={{ patients, setPatients, staffList, setStaffList, assets, setAssets }}>
       {children}
     </EMRContext.Provider>
   );

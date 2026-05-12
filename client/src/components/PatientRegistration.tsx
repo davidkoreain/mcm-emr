@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
+import { useEMR } from '../context/EMRContext';
 
 interface PatientRegistrationProps {
   onClose: () => void;
 }
 
 const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) => {
+  const { setPatients } = useEMR();
   const [formData, setFormData] = useState({
     mrn: '',
     first_name: '',
@@ -21,9 +23,25 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Patient Data Submitted:', formData);
-    // Here we would call the API
-    alert('Patient registered successfully! (Demo Mode)');
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const dateStr = now.toISOString().slice(0, 10);
+    setPatients(prev => [...prev, {
+      mrn: formData.mrn,
+      name: `${formData.first_name} ${formData.last_name}`.trim(),
+      amharic: formData.amharic_name,
+      visitType: 'OPD',
+      status: 'Waiting',
+      time: timeStr,
+      registeredAt: dateStr,
+      gender: formData.gender,
+      dob: formData.date_of_birth,
+      phone: formData.phone_number,
+      city: formData.address_city,
+      woreda: formData.address_woreda,
+      kebele: formData.address_kebele,
+      vitals: [],
+    }]);
     onClose();
   };
 

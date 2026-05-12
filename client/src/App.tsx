@@ -31,21 +31,12 @@ import HospitalCalendar from './components/HospitalCalendar';
 import CSVImportModal from './components/CSVImportModal';
 import ListFilterControl from './components/ListFilterControl';
 import { toast } from './utils/toast';
+import { useEMR } from './context/EMRContext';
 
 type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier';
 
-const allPatients = [
-  { mrn: 'MRN-2026-001', name: 'Abebe Bikila', amharic: 'አበበ ቢቂላ', visitType: 'OPD', status: 'In Progress', time: '10:30 AM', registeredAt: '2026-05-12' },
-  { mrn: 'MRN-2026-002', name: 'Mulu Worku', amharic: 'ሙሉ ወርቁ', visitType: 'Emergency', status: 'Waiting', time: '11:15 AM', registeredAt: '2026-05-12' },
-  { mrn: 'MRN-2026-003', name: 'Kassa Tessema', amharic: 'ካሳ ተሰማ', visitType: 'Follow-up', status: 'Consulting', time: '11:45 AM', registeredAt: '2026-05-11' },
-  { mrn: 'MRN-2026-004', name: 'Selam Adane', amharic: 'ሰላም አዳነ', visitType: 'OPD', status: 'Completed', time: '09:00 AM', registeredAt: '2026-05-10' },
-  { mrn: 'MRN-2026-005', name: 'Tigist Hailu', amharic: 'ትግስት ኃይሉ', visitType: 'Inpatient', status: 'In Progress', time: '08:00 AM', registeredAt: '2026-05-09' },
-  { mrn: 'MRN-2026-006', name: 'Biruk Alemu', amharic: 'ብሩክ አለሙ', visitType: 'Emergency', status: 'Completed', time: '07:30 AM', registeredAt: '2026-05-08' },
-  { mrn: 'MRN-2026-007', name: 'Dawit Mesfin', amharic: 'ዳዊት መስፍን', visitType: 'Follow-up', status: 'Waiting', time: '12:00 PM', registeredAt: '2026-05-07' },
-  { mrn: 'MRN-2026-008', name: 'Hana Bekele', amharic: 'ሃና በቀለ', visitType: 'OPD', status: 'Consulting', time: '12:30 PM', registeredAt: '2026-05-06' },
-];
-
 function App() {
+  const { patients } = useEMR();
   const [role, setRole] = useState<UserRole>('Admin');
   const [view, setView] = useState<'dashboard' | 'registration' | 'patientList' | 'vitals' | 'encounter' | 'inventory' | 'lab' | 'billing' | 'inpatient' | 'staff' | 'assets' | 'compliance' | 'surgery' | 'calendar'>('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<{ name: string; amharic: string } | null>(null);
@@ -56,7 +47,7 @@ function App() {
   const [ptSort, setPtSort] = useState('name_asc');
 
   const filteredPatients = useMemo(() => {
-    let result = allPatients.filter((p) => {
+    let result = patients.filter((p) => {
       const q = ptSearch.toLowerCase();
       if (q && !p.name.toLowerCase().includes(q) && !p.amharic.includes(q) && !p.mrn.toLowerCase().includes(q)) return false;
       if (ptFilters.visitType && p.visitType !== ptFilters.visitType) return false;
@@ -69,7 +60,7 @@ function App() {
       if (ptSort === 'date_asc') return a.registeredAt.localeCompare(b.registeredAt);
       return a.name.localeCompare(b.name);
     });
-  }, [ptSearch, ptFilters, ptSort]);
+  }, [patients, ptSearch, ptFilters, ptSort]);
 
   return (
     <div className="app-container">
@@ -243,7 +234,7 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {allPatients.slice(0, 3).map((p) => (
+                    {patients.slice(0, 3).map((p) => (
                       <tr key={p.mrn}>
                         <td>{p.name}</td>
                         <td>{p.amharic}</td>
@@ -285,7 +276,7 @@ function App() {
                     <tr><th>MRN</th><th>Patient Name</th><th>Visit Type</th><th>Status</th><th>Time</th><th>Action</th></tr>
                   </thead>
                   <tbody>
-                    {allPatients.map(p => (
+                    {patients.map(p => (
                       <tr key={p.mrn}>
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.mrn}</td>
                         <td><strong>{p.name}</strong><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.amharic}</div></td>
@@ -369,7 +360,7 @@ function App() {
                 { label: 'Registered Oldest', value: 'date_asc' },
               ]}
               onSortChange={setPtSort}
-              totalCount={allPatients.length}
+              totalCount={patients.length}
               filteredCount={filteredPatients.length}
             />
 

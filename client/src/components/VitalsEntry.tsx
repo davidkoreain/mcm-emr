@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Activity, Thermometer, Weight, Ruler, Wind, Droplets, Save, X } from 'lucide-react';
+import { Activity, Thermometer, Weight, Ruler, Wind, Droplets, Save, X, CheckCircle } from 'lucide-react';
+import { useEMR } from '../context/EMRContext';
 
 interface VitalsEntryProps {
   onClose: () => void;
@@ -7,6 +8,8 @@ interface VitalsEntryProps {
 }
 
 const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName }) => {
+  const { setPatients } = useEMR();
+  const [saved, setSaved] = useState(false);
   const [vitals, setVitals] = useState({
     temperature: '',
     heart_rate: '',
@@ -20,9 +23,22 @@ const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Vitals Submitted:', vitals);
-    alert('Vitals recorded successfully!');
-    onClose();
+    const record = {
+      temperature: vitals.temperature,
+      heartRate: vitals.heart_rate,
+      respiratoryRate: vitals.respiratory_rate,
+      bpSystolic: vitals.bp_systolic,
+      bpDiastolic: vitals.bp_diastolic,
+      weightKg: vitals.weight_kg,
+      heightCm: vitals.height_cm,
+      spo2: vitals.spo2,
+      recordedAt: new Date().toISOString(),
+    };
+    setPatients(prev => prev.map(p =>
+      p.name === patientName ? { ...p, vitals: [...p.vitals, record] } : p
+    ));
+    setSaved(true);
+    setTimeout(onClose, 1200);
   };
 
   return (
@@ -38,6 +54,11 @@ const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName }) => {
         <button onClick={onClose} className="btn-close"><X size={24} /></button>
       </div>
 
+      {saved && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#dcfce7', color: '#15803d', padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1rem' }}>
+          <CheckCircle size={18} /> Vitals saved to patient record.
+        </div>
+      )}
       <form onSubmit={handleSubmit} className="vitals-form">
         <div className="vitals-grid">
           {/* Temperature */}
