@@ -100,9 +100,11 @@ const DoctorDashboard: React.FC = () => {
   const queue = patients.filter(p => !['Completed'].includes(p.status));
   const selected = selectedMrn ? patients.find(p => p.mrn === selectedMrn) ?? null : null;
 
-  const get = (mrn: string): Consultation => consults[mrn] ?? EMPTY();
-  const patch = (mrn: string, diff: Partial<Consultation>) =>
+  const get = (mrn: string | null): Consultation => (mrn ? consults[mrn] : undefined) ?? EMPTY();
+  const patch = (mrn: string | null, diff: Partial<Consultation>) => {
+    if (!mrn) return;
     setConsults(prev => ({ ...prev, [mrn]: { ...get(mrn), ...diff } }));
+  };
   const c = selectedMrn ? get(selectedMrn) : null;
 
   // Stats
