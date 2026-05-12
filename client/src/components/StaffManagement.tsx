@@ -1,87 +1,61 @@
 import React, { useState, useMemo } from 'react';
-import { toast } from '../utils/toast';
 import {
-  Calendar,
-  Coffee,
-  Award,
-  ShieldAlert,
-  FileText,
-  CheckCircle,
-  Clock,
-  UserPlus,
-  BookOpen,
-  GraduationCap,
-  ChevronRight,
-  ShieldCheck,
-  Stethoscope,
+  Calendar, Coffee, Award, ShieldAlert, FileText, CheckCircle, Clock,
+  UserPlus, BookOpen, GraduationCap, ChevronRight, ShieldCheck, Stethoscope, X,
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
+
+type LeaveRequest = { id: number; name: string; type: string; duration: string; status: string; date: string };
+type PerformanceRecord = { id: number; name: string; type: string; title: string; date: string };
+type Staff = {
+  id: number; name: string; role: string; shift: string; status: string;
+  education: string; license: string; experience: string;
+  surgeries: string[]; training: string[]; awards: string[];
+};
+
+const staffList: Staff[] = [
+  { id: 1, name: 'Dr. Solomon Tsegaye', role: 'Chief MD / Surgeon', shift: 'Day', status: 'On Duty', education: 'MD from Addis Ababa University, Specialization in General Surgery', license: 'ETH-MD-9982 (Valid until 2028)', experience: '15 years (MCM Hospital, Black Lion Hospital)', surgeries: ['Appendectomy (240)', 'Hernia Repair (180)', 'Hip Replacement (45)'], training: ['Advanced Trauma Life Support (ATLS)', 'Robotic Surgery Fundamentals'], awards: ['Physician of the Year 2026', 'Outstanding Surgeon 2024'] },
+  { id: 2, name: 'Nurse Martha Kassa', role: 'Head Nurse', shift: 'Night', status: 'Off Duty', education: 'BSc in Nursing from Jimma University', license: 'ETH-RN-4451 (Valid until 2027)', experience: "10 years (MCM Hospital, St. Paul's Hospital)", surgeries: ['Surgical Assisting (500+)', 'ICU Care Management'], training: ['Critical Care Nursing Certification', 'Hygiene Control Protocol'], awards: ['Excellence in Nursing 2025'] },
+  { id: 3, name: 'Dr. Fitsum Ayele', role: 'Internal Medicine', shift: 'Day', status: 'On Duty', education: 'MD, MSc Internal Medicine, AAU', license: 'ETH-MD-7721 (Valid until 2027)', experience: '8 years (MCM Hospital)', surgeries: ['Bronchoscopy (30)', 'Endoscopy (60)'], training: ['ACLS Certification', 'Diabetes Management CME'], awards: [] },
+  { id: 4, name: 'Nurse Tigist Hailu', role: 'Staff Nurse', shift: 'Night', status: 'On Duty', education: 'Diploma in Nursing, Mekelle University', license: 'ETH-RN-5520 (Valid until 2026)', experience: '5 years (MCM Hospital)', surgeries: ['Surgical Assisting (120+)'], training: ['Basic Life Support', 'Wound Care'], awards: [] },
+];
+
+const initialLeave: LeaveRequest[] = [
+  { id: 1, name: 'Nurse Tigist Hailu', type: 'Annual Leave', duration: '5 days', status: 'Pending', date: '2026-05-10' },
+  { id: 2, name: 'Dr. Fitsum Ayele', type: 'Sick Leave', duration: '2 days', status: 'Approved', date: '2026-05-08' },
+  { id: 3, name: 'Nurse Martha Kassa', type: 'Annual Leave', duration: '7 days', status: 'Pending', date: '2026-05-05' },
+];
+
+const initialPerf: PerformanceRecord[] = [
+  { id: 1, name: 'Dr. Solomon Tsegaye', type: 'Award', title: 'Physician of the Year', date: '2026-01-15' },
+  { id: 2, name: 'Nurse Martha Kassa', type: 'Award', title: 'Excellence in Nursing', date: '2026-03-10' },
+  { id: 3, name: 'Staff X', type: 'Disciplinary', title: 'Tardiness Warning', date: '2026-04-05' },
+  { id: 4, name: 'Dr. Fitsum Ayele', type: 'Award', title: 'Patient Satisfaction Award', date: '2026-02-20' },
+];
+
+const emptyNewStaff = { name: '', role: '', shift: 'Day', status: 'On Duty', education: '', license: '', experience: '' };
 
 const StaffManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'roster' | 'leave' | 'performance' | 'portfolio'>('roster');
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
+  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeave);
+  const [reviewModal, setReviewModal] = useState<LeaveRequest | null>(null);
+  const [logsModal, setLogsModal] = useState<Staff | null>(null);
+  const [addStaffModal, setAddStaffModal] = useState(false);
+  const [newStaff, setNewStaff] = useState(emptyNewStaff);
+  const [perfDetailModal, setPerfDetailModal] = useState<PerformanceRecord | null>(null);
 
   const [rosterSearch, setRosterSearch] = useState('');
   const [rosterFilters, setRosterFilters] = useState<Record<string, string>>({ shift: '', status: '' });
   const [rosterSort, setRosterSort] = useState('name_asc');
-
   const [leaveSearch, setLeaveSearch] = useState('');
   const [leaveFilters, setLeaveFilters] = useState<Record<string, string>>({ type: '', status: '' });
   const [leaveSort, setLeaveSort] = useState('name_asc');
-
   const [perfSearch, setPerfSearch] = useState('');
   const [perfFilters, setPerfFilters] = useState<Record<string, string>>({ type: '' });
   const [perfSort, setPerfSort] = useState('date_desc');
-
-  const staffList = [
-    {
-      id: 1, name: 'Dr. Solomon Tsegaye', role: 'Chief MD / Surgeon', shift: 'Day', status: 'On Duty',
-      education: 'MD from Addis Ababa University, Specialization in General Surgery',
-      license: 'ETH-MD-9982 (Valid until 2028)', experience: '15 years (MCM Hospital, Black Lion Hospital)',
-      surgeries: ['Appendectomy (240)', 'Hernia Repair (180)', 'Hip Replacement (45)'],
-      training: ['Advanced Trauma Life Support (ATLS)', 'Robotic Surgery Fundamentals'],
-      awards: ['Physician of the Year 2026', 'Outstanding Surgeon 2024'],
-    },
-    {
-      id: 2, name: 'Nurse Martha Kassa', role: 'Head Nurse', shift: 'Night', status: 'Off Duty',
-      education: 'BSc in Nursing from Jimma University',
-      license: 'ETH-RN-4451 (Valid until 2027)', experience: "10 years (MCM Hospital, St. Paul's Hospital)",
-      surgeries: ['Surgical Assisting (500+)', 'ICU Care Management'],
-      training: ['Critical Care Nursing Certification', 'Hygiene Control Protocol'],
-      awards: ['Excellence in Nursing 2025'],
-    },
-    {
-      id: 3, name: 'Dr. Fitsum Ayele', role: 'Internal Medicine', shift: 'Day', status: 'On Duty',
-      education: 'MD, MSc Internal Medicine, AAU',
-      license: 'ETH-MD-7721 (Valid until 2027)', experience: '8 years (MCM Hospital)',
-      surgeries: ['Bronchoscopy (30)', 'Endoscopy (60)'],
-      training: ['ACLS Certification', 'Diabetes Management CME'],
-      awards: [],
-    },
-    {
-      id: 4, name: 'Nurse Tigist Hailu', role: 'Staff Nurse', shift: 'Night', status: 'On Duty',
-      education: 'Diploma in Nursing, Mekelle University',
-      license: 'ETH-RN-5520 (Valid until 2026)', experience: '5 years (MCM Hospital)',
-      surgeries: ['Surgical Assisting (120+)'],
-      training: ['Basic Life Support', 'Wound Care'],
-      awards: [],
-    },
-  ];
-
-  const leaveRequests = [
-    { id: 1, name: 'Nurse Tigist Hailu', type: 'Annual Leave', duration: '5 days', status: 'Pending', date: '2026-05-10' },
-    { id: 2, name: 'Dr. Fitsum Ayele', type: 'Sick Leave', duration: '2 days', status: 'Approved', date: '2026-05-08' },
-    { id: 3, name: 'Nurse Martha Kassa', type: 'Annual Leave', duration: '7 days', status: 'Pending', date: '2026-05-05' },
-  ];
-
-  const performanceRecords = [
-    { id: 1, name: 'Dr. Solomon Tsegaye', type: 'Award', title: 'Physician of the Year', date: '2026-01-15' },
-    { id: 2, name: 'Nurse Martha Kassa', type: 'Award', title: 'Excellence in Nursing', date: '2026-03-10' },
-    { id: 3, name: 'Staff X', type: 'Disciplinary', title: 'Tardiness Warning', date: '2026-04-05' },
-    { id: 4, name: 'Dr. Fitsum Ayele', type: 'Award', title: 'Patient Satisfaction Award', date: '2026-02-20' },
-  ];
 
   const filteredRoster = useMemo(() => {
     let result = staffList.filter((s) => {
@@ -91,9 +65,7 @@ const StaffManagement: React.FC = () => {
       if (rosterFilters.status && s.status !== rosterFilters.status) return false;
       return true;
     });
-    return [...result].sort((a, b) =>
-      rosterSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
-    );
+    return [...result].sort((a, b) => rosterSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
   }, [rosterSearch, rosterFilters, rosterSort]);
 
   const filteredLeave = useMemo(() => {
@@ -104,26 +76,29 @@ const StaffManagement: React.FC = () => {
       if (leaveFilters.status && l.status !== leaveFilters.status) return false;
       return true;
     });
-    return [...result].sort((a, b) =>
-      leaveSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name)
-    );
-  }, [leaveSearch, leaveFilters, leaveSort]);
+    return [...result].sort((a, b) => leaveSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
+  }, [leaveRequests, leaveSearch, leaveFilters, leaveSort]);
 
   const filteredPerf = useMemo(() => {
-    let result = performanceRecords.filter((r) => {
+    let result = initialPerf.filter((r) => {
       const q = perfSearch.toLowerCase();
       if (q && !r.name.toLowerCase().includes(q) && !r.title.toLowerCase().includes(q)) return false;
       if (perfFilters.type && r.type !== perfFilters.type) return false;
       return true;
     });
-    return [...result].sort((a, b) =>
-      perfSort === 'date_asc'
-        ? a.date.localeCompare(b.date)
-        : b.date.localeCompare(a.date)
-    );
+    return [...result].sort((a, b) => perfSort === 'date_asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
   }, [perfSearch, perfFilters, perfSort]);
 
-  const renderProfile = (staff: (typeof staffList)[0]) => (
+  const handleReviewLeave = (action: 'Approved' | 'Rejected') => {
+    if (!reviewModal) return;
+    setLeaveRequests((prev) => prev.map((l) => l.id === reviewModal.id ? { ...l, status: action } : l));
+    setReviewModal(null);
+  };
+
+  const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
+  const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '480px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' };
+
+  const renderProfile = (staff: Staff) => (
     <div className="staff-profile" style={{ background: 'white', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
@@ -137,17 +112,18 @@ const StaffManagement: React.FC = () => {
         </div>
         <button onClick={() => setSelectedStaff(null)} className="btn-secondary">Back to List</button>
       </div>
-
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-        <div className="profile-section">
+        <div>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', borderBottom: '2px solid #f1f5f9' }}>
             <GraduationCap size={20} color="var(--primary-color)" /> Academic & Professional
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>EDUCATION</label>
-              <p style={{ fontSize: '0.95rem' }}>{staff.education}</p>
-            </div>
+            {[{ label: 'EDUCATION', value: staff.education }, { label: 'WORK EXPERIENCE', value: staff.experience }].map(({ label, value }) => (
+              <div key={label} style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
+                <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>{label}</label>
+                <p style={{ fontSize: '0.95rem' }}>{value}</p>
+              </div>
+            ))}
             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>MEDICAL LICENSE</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -155,28 +131,21 @@ const StaffManagement: React.FC = () => {
                 <p style={{ fontSize: '0.95rem', fontWeight: '600' }}>{staff.license}</p>
               </div>
             </div>
-            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>WORK EXPERIENCE</label>
-              <p style={{ fontSize: '0.95rem' }}>{staff.experience}</p>
-            </div>
           </div>
         </div>
-
-        <div className="profile-section">
+        <div>
           <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', borderBottom: '2px solid #f1f5f9' }}>
-            <Stethoscope size={20} color="var(--primary-color)" /> Clinical & Training Portfolio
+            <Stethoscope size={20} color="var(--primary-color)" /> Clinical & Training
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
               <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>SURGERY LOG</label>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
-                {staff.surgeries.map((s, idx) => (
-                  <span key={idx} style={{ padding: '0.25rem 0.75rem', background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>{s}</span>
-                ))}
+                {staff.surgeries.map((s, idx) => <span key={idx} style={{ padding: '0.25rem 0.75rem', background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '0.85rem' }}>{s}</span>)}
               </div>
             </div>
             <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>EDUCATIONAL HISTORY / CME</label>
+              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>CME / TRAINING</label>
               <ul style={{ listStyle: 'none', padding: '0', fontSize: '0.9rem', margin: '0' }}>
                 {staff.training.map((t, idx) => (
                   <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
@@ -184,13 +153,6 @@ const StaffManagement: React.FC = () => {
                   </li>
                 ))}
               </ul>
-            </div>
-            <div style={{ background: '#fdf2f2', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #fee2e2' }}>
-              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#b91c1c', display: 'block', marginBottom: '0.25rem' }}>HR STATUS</label>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                <span>Current Duty: <strong>{staff.status}</strong></span>
-                <span>Leaves Left: <strong>12 Days</strong></span>
-              </div>
             </div>
           </div>
         </div>
@@ -202,6 +164,135 @@ const StaffManagement: React.FC = () => {
 
   return (
     <div className="staff-container">
+      {/* Review Leave Modal */}
+      {reviewModal && (
+        <div style={overlayStyle}>
+          <div style={boxStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>Review Leave Request</h3>
+              <button onClick={() => setReviewModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {[{ label: 'Employee', value: reviewModal.name }, { label: 'Leave Type', value: reviewModal.type }, { label: 'Duration', value: reviewModal.duration }, { label: 'Request Date', value: reviewModal.date }, { label: 'Current Status', value: reviewModal.status }].map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '600' }}>{label}</span>
+                  <span style={{ fontWeight: '700' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setReviewModal(null)}>Cancel</button>
+              <button style={{ background: '#ef4444', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer' }} onClick={() => handleReviewLeave('Rejected')}>Reject</button>
+              <button className="btn-primary" onClick={() => handleReviewLeave('Approved')}>Approve</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* View Logs Modal */}
+      {logsModal && (
+        <div style={overlayStyle}>
+          <div style={{ ...boxStyle, width: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>Duty Logs – {logsModal.name}</h3>
+              <button onClick={() => setLogsModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                { date: '2026-05-12', shift: logsModal.shift, hours: '8h', status: logsModal.status },
+                { date: '2026-05-11', shift: logsModal.shift, hours: '8h', status: 'Completed' },
+                { date: '2026-05-10', shift: logsModal.shift, hours: '8h', status: 'Completed' },
+                { date: '2026-05-09', shift: logsModal.shift, hours: '8h', status: 'Completed' },
+                { date: '2026-05-08', shift: logsModal.shift, hours: '8h', status: 'Completed' },
+              ].map((log, idx) => (
+                <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem', alignItems: 'center' }}>
+                  <span style={{ fontWeight: '600' }}>{log.date}</span>
+                  <span style={{ color: '#64748b' }}>{log.shift} Shift · {log.hours}</span>
+                  <span className={`status-badge ${log.status === 'On Duty' ? 'status-pending' : 'status-active'}`}>{log.status}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setLogsModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Performance Detail Modal */}
+      {perfDetailModal && (
+        <div style={overlayStyle}>
+          <div style={boxStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>{perfDetailModal.type === 'Award' ? '🏆 Award Detail' : '⚠ Disciplinary Detail'}</h3>
+              <button onClick={() => setPerfDetailModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {[{ label: 'Title', value: perfDetailModal.title }, { label: 'Employee', value: perfDetailModal.name }, { label: 'Category', value: perfDetailModal.type }, { label: 'Date', value: perfDetailModal.date }].map(({ label, value }) => (
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '600' }}>{label}</span>
+                  <span style={{ fontWeight: '700' }}>{value}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setPerfDetailModal(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Staff Modal */}
+      {addStaffModal && (
+        <div style={overlayStyle}>
+          <div style={boxStyle}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>Add New Staff</h3>
+              <button onClick={() => setAddStaffModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {[
+                { label: 'Full Name *', key: 'name', placeholder: 'Dr. / Nurse ...' },
+                { label: 'Role / Position *', key: 'role', placeholder: 'e.g. Staff Nurse' },
+                { label: 'Medical License No.', key: 'license', placeholder: 'e.g. ETH-MD-0000' },
+                { label: 'Education', key: 'education', placeholder: 'e.g. BSc Nursing, AAU' },
+                { label: 'Experience', key: 'experience', placeholder: 'e.g. 3 years (MCM Hospital)' },
+              ].map(({ label, key, placeholder }) => (
+                <div key={key}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>{label}</label>
+                  <input type="text" value={(newStaff as any)[key]} placeholder={placeholder}
+                    onChange={(e) => setNewStaff((prev) => ({ ...prev, [key]: e.target.value }))}
+                    style={{ width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.95rem' }} />
+                </div>
+              ))}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Shift</label>
+                  <select value={newStaff.shift} onChange={(e) => setNewStaff((p) => ({ ...p, shift: e.target.value }))}
+                    style={{ width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.95rem' }}>
+                    <option>Day</option><option>Night</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Status</label>
+                  <select value={newStaff.status} onChange={(e) => setNewStaff((p) => ({ ...p, status: e.target.value }))}
+                    style={{ width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.95rem' }}>
+                    <option>On Duty</option><option>Off Duty</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button className="btn-secondary" onClick={() => { setAddStaffModal(false); setNewStaff(emptyNewStaff); }}>Cancel</button>
+              <button className="btn-primary" disabled={!newStaff.name.trim() || !newStaff.role.trim()}
+                onClick={() => { alert(`Staff member "${newStaff.name}" registered successfully.\n(Connect to server API to persist data.)`); setAddStaffModal(false); setNewStaff(emptyNewStaff); }}>
+                Register Staff
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="pharmacy-tabs">
         <button className={`tab-btn ${activeTab === 'roster' ? 'active' : ''}`} onClick={() => { setActiveTab('roster'); setSelectedStaff(null); }}>
           <Calendar size={20} /> Duty Roster
@@ -210,7 +301,7 @@ const StaffManagement: React.FC = () => {
           <BookOpen size={20} /> Credentials & Portfolio
         </button>
         <button className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`} onClick={() => { setActiveTab('leave'); setSelectedStaff(null); }}>
-          <Coffee size={20} /> Leave Mgmt
+          <Coffee size={20} /> Leave Mgmt {leaveRequests.filter((l) => l.status === 'Pending').length > 0 && <span style={{ background: '#f59e0b', color: 'white', borderRadius: '9999px', padding: '0.1rem 0.4rem', fontSize: '0.75rem' }}>{leaveRequests.filter((l) => l.status === 'Pending').length}</span>}
         </button>
         <button className={`tab-btn ${activeTab === 'performance' ? 'active' : ''}`} onClick={() => { setActiveTab('performance'); setSelectedStaff(null); }}>
           <Award size={20} /> Performance
@@ -218,24 +309,17 @@ const StaffManagement: React.FC = () => {
       </div>
 
       <div className="staff-content" style={{ marginTop: '1.5rem' }}>
-        {showCSVModal && (
-          <CSVImportModal
-            title="Medical Staff & HR"
-            onClose={() => setShowCSVModal(false)}
-            onImport={(data) => console.log('Imported Staff:', data)}
-          />
-        )}
+        {showCSVModal && <CSVImportModal title="Medical Staff & HR" onClose={() => setShowCSVModal(false)} onImport={(data) => console.log('Imported Staff:', data)} />}
 
         {activeTab === 'portfolio' && selectedStaff && activeStaff ? (
           renderProfile(activeStaff)
         ) : (
           <>
-            {/* Header: CSV + Add button */}
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
               <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
                 <FileText size={18} /> CSV Bulk Upload
               </button>
-              <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toast('New staff registration form opening...', 'info')}>
+              <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddStaffModal(true)}>
                 <UserPlus size={18} /> Add Staff
               </button>
             </div>
@@ -243,49 +327,21 @@ const StaffManagement: React.FC = () => {
             {(activeTab === 'roster' || activeTab === 'portfolio') && (
               <>
                 <ListFilterControl
-                  searchValue={rosterSearch}
-                  onSearchChange={setRosterSearch}
-                  searchPlaceholder="Search staff by name or role..."
+                  searchValue={rosterSearch} onSearchChange={setRosterSearch} searchPlaceholder="Search staff by name or role..."
                   filters={[
-                    {
-                      key: 'shift', label: 'Shift',
-                      options: [
-                        { label: 'All Shifts', value: '' },
-                        { label: 'Day', value: 'Day' },
-                        { label: 'Night', value: 'Night' },
-                      ],
-                    },
-                    {
-                      key: 'status', label: 'Status',
-                      options: [
-                        { label: 'All', value: '' },
-                        { label: 'On Duty', value: 'On Duty' },
-                        { label: 'Off Duty', value: 'Off Duty' },
-                      ],
-                    },
+                    { key: 'shift', label: 'Shift', options: [{ label: 'All Shifts', value: '' }, { label: 'Day', value: 'Day' }, { label: 'Night', value: 'Night' }] },
+                    { key: 'status', label: 'Status', options: [{ label: 'All', value: '' }, { label: 'On Duty', value: 'On Duty' }, { label: 'Off Duty', value: 'Off Duty' }] },
                   ]}
-                  filterValues={rosterFilters}
-                  onFilterChange={(k, v) => setRosterFilters((prev) => ({ ...prev, [k]: v }))}
-                  sortValue={rosterSort}
-                  sortOptions={[
-                    { label: 'Name A→Z', value: 'name_asc' },
-                    { label: 'Name Z→A', value: 'name_desc' },
-                  ]}
-                  onSortChange={setRosterSort}
-                  totalCount={staffList.length}
-                  filteredCount={filteredRoster.length}
+                  filterValues={rosterFilters} onFilterChange={(k, v) => setRosterFilters((prev) => ({ ...prev, [k]: v }))}
+                  sortValue={rosterSort} sortOptions={[{ label: 'Name A→Z', value: 'name_asc' }, { label: 'Name Z→A', value: 'name_desc' }]}
+                  onSortChange={setRosterSort} totalCount={staffList.length} filteredCount={filteredRoster.length}
                 />
                 <div className="data-table-container">
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Staff Name</th>
-                        <th>Role</th>
-                        {activeTab === 'roster' ? (
-                          <><th>Current Shift</th><th>Status</th><th>Duty Log</th></>
-                        ) : (
-                          <><th>License</th><th>Experience</th><th>Full Portfolio</th></>
-                        )}
+                        <th>Staff Name</th><th>Role</th>
+                        {activeTab === 'roster' ? <><th>Current Shift</th><th>Status</th><th>Duty Log</th></> : <><th>License</th><th>Experience</th><th>Full Portfolio</th></>}
                       </tr>
                     </thead>
                     <tbody>
@@ -297,18 +353,14 @@ const StaffManagement: React.FC = () => {
                             <>
                               <td>{s.shift}</td>
                               <td><span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`}>{s.status}</span></td>
-                              <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Duty logs for ${s.name} loading...`, 'info')}>View Logs</button></td>
+                              <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setLogsModal(s)}>View Logs</button></td>
                             </>
                           ) : (
                             <>
                               <td>{s.license}</td>
                               <td>{s.experience}</td>
                               <td>
-                                <button
-                                  className="btn-primary"
-                                  style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
-                                  onClick={() => setSelectedStaff(s.id)}
-                                >
+                                <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => setSelectedStaff(s.id)}>
                                   View Profile <ChevronRight size={14} />
                                 </button>
                               </td>
@@ -316,13 +368,7 @@ const StaffManagement: React.FC = () => {
                           )}
                         </tr>
                       ))}
-                      {filteredRoster.length === 0 && (
-                        <tr>
-                          <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                            No staff match your search criteria.
-                          </td>
-                        </tr>
-                      )}
+                      {filteredRoster.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No staff match your search criteria.</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -332,37 +378,14 @@ const StaffManagement: React.FC = () => {
             {activeTab === 'leave' && (
               <>
                 <ListFilterControl
-                  searchValue={leaveSearch}
-                  onSearchChange={setLeaveSearch}
-                  searchPlaceholder="Search staff name..."
+                  searchValue={leaveSearch} onSearchChange={setLeaveSearch} searchPlaceholder="Search staff name..."
                   filters={[
-                    {
-                      key: 'type', label: 'Type',
-                      options: [
-                        { label: 'All Types', value: '' },
-                        { label: 'Annual Leave', value: 'Annual Leave' },
-                        { label: 'Sick Leave', value: 'Sick Leave' },
-                      ],
-                    },
-                    {
-                      key: 'status', label: 'Status',
-                      options: [
-                        { label: 'All', value: '' },
-                        { label: 'Pending', value: 'Pending' },
-                        { label: 'Approved', value: 'Approved' },
-                      ],
-                    },
+                    { key: 'type', label: 'Type', options: [{ label: 'All Types', value: '' }, { label: 'Annual Leave', value: 'Annual Leave' }, { label: 'Sick Leave', value: 'Sick Leave' }] },
+                    { key: 'status', label: 'Status', options: [{ label: 'All', value: '' }, { label: 'Pending', value: 'Pending' }, { label: 'Approved', value: 'Approved' }, { label: 'Rejected', value: 'Rejected' }] },
                   ]}
-                  filterValues={leaveFilters}
-                  onFilterChange={(k, v) => setLeaveFilters((prev) => ({ ...prev, [k]: v }))}
-                  sortValue={leaveSort}
-                  sortOptions={[
-                    { label: 'Name A→Z', value: 'name_asc' },
-                    { label: 'Name Z→A', value: 'name_desc' },
-                  ]}
-                  onSortChange={setLeaveSort}
-                  totalCount={leaveRequests.length}
-                  filteredCount={filteredLeave.length}
+                  filterValues={leaveFilters} onFilterChange={(k, v) => setLeaveFilters((prev) => ({ ...prev, [k]: v }))}
+                  sortValue={leaveSort} sortOptions={[{ label: 'Name A→Z', value: 'name_asc' }, { label: 'Name Z→A', value: 'name_desc' }]}
+                  onSortChange={setLeaveSort} totalCount={leaveRequests.length} filteredCount={filteredLeave.length}
                 />
                 <div className="data-table-container">
                   <table className="data-table">
@@ -375,17 +398,20 @@ const StaffManagement: React.FC = () => {
                           <td><strong>{l.name}</strong></td>
                           <td>{l.type}</td>
                           <td>{l.duration}</td>
-                          <td><span className={`status-badge ${l.status === 'Approved' ? 'status-active' : 'status-pending'}`}>{l.status}</span></td>
-                          <td><button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => toast(`Reviewing leave request for ${l.name}`, 'info')}>Review</button></td>
-                        </tr>
-                      ))}
-                      {filteredLeave.length === 0 && (
-                        <tr>
-                          <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                            No leave requests match your search criteria.
+                          <td>
+                            <span className={`status-badge ${l.status === 'Approved' ? 'status-active' : l.status === 'Rejected' ? '' : 'status-pending'}`}
+                              style={l.status === 'Rejected' ? { background: '#fee2e2', color: '#991b1b' } : {}}>
+                              {l.status}
+                            </span>
+                          </td>
+                          <td>
+                            {l.status === 'Pending' && (
+                              <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setReviewModal(l)}>Review</button>
+                            )}
                           </td>
                         </tr>
-                      )}
+                      ))}
+                      {filteredLeave.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No leave requests match your search criteria.</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -395,29 +421,11 @@ const StaffManagement: React.FC = () => {
             {activeTab === 'performance' && (
               <>
                 <ListFilterControl
-                  searchValue={perfSearch}
-                  onSearchChange={setPerfSearch}
-                  searchPlaceholder="Search by name or title..."
-                  filters={[
-                    {
-                      key: 'type', label: 'Category',
-                      options: [
-                        { label: 'All', value: '' },
-                        { label: 'Award', value: 'Award' },
-                        { label: 'Disciplinary', value: 'Disciplinary' },
-                      ],
-                    },
-                  ]}
-                  filterValues={perfFilters}
-                  onFilterChange={(k, v) => setPerfFilters((prev) => ({ ...prev, [k]: v }))}
-                  sortValue={perfSort}
-                  sortOptions={[
-                    { label: 'Newest First', value: 'date_desc' },
-                    { label: 'Oldest First', value: 'date_asc' },
-                  ]}
-                  onSortChange={setPerfSort}
-                  totalCount={performanceRecords.length}
-                  filteredCount={filteredPerf.length}
+                  searchValue={perfSearch} onSearchChange={setPerfSearch} searchPlaceholder="Search by name or title..."
+                  filters={[{ key: 'type', label: 'Category', options: [{ label: 'All', value: '' }, { label: 'Award', value: 'Award' }, { label: 'Disciplinary', value: 'Disciplinary' }] }]}
+                  filterValues={perfFilters} onFilterChange={(k, v) => setPerfFilters((prev) => ({ ...prev, [k]: v }))}
+                  sortValue={perfSort} sortOptions={[{ label: 'Newest First', value: 'date_desc' }, { label: 'Oldest First', value: 'date_asc' }]}
+                  onSortChange={setPerfSort} totalCount={initialPerf.length} filteredCount={filteredPerf.length}
                 />
                 <div className="performance-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(400px, 1fr))', gap: '1.5rem' }}>
                   {filteredPerf.map((r) => (
@@ -435,15 +443,11 @@ const StaffManagement: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
                           <Clock size={16} />{r.date}
                         </div>
-                        <button style={{ color: 'var(--secondary-color)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => toast(`Viewing details for ${r.title}`, 'info')}>View Detail</button>
+                        <button style={{ color: 'var(--secondary-color)', fontWeight: '600', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setPerfDetailModal(r)}>View Detail</button>
                       </div>
                     </div>
                   ))}
-                  {filteredPerf.length === 0 && (
-                    <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                      No performance records match your search criteria.
-                    </div>
-                  )}
+                  {filteredPerf.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No performance records match your search criteria.</div>}
                 </div>
               </>
             )}
