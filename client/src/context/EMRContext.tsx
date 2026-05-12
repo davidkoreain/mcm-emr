@@ -139,7 +139,20 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     Promise.all([db.fetchPatients(), db.fetchStaff(), db.fetchAssets()])
-      .then(([p, s, a]) => { setPatients(p); setStaffList(s); setAssets(a); })
+      .then(([p, s, a]) => {
+        // Merge hardcoded photos when photo_url column not yet in DB
+        const pMerged = p.map(pt => ({
+          ...pt,
+          photoUrl: pt.photoUrl ?? initialPatients.find(ip => ip.mrn === pt.mrn)?.photoUrl,
+        }));
+        const sMerged = s.map(st => ({
+          ...st,
+          photoUrl: st.photoUrl ?? initialStaff.find(is => is.name === st.name)?.photoUrl,
+        }));
+        setPatients(pMerged);
+        setStaffList(sMerged);
+        setAssets(a);
+      })
       .catch(err => setError((err as Error).message))
       .finally(() => setLoading(false));
   }, []);

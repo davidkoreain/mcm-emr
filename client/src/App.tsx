@@ -255,7 +255,7 @@ function App() {
                       <tr key={p.mrn}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <Avatar name={p.name} photoUrl={p.photoUrl} size={28} />
+                            <Avatar name={p.name} photoUrl={p.photoUrl} size={40} />
                             {p.name}
                           </div>
                         </td>
@@ -392,8 +392,7 @@ function App() {
                 <thead>
                   <tr>
                     <th>MRN</th>
-                    <th>Patient Name</th>
-                    <th>Amharic Name</th>
+                    <th>Patient</th>
                     <th>Visit Type</th>
                     <th>Status</th>
                     <th>Registered</th>
@@ -405,12 +404,14 @@ function App() {
                     <tr key={p.mrn}>
                       <td style={{ fontSize: '0.78rem', fontFamily: 'monospace', fontWeight: '600', color: '#2563eb' }}>{p.mrn}</td>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <Avatar name={p.name} photoUrl={p.photoUrl} size={30} />
-                          <strong>{p.name}</strong>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <Avatar name={p.name} photoUrl={p.photoUrl} size={52} />
+                          <div>
+                            <div style={{ fontWeight: '600' }}>{p.name}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{p.amharic}</div>
+                          </div>
                         </div>
                       </td>
-                      <td>{p.amharic}</td>
                       <td>{p.visitType}</td>
                       <td>
                         <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`}>
@@ -440,7 +441,7 @@ function App() {
                   ))}
                   {filteredPatients.length === 0 && (
                     <tr>
-                      <td colSpan={7} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
                         No patients match your search criteria.
                       </td>
                     </tr>

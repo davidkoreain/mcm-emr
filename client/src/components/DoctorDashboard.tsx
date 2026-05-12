@@ -242,7 +242,7 @@ const DoctorDashboard: React.FC = () => {
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', minWidth: 0 }}>
-                    <Avatar name={p.name} photoUrl={p.photoUrl} size={30} style={{ flexShrink: 0 }} />
+                    <Avatar name={p.name} photoUrl={p.photoUrl} size={42} style={{ flexShrink: 0 }} />
                     <div style={{ minWidth: 0 }}>
                       <div style={{ fontWeight: '600', fontSize: '0.875rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
                       <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn} · {p.visitType}</div>
@@ -271,7 +271,7 @@ const DoctorDashboard: React.FC = () => {
             {/* Patient header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9' }}>
               <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                <Avatar name={selected.name} photoUrl={selected.photoUrl} size={46} />
+                <Avatar name={selected.name} photoUrl={selected.photoUrl} size={64} />
                 <div>
                   <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>{selected.name}</h2>
                   <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>

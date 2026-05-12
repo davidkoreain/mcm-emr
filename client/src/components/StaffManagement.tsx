@@ -95,7 +95,7 @@ const StaffManagement: React.FC = () => {
     <div className="staff-profile" style={{ background: 'white', padding: '2rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '2rem' }}>
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-          <Avatar name={staff.name} photoUrl={staff.photoUrl} size={80} />
+          <Avatar name={staff.name} photoUrl={staff.photoUrl} size={100} />
           <div>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>{staff.name}</h2>
             <p style={{ color: 'var(--primary-color)', fontWeight: '600' }}>{staff.role}</p>
@@ -354,7 +354,7 @@ const StaffManagement: React.FC = () => {
                         <tr key={s.id}>
                           <td>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                              <Avatar name={s.name} photoUrl={s.photoUrl} size={34} />
+                              <Avatar name={s.name} photoUrl={s.photoUrl} size={52} />
                               <div>
                                 <div style={{ fontWeight: '600' }}>{s.name}</div>
                                 <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '600' }}>{fmtStaffId(s.id)}</div>
