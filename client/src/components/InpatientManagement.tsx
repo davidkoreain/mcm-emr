@@ -4,6 +4,8 @@ import {
   ChevronRight, X, Stethoscope, Clipboard, ShieldAlert, Droplet, Save,
 } from 'lucide-react';
 import ListFilterControl from './ListFilterControl';
+import Avatar from './Avatar';
+import { useEMR } from '../context/EMRContext';
 
 type BedPatient = {
   name: string | null;
@@ -81,6 +83,7 @@ const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, 
 const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '460px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' };
 
 const InpatientManagement: React.FC = () => {
+  const { patients } = useEMR();
   const [activeTab, setActiveTab] = useState<'ward' | 'care'>('ward');
   const [selectedBed, setSelectedBed] = useState<number | null>(null);
   const [beds, setBeds] = useState<BedData[]>(initialBeds);
@@ -179,6 +182,8 @@ const InpatientManagement: React.FC = () => {
     const bed = beds.find(b => b.id === selectedBed);
     if (!bed || !bed.occupied) return null;
     const currentNote = noteEdits[bed.id] ?? bed.patient.notes;
+    const emrPatient = patients.find(p => p.name === bed.patient.name);
+    const photoUrl = emrPatient?.photoUrl;
 
     return (
       <div style={{ ...overlayStyle, zIndex: 1001 }}>
@@ -191,7 +196,17 @@ const InpatientManagement: React.FC = () => {
                 <p style={{ fontSize: '0.9rem', opacity: 0.9 }}>{bed.patient.name} ({bed.patient.age}Y/M) | ID: {bed.patient.id}</p>
               </div>
             </div>
-            <button onClick={() => setSelectedBed(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={28} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ borderRadius: '50%', border: '3px solid rgba(255,255,255,0.7)', overflow: 'hidden' }}>
+                <Avatar
+                  name={bed.patient.name ?? 'Patient'}
+                  photoUrl={photoUrl}
+                  size={64}
+                  style={{ display: 'block' }}
+                />
+              </div>
+              <button onClick={() => setSelectedBed(null)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }}><X size={28} /></button>
+            </div>
           </div>
 
           <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
