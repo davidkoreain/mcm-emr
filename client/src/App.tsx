@@ -69,8 +69,8 @@ function App() {
     <div className="app-container">
       {/* Sidebar */}
       <aside className="sidebar">
-        <div className="sidebar-header" style={{ padding: '1.5rem', background: 'white', margin: '1rem', borderRadius: '0.75rem', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <img src="/mcm_logo.png" alt="MCM Hospital Logo" style={{ maxWidth: '100%', height: 'auto' }} />
+        <div className="sidebar-header">
+          <img src="/mcm_logo.png" alt="MCM Hospital Logo" style={{ maxWidth: '100%', height: 'auto', display: 'block' }} />
         </div>
         <nav>
           <ul className="nav-list">
