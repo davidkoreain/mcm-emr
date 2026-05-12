@@ -1,441 +1,137 @@
-import React, { useState, useMemo } from 'react';
-import {
-  LayoutDashboard,
-  Users,
-  Activity,
-  Package,
-  Settings,
-  Bell,
-  Search,
-  PlusCircle,
-  Beaker,
-  CreditCard,
-  Home,
-  ShieldCheck,
-  Scissors,
-  FileText,
-  Calendar as CalendarIcon,
+import React, { useState } from 'react';
+import { 
+  LayoutDashboard, Users, UserPlus, Package, 
+  Menu, X, Pill, Scissors, Beaker, LogOut,
+  Bed, CreditCard, CalendarDays
 } from 'lucide-react';
-import PatientRegistration from './components/PatientRegistration';
-import VitalsEntry from './components/VitalsEntry';
-import ClinicalEncounter from './components/ClinicalEncounter';
-import PharmacyManagement from './components/PharmacyManagement';
-import LabManagement from './components/LabManagement';
-import BillingManagement from './components/BillingManagement';
-import InpatientManagement from './components/InpatientManagement';
-import StaffManagement from './components/StaffManagement';
-import AssetManagement from './components/AssetManagement';
-import AIComplianceManager from './components/AIComplianceManager';
-import OperationManagement from './components/OperationManagement';
-import HospitalCalendar from './components/HospitalCalendar';
+import { useEMR } from './context/EMRContext';
+
+// Portals
+import RoleLogin from './components/RoleLogin';
+import PatientSignup from './components/PatientSignup';
+import PatientPortal from './components/PatientPortal';
+import GuardianSignup from './components/GuardianSignup';
+import GuardianPortal from './components/GuardianPortal';
+
 import DoctorDashboard from './components/DoctorDashboard';
 import NurseDashboard from './components/NurseDashboard';
-import Avatar from './components/Avatar';
-import CSVImportModal from './components/CSVImportModal';
-import ListFilterControl from './components/ListFilterControl';
-import { toast } from './utils/toast';
-import { useEMR } from './context/EMRContext';
-import RoleLogin from './components/RoleLogin';
+import PatientRegistration from './components/PatientRegistration';
+import StaffManagement from './components/StaffManagement';
+import LabManagement from './components/LabManagement';
+import OperationManagement from './components/OperationManagement';
+import PharmacyManagement from './components/PharmacyManagement';
+import AssetManagement from './components/AssetManagement';
+import InpatientManagement from './components/InpatientManagement';
+import BillingManagement from './components/BillingManagement';
+import HospitalCalendar from './components/HospitalCalendar';
+import PatientManagement from './components/PatientManagement';
+import VitalsEntry from './components/VitalsEntry';
+import ClinicalEncounter from './components/ClinicalEncounter';
+import ErrorBoundary from './components/ErrorBoundary';
 
-type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier';
-
-function App() {
-  const { patients, loading, error } = useEMR();
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [view, setView] = useState<'dashboard' | 'registration' | 'patientList' | 'vitals' | 'encounter' | 'inventory' | 'lab' | 'billing' | 'inpatient' | 'staff' | 'assets' | 'compliance' | 'surgery' | 'calendar'>('dashboard');
+const App: React.FC = () => {
+  const { role, setRole, loading } = useEMR();
+  const [view, setView] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
-  const [showCSVModal, setShowCSVModal] = useState(false);
+  const [signupFlow, setSignupFlow] = useState<'none' | 'patient' | 'guardian'>('none');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [ptSearch, setPtSearch] = useState('');
-  const [ptFilters, setPtFilters] = useState<Record<string, string>>({ visitType: '', status: '' });
-  const [ptSort, setPtSort] = useState('name_asc');
+  const handleLogout = () => {
+    setRole(null);
+    window.location.reload(); 
+  };
 
-  const filteredPatients = useMemo(() => {
-    let result = patients.filter((p) => {
-      const q = ptSearch.toLowerCase();
-      if (q && !p.name.toLowerCase().includes(q) && !p.amharic.includes(q) && !p.mrn.toLowerCase().includes(q)) return false;
-      if (ptFilters.visitType && p.visitType !== ptFilters.visitType) return false;
-      if (ptFilters.status && p.status !== ptFilters.status) return false;
-      return true;
-    });
-    return [...result].sort((a, b) => {
-      if (ptSort === 'name_desc') return b.name.localeCompare(a.name);
-      if (ptSort === 'date_desc') return b.registeredAt.localeCompare(a.registeredAt);
-      if (ptSort === 'date_asc') return a.registeredAt.localeCompare(b.registeredAt);
-      return a.name.localeCompare(b.name);
-    });
-  }, [patients, ptSearch, ptFilters, ptSort]);
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading EMR...</div>;
+
+  if (signupFlow === 'patient') return <PatientSignup onBack={() => setSignupFlow('none')} onLogin={(mrn) => { setRole('Patient'); setSignupFlow('none'); }} />;
+  if (signupFlow === 'guardian') return <GuardianSignup onBack={() => setSignupFlow('none')} />;
 
   if (!role) {
-    return <RoleLogin onLogin={(r) => { setRole(r); setView('dashboard'); }} />;
+    return <RoleLogin 
+      onLogin={(r) => setRole(r)} 
+      onPatientSignup={() => setSignupFlow('patient')}
+      onGuardianSignup={() => setSignupFlow('guardian')}
+    />;
   }
+  
+  // 2. Logic for Patient/Guardian Portals (Full Screen)
+  if (role === 'Patient') return <PatientPortal onLogout={handleLogout} />;
+  if (role === 'Guardian') return <GuardianPortal onLogout={handleLogout} />;
 
+
+
+  // 3. Logic for Admin/Staff View (Full Layout)
   return (
     <div className="app-container">
-      {/* Sidebar */}
-      <aside className="sidebar">
+      {mobileMenuOpen && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} onClick={() => setMobileMenuOpen(false)} />}
+      
+      <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
-          <img src="/mcm_logo.png" alt="MCM Hospital Logo" style={{ maxWidth: '100%', height: 'auto', display: 'block' }} />
+          <img src="/mcm_logo.png" alt="Logo" style={{ height: '40px' }} />
+          <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }} className="mobile-close"><X size={24} /></button>
         </div>
         <nav>
           <ul className="nav-list">
-            <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => setView('dashboard')}>
-              <LayoutDashboard size={20} /><span>Dashboard</span>
-            </li>
-
-            {(role === 'Admin' || role === 'Doctor') && (
-              <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => setView('calendar')}>
-                <CalendarIcon size={20} /><span>Hospital Calendar</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Doctor' || role === 'Nurse') && (
-              <li className={`nav-item ${view === 'patientList' || view === 'registration' ? 'active' : ''}`} onClick={() => setView('patientList')}>
-                <Users size={20} /><span>Patients</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Doctor' || role === 'Nurse') && (
-              <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => setView('inpatient')}>
-                <Home size={20} /><span>Inpatient (Ward)</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Doctor') && (
-              <li className={`nav-item ${view === 'surgery' ? 'active' : ''}`} onClick={() => setView('surgery')}>
-                <Scissors size={20} /><span>Surgery (OT)</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Doctor') && (
-              <li className={`nav-item ${view === 'encounter' ? 'active' : ''}`} onClick={() => setView('encounter')}>
-                <Activity size={20} /><span>Encounters</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'LabTech') && (
-              <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => setView('lab')}>
-                <Beaker size={20} /><span>Laboratory</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Pharmacist') && (
-              <li className={`nav-item ${view === 'inventory' ? 'active' : ''}`} onClick={() => setView('inventory')}>
-                <Package size={20} /><span>Pharmacy</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Cashier') && (
-              <li className={`nav-item ${view === 'billing' ? 'active' : ''}`} onClick={() => setView('billing')}>
-                <CreditCard size={20} /><span>Billing</span>
-              </li>
-            )}
-
-            {(role === 'Admin' || role === 'Doctor') && (
-              <li className={`nav-item ${view === 'staff' ? 'active' : ''}`} onClick={() => setView('staff')}>
-                <Users size={20} /><span>HR & Staff</span>
-              </li>
-            )}
-
-            {role === 'Admin' && (
-              <li className={`nav-item ${view === 'compliance' ? 'active' : ''}`} onClick={() => setView('compliance')}>
-                <ShieldCheck size={20} /><span>AI Compliance</span>
-              </li>
-            )}
-
-            {role === 'Admin' && (
-              <li className={`nav-item ${view === 'assets' ? 'active' : ''}`} onClick={() => setView('assets')}>
-                <Settings size={20} /><span>Asset Management</span>
-              </li>
-            )}
-
-            <li className="nav-item" onClick={() => toast('Settings panel coming soon', 'info')}>
-              <Settings size={20} /><span>Settings</span>
-            </li>
-
-            <li className="nav-item logout-item" style={{ marginTop: 'auto', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', color: '#f87171' }} onClick={() => setRole(null)}>
-              <LayoutDashboard size={20} /><span>Logout / Switch Role</span>
-            </li>
+            <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}><LayoutDashboard size={20}/> <span>Dashboard</span></li>
+            <li className={`nav-item ${view === 'patients' ? 'active' : ''}`} onClick={() => { setView('patients'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Patients</span></li>
+            <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => { setView('calendar'); setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Calendar</span></li>
+            <li className={`nav-item ${view === 'registration' ? 'active' : ''}`} onClick={() => { setView('registration'); setMobileMenuOpen(false); }}><UserPlus size={20}/> <span>Registration</span></li>
+            <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => { setView('inpatient'); setMobileMenuOpen(false); }}><Bed size={20}/> <span>Inpatient Ward</span></li>
+            <li className={`nav-item ${view === 'staff' ? 'active' : ''}`} onClick={() => { setView('staff'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Staff</span></li>
+            <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => { setView('lab'); setMobileMenuOpen(false); }}><Beaker size={20}/> <span>Laboratory</span></li>
+            <li className={`nav-item ${view === 'operation' ? 'active' : ''}`} onClick={() => { setView('operation'); setMobileMenuOpen(false); }}><Scissors size={20}/> <span>Operations</span></li>
+            <li className={`nav-item ${view === 'pharmacy' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setMobileMenuOpen(false); }}><Pill size={20}/> <span>Pharmacy</span></li>
+            <li className={`nav-item ${view === 'assets' ? 'active' : ''}`} onClick={() => { setView('assets'); setMobileMenuOpen(false); }}><Package size={20}/> <span>Assets</span></li>
+            <li className={`nav-item ${view === 'billing' ? 'active' : ''}`} onClick={() => { setView('billing'); setMobileMenuOpen(false); }}><CreditCard size={20}/> <span>Billing</span></li>
           </ul>
         </nav>
+        <div style={{ marginTop: 'auto', padding: '1rem' }}>
+          <button onClick={handleLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(255,255,255,0.1)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer' }}><LogOut size={20}/> <span>Logout</span></button>
+        </div>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
-        {loading && (
-          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, fontSize: '1rem', color: '#475569' }}>
-            Loading EMR data…
-          </div>
-        )}
-        {error && (
-          <div style={{ background: '#fef2f2', color: '#dc2626', padding: '0.75rem 1rem', borderRadius: '0.5rem', margin: '1rem', fontSize: '0.875rem' }}>
-            DB error: {error}
-          </div>
-        )}
-        <header className="header">
-          <div className="search-bar">
-            <Search size={20} color="var(--text-secondary)" />
-            <input type="text" placeholder="Search patient..." />
-          </div>
-          <div className="header-actions">
-            {/* Action buttons removed as requested */}
-          </div>
+        <header className="main-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 2rem', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
+          <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Menu size={24} /></button>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>{view.toUpperCase()}</h1>
         </header>
-
-        {showCSVModal && (
-          <CSVImportModal
-            title="Patient Records"
-            onClose={() => setShowCSVModal(false)}
-            onImport={(data) => console.log('Imported:', data)}
-          />
-        )}
-
-        {view === 'dashboard' && role === 'Doctor' ? (
-          <DoctorDashboard />
-        ) : view === 'dashboard' && role === 'Nurse' ? (
-          <NurseDashboard />
-        ) : view === 'dashboard' ? (
-          <>
-            <section className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-label">Total Patients</div>
-                <div className="stat-value">1,284</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Active Encounters</div>
-                <div className="stat-value">42</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Pharmacy Requests</div>
-                <div className="stat-value">15</div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-label">Low Stock Alerts</div>
-                <div className="stat-value" style={{ color: '#ef4444' }}>8</div>
-              </div>
-            </section>
-
-            <section>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h2 style={{ fontSize: '1.25rem' }}>Recent Patient Visits</h2>
-                <button
-                  onClick={() => setView('patientList')}
-                  style={{ color: 'var(--secondary-color)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '600' }}
-                >
-                  View All
-                </button>
-              </div>
-              <div className="data-table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Patient Name</th><th>Amharic Name</th><th>Visit Type</th><th>Status</th><th>Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {patients.slice(0, 3).map((p) => (
-                      <tr key={p.mrn}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                            <Avatar name={p.name} photoUrl={p.photoUrl} size={40} />
-                            {p.name}
-                          </div>
-                        </td>
-                        <td>{p.amharic}</td>
-                        <td>{p.visitType}</td>
-                        <td>
-                          <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`}>
-                            {p.status}
-                          </span>
-                        </td>
-                        <td>{p.time}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-          </>
-        ) : view === 'registration' ? (
-          <PatientRegistration onClose={() => setView('dashboard')} />
-        ) : view === 'vitals' ? (
-          <VitalsEntry
-            patientName={selectedPatient?.name || ''}
-            mrn={selectedPatient?.mrn || ''}
-            onClose={() => setView('dashboard')}
-          />
-        ) : view === 'encounter' ? (
-          selectedPatient ? (
-            <ClinicalEncounter
-              patientName={selectedPatient.name}
-              onClose={() => { setSelectedPatient(null); setView('encounter'); }}
-            />
-          ) : (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.25rem' }}>Encounters — Select Patient</h2>
-              </div>
-              <div className="data-table-container">
-                <table className="data-table">
-                  <thead>
-                    <tr><th>MRN</th><th>Patient Name</th><th>Visit Type</th><th>Status</th><th>Time</th><th>Action</th></tr>
-                  </thead>
-                  <tbody>
-                    {patients.map(p => (
-                      <tr key={p.mrn}>
-                        <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.mrn}</td>
-                        <td><strong>{p.name}</strong><div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.amharic}</div></td>
-                        <td>{p.visitType}</td>
-                        <td><span className={`status-badge ${p.status === 'Completed' ? 'status-active' : 'status-pending'}`}>{p.status}</span></td>
-                        <td>{p.time}</td>
-                        <td>
-                          <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                            onClick={() => setSelectedPatient({ mrn: p.mrn, name: p.name, amharic: p.amharic })}>
-                            Start Encounter
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )
-        ) : view === 'inventory' ? (
-          <PharmacyManagement />
-        ) : view === 'lab' ? (
-          <LabManagement />
-        ) : view === 'billing' ? (
-          <BillingManagement />
-        ) : view === 'inpatient' ? (
-          <InpatientManagement />
-        ) : view === 'staff' ? (
-          <StaffManagement />
-        ) : view === 'assets' ? (
-          <AssetManagement />
-        ) : view === 'compliance' ? (
-          <AIComplianceManager />
-        ) : view === 'surgery' ? (
-          <OperationManagement />
-        ) : view === 'calendar' ? (
-          <HospitalCalendar />
-        ) : (
-          /* Patient List */
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 style={{ fontSize: '1.25rem' }}>Patient List</h2>
-              <button className="btn-primary" onClick={() => setView('registration')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <PlusCircle size={18} /> New Patient
-              </button>
-            </div>
-
-            <ListFilterControl
-              searchValue={ptSearch}
-              onSearchChange={setPtSearch}
-              searchPlaceholder="Search by name, Amharic name, or MRN..."
-              filters={[
-                {
-                  key: 'visitType', label: 'Visit Type',
-                  options: [
-                    { label: 'All Types', value: '' },
-                    { label: 'OPD', value: 'OPD' },
-                    { label: 'Emergency', value: 'Emergency' },
-                    { label: 'Follow-up', value: 'Follow-up' },
-                    { label: 'Inpatient', value: 'Inpatient' },
-                  ],
-                },
-                {
-                  key: 'status', label: 'Status',
-                  options: [
-                    { label: 'All', value: '' },
-                    { label: 'Waiting', value: 'Waiting' },
-                    { label: 'In Progress', value: 'In Progress' },
-                    { label: 'Consulting', value: 'Consulting' },
-                    { label: 'Completed', value: 'Completed' },
-                  ],
-                },
-              ]}
-              filterValues={ptFilters}
-              onFilterChange={(k, v) => setPtFilters((prev) => ({ ...prev, [k]: v }))}
-              sortValue={ptSort}
-              sortOptions={[
-                { label: 'Name A→Z', value: 'name_asc' },
-                { label: 'Name Z→A', value: 'name_desc' },
-                { label: 'Registered Newest', value: 'date_desc' },
-                { label: 'Registered Oldest', value: 'date_asc' },
-              ]}
-              onSortChange={setPtSort}
-              totalCount={patients.length}
-              filteredCount={filteredPatients.length}
-            />
-
-            <div className="data-table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>MRN</th>
-                    <th>Patient</th>
-                    <th>Visit Type</th>
-                    <th>Status</th>
-                    <th>Registered</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPatients.map((p) => (
-                    <tr key={p.mrn}>
-                      <td style={{ fontSize: '0.78rem', fontFamily: 'monospace', fontWeight: '600', color: '#2563eb' }}>{p.mrn}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <Avatar name={p.name} photoUrl={p.photoUrl} size={52} />
-                          <div>
-                            <div style={{ fontWeight: '600' }}>{p.name}</div>
-                            <div style={{ fontSize: '0.78rem', color: '#64748b' }}>{p.amharic}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>{p.visitType}</td>
-                      <td>
-                        <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`}>
-                          {p.status}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.85rem' }}>{p.registeredAt}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            onClick={() => { setSelectedPatient({ mrn: p.mrn, name: p.name, amharic: p.amharic }); setView('vitals'); }}
-                            className="btn-primary"
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', background: 'var(--accent-color)' }}
-                          >
-                            Vitals
-                          </button>
-                          <button
-                            onClick={() => { setSelectedPatient({ mrn: p.mrn, name: p.name, amharic: p.amharic }); setView('encounter'); }}
-                            className="btn-primary"
-                            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
-                          >
-                            Consult
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredPatients.length === 0 && (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                        No patients match your search criteria.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+        <div style={{ padding: '2rem' }}>
+          <ErrorBoundary>
+            {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : <DoctorDashboard />)}
+            {view === 'patients' && (
+              <PatientManagement 
+                onViewVitals={(p) => { setSelectedPatient(p); setView('vitals'); }}
+                onViewEncounter={(p) => { setSelectedPatient(p); setView('encounter'); }}
+                onRegister={() => setView('registration')}
+              />
+            )}
+            {view === 'calendar' && <HospitalCalendar />}
+            {view === 'vitals' && selectedPatient && (
+              <VitalsEntry 
+                patientName={selectedPatient.name}
+                mrn={selectedPatient.mrn}
+                onClose={() => setView('patients')}
+              />
+            )}
+            {view === 'encounter' && selectedPatient && (
+              <ClinicalEncounter 
+                patientName={selectedPatient.name}
+                onClose={() => setView('patients')}
+              />
+            )}
+            {view === 'registration' && <PatientRegistration onClose={() => setView('dashboard')} />}
+            {view === 'inpatient' && <InpatientManagement />}
+            {view === 'staff' && <StaffManagement />}
+            {view === 'lab' && <LabManagement />}
+            {view === 'operation' && <OperationManagement />}
+            {view === 'pharmacy' && <PharmacyManagement />}
+            {view === 'assets' && <AssetManagement />}
+            {view === 'billing' && <BillingManagement />}
+          </ErrorBoundary>
+        </div>
       </main>
     </div>
   );
-}
+};
 
 export default App;

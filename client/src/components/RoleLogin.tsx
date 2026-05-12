@@ -1,12 +1,15 @@
 import React from 'react';
 import {
-  LayoutDashboard, Activity, Package, Beaker, CreditCard, Users,
+  LayoutDashboard, Activity, Package, Beaker, CreditCard, Users, Heart, Shield
 } from 'lucide-react';
+import './RoleLogin.css';
 
-type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier';
+type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier' | 'Patient' | 'Guardian';
 
 interface Props {
   onLogin: (role: UserRole) => void;
+  onPatientSignup?: () => void;
+  onGuardianSignup?: () => void;
 }
 
 const roles: { id: UserRole; label: string; desc: string; icon: React.FC<{ size: number; color: string }>; color: string; bg: string }[] = [
@@ -16,47 +19,26 @@ const roles: { id: UserRole; label: string; desc: string; icon: React.FC<{ size:
   { id: 'Pharmacist', label: 'Pharmacist',      desc: 'Medication dispensing & inventory', icon: Package,         color: '#7c3aed', bg: '#ede9fe' },
   { id: 'LabTech',    label: 'Lab Technician',  desc: 'Laboratory tests & results',        icon: Beaker,          color: '#b45309', bg: '#fef3c7' },
   { id: 'Cashier',    label: 'Cashier',         desc: 'Billing & payment processing',      icon: CreditCard,      color: '#b91c1c', bg: '#fee2e2' },
+  { id: 'Patient',    label: 'Patient Portal',  desc: 'View records, book appointments',   icon: Heart,           color: '#db2777', bg: '#fce7f3' },
+  { id: 'Guardian',   label: 'Guardian Portal', desc: 'Manage privacy & records',          icon: Shield,          color: '#7c3aed', bg: '#f5f3ff' },
 ];
 
-const RoleLogin: React.FC<Props> = ({ onLogin }) => {
+const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup }) => {
   return (
-    <div style={{
-      minHeight: '100vh',
-      display: 'flex',
-      background: 'linear-gradient(135deg, #0f172a 0%, #1e3a5f 100%)',
-    }}>
-      {/* Left panel */}
-      <div style={{
-        width: '380px',
-        flexShrink: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '3rem 2.5rem',
-        borderRight: '1px solid rgba(255,255,255,0.1)',
-      }}>
-        <div style={{
-          background: 'white',
-          borderRadius: '1.25rem',
-          padding: '1.5rem',
-          marginBottom: '2rem',
-          width: '180px',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-        }}>
-          <img src="/mcm_logo.png" alt="MCM Logo" style={{ width: '100%', height: 'auto' }} />
+    <div className="login-container">
+      {/* Left panel - hidden on mobile */}
+      <div className="login-left">
+        <div className="login-logo-box">
+          <img src="/mcm_logo.png" alt="MCM Logo" />
         </div>
-        <h1 style={{ color: 'white', fontSize: '1.75rem', fontWeight: '800', textAlign: 'center', marginBottom: '0.5rem', lineHeight: 1.2 }}>
+        <h1 className="login-title">
           MCM Comprehensive<br />Specialized Hospital
         </h1>
-        <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', textAlign: 'center', marginTop: '1rem', lineHeight: 1.6 }}>
+        <p className="login-subtitle">
           Electronic Medical Records<br />Management System
         </p>
-        <div style={{ marginTop: '3rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '2rem', width: '100%', textAlign: 'center' }}>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.75rem' }}>
+        <div className="login-footer">
+          <p>
             Addis Ababa, Ethiopia<br />
             v2.0 · 2026
           </p>
@@ -64,68 +46,37 @@ const RoleLogin: React.FC<Props> = ({ onLogin }) => {
       </div>
 
       {/* Right panel */}
-      <div style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '3rem',
-      }}>
-        <div style={{ width: '100%', maxWidth: '640px' }}>
-          <h2 style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700', marginBottom: '0.5rem' }}>
-            Select Your Role
-          </h2>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.9rem', marginBottom: '2.5rem' }}>
+      <div className="login-right">
+        <div className="login-right-content">
+          {/* Logo for mobile */}
+          <div className="login-logo-mobile">
+            <div className="login-mobile-logo-box">
+              <img src="/mcm_logo.png" alt="MCM Logo" />
+            </div>
+          </div>
+          
+          <h2 className="select-role-title">Select Your Role</h2>
+          <p className="select-role-desc">
             Choose your department to continue to the dashboard
           </p>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '1rem',
-          }}>
+          <div className="login-grid">
             {roles.map(({ id, label, desc, icon: Icon, color, bg }) => (
               <button
                 key={id}
-                onClick={() => onLogin(id)}
-                style={{
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  borderRadius: '1rem',
-                  padding: '1.5rem 1.25rem',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'all 0.2s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem',
+                onClick={() => {
+                  if (id === 'Patient' && onPatientSignup) onPatientSignup();
+                  else if (id === 'Guardian' && onGuardianSignup) onGuardianSignup();
+                  else onLogin(id);
                 }}
-                onMouseEnter={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.13)';
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.3)';
-                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-3px)';
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 12px 28px rgba(0,0,0,0.3)';
-                }}
-                onMouseLeave={e => {
-                  (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.12)';
-                  (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)';
-                  (e.currentTarget as HTMLButtonElement).style.boxShadow = 'none';
-                }}
+                className="role-card"
               >
-                <div style={{
-                  width: '44px', height: '44px',
-                  borderRadius: '0.75rem',
-                  background: bg,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  flexShrink: 0,
-                }}>
+                <div className="role-icon-box" style={{ background: bg }}>
                   <Icon size={22} color={color} />
                 </div>
-                <div>
-                  <div style={{ color: 'white', fontWeight: '700', fontSize: '1rem', marginBottom: '0.25rem' }}>{label}</div>
-                  <div style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem', lineHeight: 1.4 }}>{desc}</div>
+                <div className="role-text-box">
+                  <div className="role-label">{label}</div>
+                  <div className="role-desc">{desc}</div>
                 </div>
               </button>
             ))}

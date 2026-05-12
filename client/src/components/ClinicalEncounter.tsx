@@ -2,8 +2,9 @@ import React, { useState, useRef } from 'react';
 import {
   Clipboard, BookOpen, PenTool, CheckCircle, Save, X, Activity,
   Image as ImageIcon, Video, History, FileText, Plus, Maximize2,
-  Calendar, ChevronRight, Download
+  Calendar, ChevronRight, Download, Eye
 } from 'lucide-react';
+import { useEMR } from '../context/EMRContext';
 
 interface ClinicalEncounterProps {
   onClose: () => void;
@@ -27,15 +28,33 @@ const initialImaging: ImagingItem[] = [
 ];
 
 const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientName }) => {
+  const { patients, updatePatient } = useEMR();
+  const currentPatient = patients.find(p => p.name === patientName);
+
   const [activeTab, setActiveTab] = useState<'soap' | 'imaging' | 'history'>('soap');
-  const [soap, setSoap] = useState({ subjective: '', objective: '', assessment: '', plan: '', icd10_code: '', diagnosis_description: '' });
+  const [soap, setSoap] = useState({ 
+    subjective: '', 
+    objective: '', 
+    assessment: '', 
+    plan: '', 
+    icd10_code: '', 
+    diagnosis_description: '',
+    publishToPortal: true
+  });
   const [imagingData, setImagingData] = useState<ImagingItem[]>(initialImaging);
   const [prescriptionHistory, setPrescriptionHistory] = useState<PrescriptionRecord[]>(initialHistory);
   const [maximizedImage, setMaximizedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (currentPatient) {
+      const planArray = soap.plan.split('\n').filter(line => line.trim() !== '');
+      await updatePatient(currentPatient.mrn, {
+        diagnosisSummary: soap.diagnosis_description || soap.assessment,
+        treatmentPlan: soap.publishToPortal ? planArray : [],
+      });
+    }
     onClose();
   };
 
@@ -131,6 +150,12 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                   <textarea rows={6} value={soap.plan} onChange={e => setSoap({ ...soap, plan: e.target.value })} placeholder="Enter treatment plan, prescriptions, and follow-up..."></textarea>
                 </div>
               </div>
+            </div>
+            <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f0fdfa', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #ccfbf1' }}>
+               <input type="checkbox" id="publish" checked={soap.publishToPortal} onChange={e => setSoap({...soap, publishToPortal: e.target.checked})} style={{ width: '18px', height: '18px' }} />
+               <label htmlFor="publish" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#134e4a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                 <Eye size={16} /> Publish diagnosis and plan to Patient Portal
+               </label>
             </div>
             <div className="form-actions" style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1.5rem' }}>
               <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>

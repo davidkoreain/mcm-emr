@@ -454,7 +454,8 @@ const InpatientManagement: React.FC = () => {
                 sortValue={careSort} sortOptions={[{ label: 'Time ↑ (Earliest)', value: 'time_asc' }, { label: 'Time ↓ (Latest)', value: 'time_desc' }]}
                 onSortChange={setCareSort} totalCount={careTasks.length} filteredCount={filteredTasks.length}
               />
-              <div className="data-table-container">
+              <div className="mobile-scroll-hint">← Swipe to see more →</div>
+        <div className="data-table-container">
                 <table className="data-table">
                   <thead>
                     <tr><th>Time</th><th>Patient / Bed</th><th>Task Type</th><th>Description</th><th>Status</th></tr>

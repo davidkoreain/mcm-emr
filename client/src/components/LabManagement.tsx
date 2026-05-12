@@ -1,34 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Beaker, Clipboard, X } from 'lucide-react';
+import { Beaker, Clipboard, X, CheckCircle2 } from 'lucide-react';
 import ListFilterControl from './ListFilterControl';
-
-type LabOrder = { id: number; patient: string; amharic: string; tests: string[]; priority: string; time: string; sortIdx: number };
-type LabResult = { id: number; patient: string; test: string; value: string; unit: string; range: string; status: string };
-
-const initialOrders: LabOrder[] = [
-  { id: 1, patient: 'Abebe Bikila', amharic: 'አበበ ቢቂላ', tests: ['CBC', 'Blood Sugar'], priority: 'Normal', time: '15 mins ago', sortIdx: 3 },
-  { id: 2, patient: 'Mulu Worku', amharic: 'ሙሉ ወርቁ', tests: ['Malaria Parasite', 'Widal'], priority: 'Urgent', time: '5 mins ago', sortIdx: 1 },
-  { id: 3, patient: 'Kassa Tessema', amharic: 'ካሳ ተሰማ', tests: ['LFT', 'RFT'], priority: 'Normal', time: '30 mins ago', sortIdx: 4 },
-  { id: 4, patient: 'Selam Adane', amharic: 'ሰላም አዳነ', tests: ['Urine R/E'], priority: 'Urgent', time: '2 mins ago', sortIdx: 0 },
-  { id: 5, patient: 'Biruk Alemu', amharic: 'ብሩክ አለሙ', tests: ['Typhoid', 'ESR'], priority: 'Normal', time: '45 mins ago', sortIdx: 5 },
-];
-
-const initialResults: LabResult[] = [
-  { id: 101, patient: 'Kassa Tessema', test: 'Hemoglobin', value: '9.2', unit: 'g/dL', range: '12.0 – 16.0', status: 'Abnormal' },
-  { id: 102, patient: 'Selam Adane', test: 'FBG', value: '95', unit: 'mg/dL', range: '70 – 100', status: 'Normal' },
-  { id: 103, patient: 'Abebe Bikila', test: 'WBC', value: '11.5', unit: 'x10³/µL', range: '4.5 – 11.0', status: 'Abnormal' },
-  { id: 104, patient: 'Tigist Hailu', test: 'Creatinine', value: '0.9', unit: 'mg/dL', range: '0.6 – 1.2', status: 'Normal' },
-];
-
-type EnterModal = { order: LabOrder; testName: string; value: string; unit: string; range: string };
-type ReportModal = LabResult;
+import { useEMR, type LabOrder, type LabResult } from '../context/EMRContext';
+// import { toast } from 'react-hot-toast';
+const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m) };
 
 const LabManagement: React.FC = () => {
+  const { labOrders, labResults, submitLabResult, loading } = useEMR();
   const [activeTab, setActiveTab] = useState<'orders' | 'results'>('orders');
-  const [labOrders, setLabOrders] = useState<LabOrder[]>(initialOrders);
-  const [recentResults, setRecentResults] = useState<LabResult[]>(initialResults);
-  const [enterModal, setEnterModal] = useState<EnterModal | null>(null);
-  const [reportModal, setReportModal] = useState<ReportModal | null>(null);
+  const [enterModal, setEnterModal] = useState<{ order: LabOrder; testName: string; value: string; unit: string; range: string } | null>(null);
+  const [reportModal, setReportModal] = useState<LabResult | null>(null);
 
   const [ordSearch, setOrdSearch] = useState('');
   const [ordFilters, setOrdFilters] = useState<Record<string, string>>({ priority: '' });
@@ -40,54 +21,53 @@ const LabManagement: React.FC = () => {
   const filteredOrders = useMemo(() => {
     let result = labOrders.filter((o) => {
       const q = ordSearch.toLowerCase();
-      if (q && !o.patient.toLowerCase().includes(q) && !o.tests.some((t) => t.toLowerCase().includes(q))) return false;
+      if (q && !o.patientName.toLowerCase().includes(q) && !o.tests.some((t) => t.toLowerCase().includes(q))) return false;
       if (ordFilters.priority && o.priority !== ordFilters.priority) return false;
       return true;
     });
-    return [...result].sort((a, b) => ordSort === 'time_asc' ? b.sortIdx - a.sortIdx : a.sortIdx - b.sortIdx);
+    return [...result].sort((a, b) => ordSort === 'time_asc' ? a.id - b.id : b.id - a.id);
   }, [labOrders, ordSearch, ordFilters, ordSort]);
 
   const filteredResults = useMemo(() => {
-    let result = recentResults.filter((r) => {
+    let result = labResults.filter((r) => {
       const q = resSearch.toLowerCase();
-      if (q && !r.patient.toLowerCase().includes(q) && !r.test.toLowerCase().includes(q)) return false;
+      if (q && !r.patientName.toLowerCase().includes(q) && !r.test.toLowerCase().includes(q)) return false;
       if (resFilters.status && r.status !== resFilters.status) return false;
       return true;
     });
-    return [...result].sort((a, b) => resSort === 'name_desc' ? b.patient.localeCompare(a.patient) : a.patient.localeCompare(b.patient));
-  }, [recentResults, resSearch, resFilters, resSort]);
+    return [...result].sort((a, b) => resSort === 'name_desc' ? b.patientName.localeCompare(a.patientName) : a.patientName.localeCompare(b.patientName));
+  }, [labResults, resSearch, resFilters, resSort]);
 
-  const openEnterResults = (order: LabOrder) => {
-    setEnterModal({ order, testName: order.tests[0], value: '', unit: '', range: '' });
-  };
-
-  const handleSaveResult = () => {
+  const handleSaveResult = async () => {
     if (!enterModal || !enterModal.value.trim()) return;
     const numVal = parseFloat(enterModal.value);
     const [low, high] = enterModal.range.split('–').map((s) => parseFloat(s.trim()));
     const status = !isNaN(numVal) && !isNaN(low) && !isNaN(high)
       ? (numVal >= low && numVal <= high ? 'Normal' : 'Abnormal')
       : 'Normal';
-    const newResult: LabResult = {
-      id: Date.now(),
-      patient: enterModal.order.patient,
-      test: enterModal.testName,
-      value: enterModal.value,
-      unit: enterModal.unit,
-      range: enterModal.range,
-      status,
-    };
-    setRecentResults((prev) => [newResult, ...prev]);
-    setLabOrders((prev) => {
-      const updated = prev.map((o) => o.id === enterModal.order.id ? { ...o, tests: o.tests.filter((t) => t !== enterModal.testName) } : o);
-      return updated.filter((o) => o.tests.length > 0);
-    });
-    setEnterModal(null);
-    setActiveTab('results');
+    
+    try {
+      await submitLabResult(enterModal.order.id, {
+        patientMrn: enterModal.order.patientMrn,
+        patientName: enterModal.order.patientName,
+        test: enterModal.testName,
+        value: enterModal.value,
+        unit: enterModal.unit,
+        range: enterModal.range,
+        status: status as 'Normal' | 'Abnormal',
+      });
+      toast.success('Lab result submitted and published to portal.');
+      setEnterModal(null);
+      setActiveTab('results');
+    } catch (err: any) {
+      toast.error('Failed to submit: ' + err.message);
+    }
   };
 
   const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
   const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '460px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' };
+
+  if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading lab data...</div>;
 
   return (
     <div className="lab-container">
@@ -96,7 +76,7 @@ const LabManagement: React.FC = () => {
         <div style={overlayStyle}>
           <div style={boxStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3>Enter Results – {enterModal.order.patient}</h3>
+              <h3>Enter Results – {enterModal.order.patientName}</h3>
               <button onClick={() => setEnterModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -120,13 +100,10 @@ const LabManagement: React.FC = () => {
                   />
                 </div>
               ))}
-              <p style={{ fontSize: '0.8rem', color: '#64748b', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
-                Status (Normal/Abnormal) will be determined automatically from the range.
-              </p>
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
               <button className="btn-secondary" onClick={() => setEnterModal(null)}>Cancel</button>
-              <button className="btn-primary" onClick={handleSaveResult} disabled={!enterModal.value.trim()}>Save Result</button>
+              <button className="btn-primary" onClick={handleSaveResult} disabled={!enterModal.value.trim()}>Submit & Publish</button>
             </div>
           </div>
         </div>
@@ -142,7 +119,7 @@ const LabManagement: React.FC = () => {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
-                { label: 'Patient', value: reportModal.patient },
+                { label: 'Patient', value: reportModal.patientName },
                 { label: 'Test', value: reportModal.test },
                 { label: 'Result', value: `${reportModal.value} ${reportModal.unit}` },
                 { label: 'Normal Range', value: reportModal.range },
@@ -163,7 +140,7 @@ const LabManagement: React.FC = () => {
 
       <div className="pharmacy-tabs">
         <button className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          <Clipboard size={20} /> Pending Lab Orders {labOrders.length > 0 && <span style={{ background: '#ef4444', color: 'white', borderRadius: '9999px', padding: '0.1rem 0.4rem', fontSize: '0.75rem' }}>{labOrders.length}</span>}
+          <Clipboard size={20} /> Pending Lab Orders {labOrders.length > 0 && <span className="tab-badge">{labOrders.length}</span>}
         </button>
         <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>
           <Beaker size={20} /> Lab Results
@@ -174,7 +151,7 @@ const LabManagement: React.FC = () => {
         {activeTab === 'orders' ? (
           <>
             <ListFilterControl
-              searchValue={ordSearch} onSearchChange={setOrdSearch} searchPlaceholder="Search by patient name or test..."
+              searchValue={ordSearch} onSearchChange={setOrdSearch} searchPlaceholder="Search by patient or test..."
               filters={[{ key: 'priority', label: 'Priority', options: [{ label: 'All', value: '' }, { label: 'Urgent', value: 'Urgent' }, { label: 'Normal', value: 'Normal' }] }]}
               filterValues={ordFilters} onFilterChange={(k, v) => setOrdFilters((prev) => ({ ...prev, [k]: v }))}
               sortValue={ordSort} sortOptions={[{ label: 'Newest First', value: 'time_desc' }, { label: 'Oldest First', value: 'time_asc' }]}
@@ -182,37 +159,24 @@ const LabManagement: React.FC = () => {
             />
             <div className="data-table-container">
               <table className="data-table">
-                <thead>
-                  <tr><th>Patient</th><th>Tests Requested</th><th>Priority</th><th>Order Time</th><th>Action</th></tr>
-                </thead>
+                <thead><tr><th>Patient</th><th>Tests Requested</th><th>Priority</th><th>Action</th></tr></thead>
                 <tbody>
                   {filteredOrders.map((order) => (
                     <tr key={order.id}>
-                      <td>
-                        <div><strong>{order.patient}</strong></div>
-                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{order.amharic}</div>
-                      </td>
+                      <td><strong>{order.patientName}</strong><div style={{ fontSize: '0.75rem', color: '#64748b' }}>{order.patientMrn}</div></td>
                       <td>
                         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                          {order.tests.map((test) => (
-                            <span key={test} className="status-badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>{test}</span>
-                          ))}
+                          {order.tests.map((test) => <span key={test} className="status-badge" style={{ background: '#e0f2fe', color: '#0369a1' }}>{test}</span>)}
                         </div>
                       </td>
                       <td><span className={`status-badge ${order.priority === 'Urgent' ? 'status-pending' : 'status-active'}`}>{order.priority}</span></td>
-                      <td>{order.time}</td>
                       <td>
-                        <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => openEnterResults(order)}>
+                        <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setEnterModal({ order, testName: order.tests[0], value: '', unit: '', range: '' })}>
                           Enter Results
                         </button>
                       </td>
                     </tr>
                   ))}
-                  {filteredOrders.length === 0 && (
-                    <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>
-                      {labOrders.length === 0 ? '✓ All lab orders have been processed.' : 'No lab orders match your search criteria.'}
-                    </td></tr>
-                  )}
                 </tbody>
               </table>
             </div>
@@ -220,40 +184,25 @@ const LabManagement: React.FC = () => {
         ) : (
           <>
             <ListFilterControl
-              searchValue={resSearch} onSearchChange={setResSearch} searchPlaceholder="Search by patient name or test..."
+              searchValue={resSearch} onSearchChange={setResSearch} searchPlaceholder="Search results..."
               filters={[{ key: 'status', label: 'Result', options: [{ label: 'All', value: '' }, { label: 'Normal', value: 'Normal' }, { label: 'Abnormal', value: 'Abnormal' }] }]}
               filterValues={resFilters} onFilterChange={(k, v) => setResFilters((prev) => ({ ...prev, [k]: v }))}
-              sortValue={resSort} sortOptions={[{ label: 'Name A→Z', value: 'name_asc' }, { label: 'Name Z→A', value: 'name_desc' }]}
-              onSortChange={setResSort} totalCount={recentResults.length} filteredCount={filteredResults.length}
+              sortValue={resSort} sortOptions={[{ label: 'Name A→Z', value: 'name_asc' }]}
+              onSortChange={setResSort} totalCount={labResults.length} filteredCount={filteredResults.length}
             />
             <div className="data-table-container">
               <table className="data-table">
-                <thead>
-                  <tr><th>Patient</th><th>Test Name</th><th>Result</th><th>Normal Range</th><th>Status</th><th>Action</th></tr>
-                </thead>
+                <thead><tr><th>Patient</th><th>Test Name</th><th>Result</th><th>Status</th><th>Action</th></tr></thead>
                 <tbody>
                   {filteredResults.map((res) => (
                     <tr key={res.id}>
-                      <td>{res.patient}</td>
-                      <td><strong>{res.test}</strong></td>
+                      <td><strong>{res.patientName}</strong></td>
+                      <td>{res.test}</td>
                       <td style={{ color: res.status === 'Abnormal' ? '#ef4444' : 'inherit', fontWeight: '700' }}>{res.value} {res.unit}</td>
-                      <td>{res.range}</td>
-                      <td>
-                        <span className={`status-badge ${res.status === 'Normal' ? 'status-active' : 'status-pending'}`}
-                          style={{ background: res.status === 'Normal' ? '#dcfce7' : '#fee2e2', color: res.status === 'Normal' ? '#166534' : '#991b1b' }}>
-                          {res.status}
-                        </span>
-                      </td>
-                      <td>
-                        <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setReportModal(res)}>
-                          View Report
-                        </button>
-                      </td>
+                      <td><span className={`status-badge ${res.status === 'Normal' ? 'status-active' : 'status-pending'}`}>{res.status}</span></td>
+                      <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setReportModal(res)}>View Report</button></td>
                     </tr>
                   ))}
-                  {filteredResults.length === 0 && (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No results match your search criteria.</td></tr>
-                  )}
                 </tbody>
               </table>
             </div>

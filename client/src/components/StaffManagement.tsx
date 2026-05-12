@@ -26,10 +26,10 @@ const initialPerf: PerformanceRecord[] = [
   { id: 4, name: 'Dr. Fitsum Ayele', type: 'Award', title: 'Patient Satisfaction Award', date: '2026-02-20' },
 ];
 
-const emptyNewStaff = { name: '', role: '', shift: 'Day', status: 'On Duty', education: '', license: '', experience: '' };
+const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' as const, age: 30, shift: 'Day', status: 'On Duty', education: '', license: '', experience: '' };
 
 const StaffManagement: React.FC = () => {
-  const { staffList, addStaff } = useEMR();
+  const { staff, addStaff } = useEMR();
   const [activeTab, setActiveTab] = useState<'roster' | 'leave' | 'performance' | 'portfolio'>('roster');
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
@@ -52,7 +52,7 @@ const StaffManagement: React.FC = () => {
   const [perfSort, setPerfSort] = useState('date_desc');
 
   const filteredRoster = useMemo(() => {
-    let result = staffList.filter((s) => {
+    let result = staff.filter((s) => {
       const q = rosterSearch.toLowerCase();
       if (q && !s.name.toLowerCase().includes(q) && !s.role.toLowerCase().includes(q)) return false;
       if (rosterFilters.shift && s.shift !== rosterFilters.shift) return false;
@@ -60,7 +60,7 @@ const StaffManagement: React.FC = () => {
       return true;
     });
     return [...result].sort((a, b) => rosterSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
-  }, [staffList, rosterSearch, rosterFilters, rosterSort]);
+  }, [staff, rosterSearch, rosterFilters, rosterSort]);
 
   const filteredLeave = useMemo(() => {
     let result = leaveRequests.filter((l) => {
@@ -99,7 +99,8 @@ const StaffManagement: React.FC = () => {
           <Avatar name={staff.name} photoUrl={staff.photoUrl} size={100} />
           <div>
             <h2 style={{ fontSize: '1.75rem', marginBottom: '0.25rem' }}>{staff.name}</h2>
-            <p style={{ color: 'var(--primary-color)', fontWeight: '600' }}>{staff.role}</p>
+            <p style={{ color: 'var(--primary-color)', fontWeight: '700', fontSize: '1.1rem' }}>{staff.specialization}</p>
+            <p style={{ color: '#64748b', fontWeight: '600' }}>{staff.role}</p>
             <p style={{ fontSize: '0.85rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700', marginTop: '0.2rem' }}>{fmtStaffId(staff.id)}</p>
           </div>
         </div>
@@ -153,7 +154,7 @@ const StaffManagement: React.FC = () => {
     </div>
   );
 
-  const activeStaff = staffList.find((s) => s.id === selectedStaff);
+  const activeStaff = staff.find((s) => s.id === selectedStaff);
 
   return (
     <div className="staff-container">
@@ -336,6 +337,7 @@ const StaffManagement: React.FC = () => {
               {[
                 { label: 'Full Name *', key: 'name', placeholder: 'Dr. / Nurse ...' },
                 { label: 'Role / Position *', key: 'role', placeholder: 'e.g. Staff Nurse' },
+                { label: 'Specialization', key: 'specialization', placeholder: 'e.g. Cardiology' },
                 { label: 'Medical License No.', key: 'license', placeholder: 'e.g. ETH-MD-0000' },
                 { label: 'Education', key: 'education', placeholder: 'e.g. BSc Nursing, AAU' },
                 { label: 'Experience', key: 'experience', placeholder: 'e.g. 3 years (MCM Hospital)' },
@@ -347,6 +349,20 @@ const StaffManagement: React.FC = () => {
                     style={{ width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.95rem' }} />
                 </div>
               ))}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Gender</label>
+                  <select value={newStaff.gender} onChange={(e) => setNewStaff((p) => ({ ...p, gender: e.target.value as any }))}
+                    style={{ width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.95rem' }}>
+                    <option value="Male">Male</option><option value="Female">Female</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Age</label>
+                  <input type="number" value={newStaff.age} onChange={(e) => setNewStaff((p) => ({ ...p, age: parseInt(e.target.value) }))}
+                    style={{ width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', fontSize: '0.95rem' }} placeholder="e.g. 35" />
+                </div>
+              </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Shift</label>
@@ -371,6 +387,9 @@ const StaffManagement: React.FC = () => {
                   addStaff({
                     name: newStaff.name.trim(),
                     role: newStaff.role.trim(),
+                    specialization: newStaff.specialization.trim() || 'General Medicine',
+                    gender: newStaff.gender as 'Male' | 'Female',
+                    age: newStaff.age || 30,
                     shift: newStaff.shift,
                     status: newStaff.status,
                     education: newStaff.education.trim() || 'Not specified',
@@ -429,8 +448,9 @@ const StaffManagement: React.FC = () => {
                   ]}
                   filterValues={rosterFilters} onFilterChange={(k, v) => setRosterFilters((prev) => ({ ...prev, [k]: v }))}
                   sortValue={rosterSort} sortOptions={[{ label: 'Name A→Z', value: 'name_asc' }, { label: 'Name Z→A', value: 'name_desc' }]}
-                  onSortChange={setRosterSort} totalCount={staffList.length} filteredCount={filteredRoster.length}
+                  onSortChange={setRosterSort} totalCount={staff.length} filteredCount={filteredRoster.length}
                 />
+                <div className="mobile-scroll-hint">← Swipe to see more →</div>
                 <div className="data-table-container">
                   <table className="data-table">
                     <thead>

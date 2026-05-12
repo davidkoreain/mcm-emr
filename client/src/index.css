@@ -21,11 +21,16 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   line-height: 1.5;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .app-container {
   display: flex;
   min-height: 100vh;
+}
+
+.mobile-menu-btn {
+  display: none;
 }
 
 /* ── Collapsible Sidebar ─────────────────────────────────────── */
@@ -40,7 +45,8 @@ body {
   padding: 0.75rem 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
   transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 200;
   box-shadow: 4px 0 16px rgba(0, 0, 0, 0.3);
@@ -124,6 +130,17 @@ body {
   padding: 2rem;
   overflow-y: auto;
   margin-left: 64px;
+  padding-top: calc(1.5rem + env(safe-area-inset-top));
+  padding-right: calc(1.5rem + env(safe-area-inset-right));
+  padding-left: calc(64px + env(safe-area-inset-left));
+  margin-left: 0; /* Changed from margin-left to padding-left for better containment */
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    padding-left: calc(0.75rem + env(safe-area-inset-left));
+    padding-right: calc(0.75rem + env(safe-area-inset-right));
+  }
 }
 
 .header {
@@ -131,6 +148,7 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 2rem;
+  gap: 1rem;
 }
 
 .stats-grid {
@@ -437,7 +455,8 @@ body {
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
   border: 1px solid var(--border-color);
-  width: 400px;
+  width: 100%;
+  max-width: 400px;
 }
 
 .search-bar input {
@@ -445,4 +464,130 @@ body {
   outline: none;
   width: 100%;
   font-size: 1rem;
+}
+
+/* ── Mobile UI Helpers ──────────────────────────────────────── */
+.mobile-scroll-hint {
+  display: none;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-align: right;
+  margin-bottom: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .mobile-scroll-hint {
+    display: block;
+  }
+}
+
+/* ── Responsive Media Queries ───────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .registration-form .form-grid,
+  .vitals-grid,
+  .assessment-plan-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .full-width {
+    grid-column: span 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    width: 0;
+    transform: translateX(-100%);
+  }
+  
+  .sidebar.mobile-open {
+    width: 260px;
+    transform: translateX(0);
+    padding-top: env(safe-area-inset-top);
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 0.75rem;
+  }
+  
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .header-actions {
+    justify-content: flex-start;
+    padding-top: 0.5rem;
+  }
+
+  .mobile-menu-btn {
+    display: block !important;
+    padding: 0.5rem;
+    margin-right: 0.5rem;
+    color: var(--primary-color);
+  }
+  
+  .search-bar {
+    max-width: 100%;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .registration-container,
+  .vitals-container,
+  .encounter-container {
+    padding: 1.25rem;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .data-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0;
+    margin: 0 -1.25rem;
+    padding: 0 1.25rem;
+    border-left: none;
+    border-right: none;
+  }
+
+  .data-table {
+    min-width: 700px; /* Ensure enough room to prevent text squashing */
+  }
+
+  .pharmacy-tabs {
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    white-space: nowrap;
+    padding: 0.5rem 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .sidebar-header {
+    min-height: 44px;
+  }
+  
+  .nav-item {
+    padding: 0.6rem 1rem;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
 }

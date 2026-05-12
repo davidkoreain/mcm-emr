@@ -48,7 +48,7 @@ const fmt = (iso: string) => {
 // ── Component ──────────────────────────────────────────────────
 
 const NurseDashboard: React.FC = () => {
-  const { patients, appendPatientVitals } = useEMR();
+  const { patients, addVitals } = useEMR();
   const inpatients = patients.filter(p => p.status === 'Inpatient');
 
   const [selectedMrn, setSelectedMrn] = useState<string | null>(
@@ -98,7 +98,7 @@ const NurseDashboard: React.FC = () => {
       recordedAt: new Date().toISOString(),
     };
     setSavingVitals(true);
-    await appendPatientVitals(selectedMrn, record);
+    await addVitals(selectedMrn, record);
     setSavingVitals(false);
     setVitalsForm(EMPTY_VITALS);
   };

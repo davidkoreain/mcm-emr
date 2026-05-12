@@ -212,7 +212,8 @@ const BillingManagement: React.FC = () => {
               sortValue={histSort} sortOptions={[{ label: 'Newest First', value: 'date_desc' }, { label: 'Oldest First', value: 'date_asc' }]}
               onSortChange={setHistSort} totalCount={paymentHistory.length} filteredCount={filteredHistory.length}
             />
-            <div className="data-table-container">
+            <div className="mobile-scroll-hint">← Swipe to see more →</div>
+        <div className="data-table-container">
               <table className="data-table">
                 <thead>
                   <tr><th>Invoice #</th><th>Patient</th><th>Total</th><th>Method</th><th>Date</th><th>Status</th></tr>

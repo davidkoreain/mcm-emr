@@ -3,8 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>client</title>
+    <script>
+      window.onerror = function(message, source, lineno, colno, error) {
+        var errDiv = document.createElement('div');
+        errDiv.style = 'position:fixed;top:0;left:0;width:100%;background:rgba(255,0,0,0.9);color:white;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+        errDiv.innerHTML = '<h2>Global Uncaught Error</h2>' + message + '<br/>' + source + ':' + lineno + '<br/><br/>' + (error && error.stack ? error.stack : '');
+        document.body.appendChild(errDiv);
+        return false;
+      };
+      window.addEventListener('unhandledrejection', function(event) {
+        var errDiv = document.createElement('div');
+        errDiv.style = 'position:fixed;top:50%;left:0;width:100%;background:rgba(200,0,0,0.9);color:white;padding:20px;z-index:99999;font-family:monospace;white-space:pre-wrap;';
+        errDiv.innerHTML = '<h2>Unhandled Promise Rejection</h2>' + (event.reason ? (event.reason.stack || event.reason) : 'Unknown reason');
+        document.body.appendChild(errDiv);
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

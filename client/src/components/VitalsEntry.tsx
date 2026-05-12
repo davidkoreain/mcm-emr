@@ -9,7 +9,7 @@ interface VitalsEntryProps {
 }
 
 const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName, mrn }) => {
-  const { appendPatientVitals } = useEMR();
+  const { addVitals } = useEMR();
   const [saved, setSaved] = useState(false);
   const [vitals, setVitals] = useState({
     temperature: '',
@@ -35,7 +35,7 @@ const VitalsEntry: React.FC<VitalsEntryProps> = ({ onClose, patientName, mrn }) 
       spo2: vitals.spo2,
       recordedAt: new Date().toISOString(),
     };
-    appendPatientVitals(mrn, record);
+    addVitals(mrn, record);
     setSaved(true);
     setTimeout(onClose, 1200);
   };
