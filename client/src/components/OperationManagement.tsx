@@ -110,6 +110,7 @@ const OperationManagement: React.FC = () => {
     if (!asset || otEquipment.some(e => e.id === assetId)) return;
     setOtEquipment(prev => [...prev, { name: asset.name, id: asset.id, status: 'Allocated' }]);
     updateAsset(assetId, { status: 'In Use (OT)' });
+    setRequestEquipModal(false);
     toast.success(`${asset.name} allocated to OT.`);
   };
 
@@ -206,6 +207,29 @@ const OperationManagement: React.FC = () => {
                   <button className="btn-primary" style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem' }} onClick={() => handleAssignStaff(s.id)}>Assign</button>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      {requestEquipModal && (
+        <div style={overlayStyle}>
+          <div style={{ ...boxStyle, width: '560px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3>Allocate Equipment</h3>
+              <button onClick={() => setRequestEquipModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '380px', overflowY: 'auto' }}>
+              {availableAssets.map(a => (
+                <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
+                  <div>
+                    <div style={{ fontWeight: '700' }}>{a.name}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{a.category} · {a.id}</div>
+                  </div>
+                  <button className="btn-primary" style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem' }} onClick={() => handleRequestEquipment(a.id)}>Allocate</button>
+                </div>
+              ))}
+              {availableAssets.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No functional assets available for allocation.</div>
+              )}
             </div>
           </div>
         </div>
