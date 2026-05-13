@@ -40,16 +40,18 @@ const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
 interface DoctorDashboardProps {
+  selectedMrn?: string | null;
+  onSelectMrn?: (mrn: string | null) => void;
   onStartConsult?: (patient: { mrn: string; name: string; amharic: string }) => void;
   onViewHistory?: (patient: { mrn: string; name: string; amharic: string }) => void;
   onNewAppointment?: () => void;
 }
 
-const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onViewHistory, onNewAppointment }) => {
+const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelectMrn, onStartConsult, onViewHistory, onNewAppointment }) => {
   const { appointments, patients, currentStaff } = useEMR();
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedMrn, setSelectedMrn] = useState<string | null>(null);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newAppt, setNewAppt] = useState({ patientMrn: '', startTime: '', notes: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -169,9 +171,9 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
             return (
               <div 
                 key={app.id} 
-                className={`appointment-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => setSelectedMrn(app.mrn)}
-                style={{ top: `${top}px`, height: `${app.duration * 80 - 4}px`, background: isSelected ? '#1e40af' : app.color, left: '8px', right: '8px' }}
+                className={`appointment-card ${selectedMrn === app.mrn ? 'selected' : ''}`}
+                onClick={() => onSelectMrn && onSelectMrn(app.mrn)}
+                style={{ top: `${top}px`, height: `${app.duration * 80 - 4}px`, background: selectedMrn === app.mrn ? '#1e40af' : app.color, left: '8px', right: '8px' }}
               >
                 {app.name}
               </div>
@@ -226,9 +228,9 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
                   return (
                     <div 
                       key={app.id} 
-                      className={`appointment-card ${isSelected ? 'selected' : ''}`}
-                      onClick={() => setSelectedMrn(app.mrn)}
-                      style={{ top: `${top}px`, height: `${app.duration * 80 - 4}px`, background: isSelected ? '#1e40af' : app.color }}
+                      className={`appointment-card ${selectedMrn === app.mrn ? 'selected' : ''}`}
+                      onClick={() => onSelectMrn && onSelectMrn(app.mrn)}
+                      style={{ top: `${top}px`, height: `${app.duration * 80 - 4}px`, background: selectedMrn === app.mrn ? '#1e40af' : app.color }}
                     >
                       {app.name}
                     </div>
@@ -403,7 +405,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
                   </div>
                 </div>
               </div>
-              <button onClick={() => setSelectedMrn(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer', color: '#64748b' }}>
+              <button onClick={() => onSelectMrn && onSelectMrn(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer', color: '#64748b' }}>
                 <Plus size={20} style={{ transform: 'rotate(45deg)' }} />
               </button>
             </div>
@@ -470,7 +472,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
               <div style={{ position: 'relative', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ position: 'absolute', left: '4px', top: '5px', bottom: '5px', width: '2px', background: '#e2e8f0' }} />
                 {MOCK_HISTORY.slice(0, 5).map((h) => (
-                  <div key={h.id} style={{ position: 'relative' }}>
+                  <div key={h.id} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setSelectedHistoryItem(h)}>
                     <div style={{ position: 'absolute', left: '-1.5rem', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: '#3b82f6', border: '2px solid white', boxShadow: '0 0 0 2px #eff6ff' }} />
                     <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '2px' }}>{h.date} • {h.doctor}</div>
                     <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b' }}>{h.diagnosis}</div>
@@ -510,6 +512,50 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
           </div>
         )}
       </div>
+
+      {/* History Detail Modal */}
+      {selectedHistoryItem && (
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)' }} onClick={() => setSelectedHistoryItem(null)}>
+          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', width: '600px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem' }}>
+              <div>
+                <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase' }}>Clinical Record Detail</span>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>{selectedHistoryItem.diagnosis}</h3>
+              </div>
+              <button onClick={() => setSelectedHistoryItem(null)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', padding: '0.5rem', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+              <div className="info-card">
+                <span className="info-label">DATE</span>
+                <span className="info-value">{selectedHistoryItem.date}</span>
+              </div>
+              <div className="info-card">
+                <span className="info-label">DOCTOR</span>
+                <span className="info-value">{selectedHistoryItem.doctor}</span>
+              </div>
+            </div>
+
+            <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#475569', marginBottom: '0.75rem' }}>Subjective & Assessment</h4>
+              <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: 1.6, margin: 0 }}>{selectedHistoryItem.summary}</p>
+            </div>
+
+            <div style={{ marginTop: '1.5rem' }}>
+              <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#475569', marginBottom: '0.75rem' }}>Treatment Plan</h4>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <span style={{ padding: '0.4rem 0.8rem', background: '#eff6ff', color: '#2563eb', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: '700' }}>Prescription Issued</span>
+                <span style={{ padding: '0.4rem 0.8rem', background: '#ecfdf5', color: '#059669', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: '700' }}>Lab Review Done</span>
+                <span style={{ padding: '0.4rem 0.8rem', background: '#fff7ed', color: '#d97706', borderRadius: '2rem', fontSize: '0.8rem', fontWeight: '700' }}>Follow-up Scheduled</span>
+              </div>
+            </div>
+
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
+              <button className="btn-primary" onClick={() => setSelectedHistoryItem(null)} style={{ padding: '0.75rem 2rem' }}>Close Record</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Appointment Modal */}
       {showNewModal && (
