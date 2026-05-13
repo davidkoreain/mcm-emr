@@ -246,18 +246,24 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
   // Auto-scroll to position the current time ~150px from the top
   useEffect(() => {
-    if (scrollRef.current && (viewType === 'day' || viewType === 'week')) {
-      const top = getPosition(new Date());
-      // timeout ensures DOM is fully rendered before scrolling
-      setTimeout(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTo({
-            top: Math.max(0, top - 150),
-            behavior: 'smooth'
-          });
-        }
-      }, 50);
-    }
+    let timeoutId: NodeJS.Timeout;
+
+    const attemptScroll = (retries = 5) => {
+      if (scrollRef.current && (viewType === 'day' || viewType === 'week')) {
+        const top = getPosition(new Date());
+        const targetScroll = Math.max(0, top - 150);
+        scrollRef.current.scrollTo({
+          top: targetScroll,
+          behavior: 'smooth'
+        });
+      } else if (retries > 0) {
+        timeoutId = setTimeout(() => attemptScroll(retries - 1), 100);
+      }
+    };
+
+    attemptScroll();
+
+    return () => clearTimeout(timeoutId);
   }, [viewType, selectedDate]);
 
   // ── Render Helpers ────────────────────────────────────────────
