@@ -87,164 +87,351 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     } catch (e) { alert('Failed to book.'); }
   };
 
-  const TabBtn = ({ id, label }: { id: any, label: string }) => (
-    <button onClick={() => setActiveTab(id)} style={{
-      padding: '0.6rem 1.25rem', borderRadius: '0.75rem', border: 'none', cursor: 'pointer',
-      background: activeTab === id ? '#2563eb' : 'transparent', color: activeTab === id ? 'white' : '#64748b', fontWeight: '700'
-    }}>{label}</button>
+  const TabBtn = ({ id, label, icon: Icon }: { id: any, label: string, icon: any }) => (
+    <button 
+      onClick={() => setActiveTab(id)} 
+      style={{
+        width: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '1rem',
+        padding: '0.85rem 1.25rem', 
+        borderRadius: '0.85rem', 
+        border: 'none', 
+        cursor: 'pointer',
+        background: activeTab === id ? '#2563eb' : 'transparent', 
+        color: activeTab === id ? 'white' : '#64748b', 
+        fontWeight: '700',
+        fontSize: '0.95rem',
+        transition: 'all 0.2s ease',
+        textAlign: 'left'
+      }}
+      onMouseOver={e => {
+        if (activeTab !== id) {
+          e.currentTarget.style.background = '#eff6ff';
+          e.currentTarget.style.color = '#2563eb';
+        }
+      }}
+      onMouseOut={e => {
+        if (activeTab !== id) {
+          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.color = '#64748b';
+        }
+      }}
+    >
+      <Icon size={20} />
+      {label}
+    </button>
   );
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
-      <header style={{ background: 'white', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Avatar name={activeUser.name} size={40} />
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
+      {/* Sidebar */}
+      <aside style={{ 
+        width: '280px', 
+        background: 'white', 
+        borderRight: '1px solid #e2e8f0', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        position: 'fixed', 
+        height: '100vh', 
+        left: 0, 
+        top: 0, 
+        zIndex: 100 
+      }}>
+        <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+            <Avatar name={activeUser.name} size={48} />
+            <div style={{ overflow: 'hidden' }}>
+              <h1 style={{ fontSize: '1.1rem', fontWeight: '900', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeUser.name}</h1>
+              <p style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '700', margin: 0 }}>{isGuardianView ? 'Guardian View' : 'Patient'}</p>
+            </div>
+          </div>
+          <div style={{ marginTop: '1rem', background: '#f8fafc', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', fontSize: '0.7rem', color: '#64748b', fontWeight: '600' }}>
+            MRN: {activeUser.mrn}
+          </div>
+        </div>
+
+        <nav style={{ flex: 1, padding: '1.5rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <TabBtn id="dashboard" label="Dashboard" icon={Activity} />
+          <TabBtn id="calendar" label="Appointments" icon={CalendarIcon} />
+          <TabBtn id="records" label="Medical Records" icon={FileText} />
+        </nav>
+
+        <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid #f1f5f9' }}>
+          <button 
+            onClick={onLogout} 
+            style={{ 
+              width: '100%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.75rem', 
+              background: '#fee2e2', 
+              color: '#dc2626', 
+              border: 'none', 
+              padding: '0.85rem 1.25rem', 
+              borderRadius: '0.85rem', 
+              fontWeight: '800', 
+              fontSize: '0.9rem', 
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={e => e.currentTarget.style.background = '#fecaca'}
+            onMouseOut={e => e.currentTarget.style.background = '#fee2e2'}
+          >
+            <LogOut size={20} />
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <main style={{ flex: 1, marginLeft: '280px', padding: '2.5rem' }}>
+        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
-            <h1 style={{ fontSize: '1rem', fontWeight: '800', margin: 0 }}>{activeUser.name}</h1>
-            <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>MRN: {activeUser.mrn} {isGuardianView && '(Guardian)'}</p>
+            <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.025em' }}>
+              {activeTab === 'dashboard' && 'Welcome Back,'}
+              {activeTab === 'calendar' && 'Appointments'}
+              {activeTab === 'records' && 'Medical Records'}
+            </h2>
+            <p style={{ color: '#64748b', fontSize: '1rem', marginTop: '0.25rem' }}>
+              {activeTab === 'dashboard' && "Here's what's happening with your health today."}
+              {activeTab === 'calendar' && 'Schedule and manage your doctor visits.'}
+              {activeTab === 'records' && 'Review your clinical history and lab results.'}
+            </p>
           </div>
-        </div>
-        <button onClick={onLogout} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}>Logout</button>
-      </header>
-
-      <div style={{ maxWidth: '1000px', margin: '2rem auto', padding: '0 1rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', background: '#f1f5f9', padding: '0.4rem', borderRadius: '1rem', width: 'fit-content', marginBottom: '2rem' }}>
-          <TabBtn id="dashboard" label="Dashboard" />
-          <TabBtn id="calendar" label="Appointments" />
-          <TabBtn id="records" label="Medical Records" />
-        </div>
-
-        {activeTab === 'dashboard' && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Activity color="#ef4444" size={20}/> Vitals Summary</h3>
-              {activeUser.vitals[0] ? (
-                <div style={{ marginTop: '1rem' }}>
-                  <p style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>{activeUser.vitals[0].bpSystolic}/{activeUser.vitals[0].bpDiastolic}</p>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Blood Pressure (Checked: {new Date(activeUser.vitals[0].recordedAt).toLocaleDateString()})</p>
-                </div>
-              ) : <p style={{ color: '#94a3b8' }}>No vitals found.</p>}
-            </div>
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Heart color="#db2777" size={20}/> Next Appointment</h3>
-              {appointments.filter(a => a.patientMrn === activeUser.mrn && new Date(a.startTime) > new Date()).slice(0,1).map(a => (
-                <div key={a.id} style={{ marginTop: '1rem' }}>
-                  <p style={{ fontWeight: '800', margin: 0 }}>{new Date(a.startTime).toLocaleString()}</p>
-                  <p style={{ fontSize: '0.9rem', color: '#64748b' }}>With Dr. {staff.find(s => s.id === a.doctorId)?.name}</p>
-                </div>
-              ))[0] || <p style={{ color: '#94a3b8' }}>No upcoming visits.</p>}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'calendar' && (
-          <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{bookingStep === 1 ? 'Choose Date' : bookingStep === 2 ? 'Select Doctor' : 'Confirm Time'}</h2>
-              {bookingStep > 1 && <button onClick={() => setBookingStep((bookingStep - 1) as 1 | 2 | 3)} style={{ background: '#f1f5f9', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}>Back</button>}
-            </div>
-
-            {bookingStep === 1 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
-                {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', padding: '0.5rem' }}>{d}</div>)}
-                {days.map((d, i) => d ? (
-                  <button key={i} onClick={() => { setSelDate(d); setBookingStep(2); }} style={{
-                    aspectRatio: '1', borderRadius: '1rem', border: 'none', cursor: 'pointer',
-                    background: '#f8fafc', color: '#1e293b', fontWeight: '800'
-                  }}>{d.getDate()}</button>
-                ) : <div key={i} />)}
+          {activeTab === 'dashboard' && (
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Last Update</div>
+                <div style={{ fontSize: '0.9rem', fontWeight: '800' }}>{new Date().toLocaleDateString()}</div>
               </div>
-            )}
+            </div>
+          )}
+        </header>
 
-            {bookingStep === 2 && (
-              <div>
-                <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: '1rem', display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
-                  <select onChange={e => setFSpec(e.target.value)} style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}>
-                    <option value="">All Specialties</option>
-                    {specs.map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <select onChange={e => setFGender(e.target.value)} style={{ padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}>
-                    <option value="">All Genders</option><option value="Male">Male</option><option value="Female">Female</option>
-                  </select>
+        <div style={{ maxWidth: '1100px' }}>
+          {activeTab === 'dashboard' && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+              <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '1rem' }}>
+                    <Activity color="#ef4444" size={24}/>
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Vitals Summary</h3>
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                  {doctors.map(doc => (
-                    <div key={doc.id} style={{ background: 'white', padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                        <Avatar name={doc.name} size={44} />
-                        <div>
-                          <div style={{ fontWeight: '800' }}>Dr. {doc.name}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#7c3aed', fontWeight: '700' }}>{doc.specialization}</div>
-                        </div>
-                      </div>
-                      <button onClick={() => { setSelDoc(doc); setBookingStep(3); }} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}>Select</button>
+                {activeUser.vitals[0] ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                      <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a' }}>{activeUser.vitals[0].bpSystolic}/{activeUser.vitals[0].bpDiastolic}</span>
+                      <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>mmHg</span>
                     </div>
-                  ))}
-                </div>
+                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Clock size={14} color="#94a3b8" />
+                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>Checked: {new Date(activeUser.vitals[0].recordedAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                ) : <p style={{ color: '#94a3b8' }}>No vitals found.</p>}
               </div>
-            )}
 
-            {bookingStep === 3 && (
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.75rem' }}>
-                  {slots.map(t => (
-                    <button key={t} onClick={() => setSelTime(t)} style={{
-                      padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0',
-                      background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b',
-                      fontWeight: '800', cursor: 'pointer'
-                    }}>{t}</button>
-                  ))}
+              <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                  <div style={{ background: '#fdf2f8', padding: '0.75rem', borderRadius: '1rem' }}>
+                    <Heart color="#db2777" size={24}/>
+                  </div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Next Appointment</h3>
                 </div>
-                <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '1rem', background: selTime ? '#2563eb' : '#cbd5e1', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}>Confirm Appointment</button>
+                {appointments.filter(a => a.patientMrn === activeUser.mrn && new Date(a.startTime) > new Date()).slice(0,1).map(a => (
+                  <div key={a.id}>
+                    <p style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>{new Date(a.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                    <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                      <Avatar name={staff.find(s => s.id === a.doctorId)?.name || ''} size={28} />
+                      <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: '600' }}>Dr. {staff.find(s => s.id === a.doctorId)?.name}</span>
+                    </div>
+                  </div>
+                ))[0] || <p style={{ color: '#94a3b8' }}>No upcoming visits.</p>}
               </div>
-            )}
-          </div>
-        )}
+            </div>
+          )}
 
-        {activeTab === 'records' && (
-          <div style={{ display: 'grid', gap: '1.5rem' }}>
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><FileText color="#2563eb" size={20}/> Consultation Notes</h3>
-              {canSeeNotes ? <div style={{ marginTop: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '1rem' }}>{activeUser.diagnosisSummary || 'No recent notes.'}</div> : <PrivacyBar />}
-            </div>
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Beaker color="#b45309" size={20}/> Lab Results</h3>
-              {(isGuardianView || privacy.showLabs) && filteredLabs.length > 0 ? (
-                <div style={{ marginTop: '1rem' }}>
-                  {filteredLabs.map((l, i) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #f1f5f9' }}>
-                    <span style={{ fontWeight: '600' }}>{l.test}</span>
-                    <span>{l.value} {l.unit}</span>
-                  </div>)}
+          {activeTab === 'calendar' && (
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.04)', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>
+                  {bookingStep === 1 ? 'Choose Preferred Date' : bookingStep === 2 ? 'Select Specialist' : 'Confirm Time Slot'}
+                </h3>
+                {bookingStep > 1 && (
+                  <button 
+                    onClick={() => setBookingStep((bookingStep - 1) as 1 | 2 | 3)} 
+                    style={{ background: '#f1f5f9', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800', color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    <ChevronLeft size={18} /> Back
+                  </button>
+                )}
+              </div>
+
+              {bookingStep === 1 && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.75rem' }}>
+                  {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.85rem', fontWeight: '800', color: '#94a3b8', padding: '1rem' }}>{d}</div>)}
+                  {days.map((d, i) => d ? (
+                    <button 
+                      key={i} 
+                      onClick={() => { setSelDate(d); setBookingStep(2); }} 
+                      style={{
+                        aspectRatio: '1', borderRadius: '1.25rem', border: '1px solid #f1f5f9', cursor: 'pointer',
+                        background: '#f8fafc', color: '#1e293b', fontWeight: '800', fontSize: '1.1rem', transition: 'all 0.2s'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.borderColor = '#2563eb'}
+                      onMouseOut={e => e.currentTarget.style.borderColor = '#f1f5f9'}
+                    >{d.getDate()}</button>
+                  ) : <div key={i} />)}
                 </div>
-              ) : <PrivacyBar />}
-            </div>
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Scissors color="#7c3aed" size={20}/> Surgery Records</h3>
-              {(isGuardianView || privacy.showSurgeries) ? (
-                <div style={{ marginTop: '1rem' }}>
-                  {surgeries.filter(s => s.patientMrn === activeUser.mrn).length > 0 ? (
-                    surgeries.filter(s => s.patientMrn === activeUser.mrn).map((s, i) => (
-                      <div key={i} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ fontWeight: '800' }}>{s.operationName}</div>
-                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Date: {new Date(s.startTime).toLocaleDateString()}</div>
+              )}
+
+              {bookingStep === 2 && (
+                <div>
+                  <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '1.25rem', display: 'flex', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>Specialty</label>
+                      <select onChange={e => setFSpec(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: '600' }}>
+                        <option value="">All Specialties</option>
+                        {specs.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>Gender</label>
+                      <select onChange={e => setFGender(e.target.value)} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: '600' }}>
+                        <option value="">All Genders</option><option value="Male">Male</option><option value="Female">Female</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+                    {doctors.map(doc => (
+                      <div key={doc.id} style={{ background: 'white', padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center', transition: 'all 0.2s' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                          <Avatar name={doc.name} size={48} />
+                          <div>
+                            <div style={{ fontWeight: '900', fontSize: '1rem' }}>Dr. {doc.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '700', textTransform: 'uppercase' }}>{doc.specialization}</div>
+                          </div>
+                        </div>
+                        <button onClick={() => { setSelDoc(doc); setBookingStep(3); }} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800', cursor: 'pointer' }}>Select</button>
                       </div>
-                    ))
-                  ) : <div style={{ color: '#94a3b8' }}>No surgical history.</div>}
+                    ))}
+                  </div>
                 </div>
-              ) : <PrivacyBar />}
+              )}
+
+              {bookingStep === 3 && (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(110px, 1fr))', gap: '1rem' }}>
+                    {slots.map(t => (
+                      <button 
+                        key={t} 
+                        onClick={() => setSelTime(t)} 
+                        style={{
+                          padding: '1rem', borderRadius: '1rem', border: '1px solid',
+                          borderColor: selTime === t ? '#2563eb' : '#e2e8f0',
+                          background: selTime === t ? '#2563eb' : 'white', 
+                          color: selTime === t ? 'white' : '#1e293b',
+                          fontWeight: '800', cursor: 'pointer', transition: 'all 0.2s'
+                        }}
+                      >{t}</button>
+                    ))}
+                  </div>
+                  <button 
+                    onClick={handleBooking} 
+                    disabled={!selTime} 
+                    style={{ 
+                      width: '100%', marginTop: '2.5rem', padding: '1.25rem', borderRadius: '1.25rem', 
+                      background: selTime ? '#2563eb' : '#cbd5e1', color: 'white', 
+                      fontWeight: '900', fontSize: '1.1rem', border: 'none', cursor: selTime ? 'pointer' : 'not-allowed',
+                      boxShadow: selTime ? '0 10px 15px -3px rgba(37, 99, 235, 0.4)' : 'none',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    Confirm Appointment
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-      </div>
+          )}
+
+          {activeTab === 'records' && (
+            <div style={{ display: 'grid', gap: '2rem' }}>
+              <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                  <div style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '1rem' }}>
+                    <FileText color="#2563eb" size={24}/>
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900' }}>Consultation Notes</h3>
+                </div>
+                {canSeeNotes ? (
+                  <div style={{ background: '#f8fafc', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #f1f5f9', lineHeight: '1.7', color: '#475569', fontSize: '1rem' }}>
+                    {activeUser.diagnosisSummary || 'No recent notes available in your record.'}
+                  </div>
+                ) : <PrivacyBar />}
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ background: '#fffbeb', padding: '0.75rem', borderRadius: '1rem' }}>
+                      <Beaker color="#b45309" size={24}/>
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900' }}>Lab Results</h3>
+                  </div>
+                  {(isGuardianView || privacy.showLabs) && filteredLabs.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {filteredLabs.map((l, i) => (
+                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.25rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #f1f5f9' }}>
+                          <span style={{ fontWeight: '800', color: '#1e293b' }}>{l.test}</span>
+                          <span style={{ fontWeight: '900', color: '#2563eb', background: 'white', padding: '0.5rem 1rem', borderRadius: '0.75rem', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>{l.value} {l.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <PrivacyBar />}
+                </div>
+
+                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                    <div style={{ background: '#f5f3ff', padding: '0.75rem', borderRadius: '1rem' }}>
+                      <Scissors color="#7c3aed" size={24}/>
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: '900' }}>Surgery Records</h3>
+                  </div>
+                  {(isGuardianView || privacy.showSurgeries) ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {surgeries.filter(s => s.patientMrn === activeUser.mrn).length > 0 ? (
+                        surgeries.filter(s => s.patientMrn === activeUser.mrn).map((s, i) => (
+                          <div key={i} style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1.25rem', border: '1px solid #f1f5f9' }}>
+                            <div style={{ fontWeight: '900', fontSize: '1.05rem', color: '#1e293b' }}>{s.operationName}</div>
+                            <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>
+                              <CalendarIcon size={14} />
+                              {new Date(s.startTime).toLocaleDateString(undefined, { dateStyle: 'long' })}
+                            </div>
+                          </div>
+                        ))
+                      ) : <p style={{ color: '#94a3b8', textAlign: 'center', padding: '1rem' }}>No surgical history.</p>}
+                    </div>
+                  ) : <PrivacyBar />}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </main>
     </div>
   );
 };
 
 const PrivacyBar = () => (
-  <div style={{ padding: '2rem', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)', borderRadius: '1rem', border: '1px dashed #cbd5e1', textAlign: 'center', marginTop: '1rem' }}>
-    <ShieldAlert color="#c2410c" size={24} />
-    <p style={{ fontWeight: '800', margin: '0.5rem 0 0' }}>Information Restricted</p>
-    <p style={{ fontSize: '0.75rem', color: '#64748b' }}>Managed by guardian settings.</p>
+  <div style={{ padding: '3rem', background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(10px)', borderRadius: '1.5rem', border: '2px dashed #e2e8f0', textAlign: 'center' }}>
+    <div style={{ background: '#fff7ed', width: '48px', height: '48px', borderRadius: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem' }}>
+      <ShieldAlert color="#c2410c" size={28} />
+    </div>
+    <h4 style={{ fontWeight: '900', fontSize: '1.1rem', margin: '0 0 0.5rem', color: '#9a3412' }}>Information Restricted</h4>
+    <p style={{ fontSize: '0.9rem', color: '#9a3412', opacity: 0.8, margin: 0 }}>This section is currently managed by your guardian's privacy settings.</p>
   </div>
 );
 
