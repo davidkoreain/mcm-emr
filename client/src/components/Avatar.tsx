@@ -68,29 +68,52 @@ const Avatar: React.FC<AvatarProps> = ({ name, photoUrl, size = 36, style }) => 
         <div
           onClick={() => setEnlarged(false)}
           style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.78)',
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            zIndex: 99999, cursor: 'zoom-out',
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.05)', // Very light backdrop
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 99999,
+            cursor: 'zoom-out',
+            backdropFilter: 'blur(2px)', // Subtle blur instead of darkening
           }}
         >
-          <img
-            src={photoUrl}
-            alt={name}
-            style={{
-              width: 240, height: 240, borderRadius: '50%',
-              objectFit: 'cover',
-              boxShadow: '0 24px 64px rgba(0,0,0,0.6)',
-              border: '4px solid white',
-            }}
-          />
-          <div style={{ marginTop: '1.25rem', color: 'white', fontSize: '1.25rem', fontWeight: '700', letterSpacing: '0.01em' }}>
-            {name}
+          <div style={{
+            background: 'white',
+            padding: '0.5rem',
+            borderRadius: '1rem',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            animation: 'avatarPopup 0.2s ease-out'
+          }}>
+            <img
+              src={photoUrl}
+              alt={name}
+              style={{
+                width: Math.min(size * 4, 300),
+                height: Math.min(size * 4, 300),
+                borderRadius: '0.75rem', // Square with rounded corners for the popup
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
+            <div style={{ marginTop: '0.75rem', color: '#1e293b', fontSize: '1rem', fontWeight: '800' }}>
+              {name}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem', marginBottom: '0.25rem' }}>
+              Click anywhere to close
+            </div>
           </div>
-          <div style={{ marginTop: '0.4rem', color: 'rgba(255,255,255,0.5)', fontSize: '0.8rem' }}>
-            클릭하면 닫힙니다
-          </div>
+          <style>{`
+            @keyframes avatarPopup {
+              from { opacity: 0; transform: scale(0.9); }
+              to { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
         </div>
       )}
     </>
