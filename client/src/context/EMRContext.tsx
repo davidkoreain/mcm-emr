@@ -302,10 +302,31 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchSurgeries(), []),
         safeFetch(db.fetchGuardians(), [])
       ]);
-      setPatients(p.length > 0 ? p : DEMO_PATIENTS);
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd] = await Promise.all([
+        safeFetch(db.fetchPatients(), []),
+        safeFetch(db.fetchStaff(), []),
+        safeFetch(db.fetchAssets(), []),
+        safeFetch(db.fetchAppointments(), []),
+        safeFetch(db.fetchDrugs(), []),
+        safeFetch(db.fetchPrescriptions(), []),
+        safeFetch(db.fetchLabOrders(), []),
+        safeFetch(db.fetchLabResults(), []),
+        safeFetch(db.fetchSurgeries(), []),
+        safeFetch(db.fetchGuardians(), [])
+      ]);
+      
+      // Always merge demo data to ensure a rich demo experience
+      const mergedPatients = [...p, ...DEMO_PATIENTS];
+      const uniquePatients = mergedPatients.filter((v, i, a) => a.findIndex(t => t.mrn === v.mrn) === i);
+      
+      setPatients(uniquePatients);
       setStaff(s);
       setAssets(a);
-      setAppointments(app.length > 0 ? app : DEMO_APPOINTMENTS);
+      
+      const mergedApps = [...app, ...DEMO_APPOINTMENTS];
+      const uniqueApps = mergedApps.filter((v, i, a) => a.findIndex(t => t.id === v.id) === i);
+      
+      setAppointments(uniqueApps);
       setDrugs(dr);
       setPrescriptions(rx);
       setLabOrders(lo);
