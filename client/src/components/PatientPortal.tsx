@@ -13,7 +13,7 @@ interface PortalProps {
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
   const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians } = useEMR();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records' | 'privacy'>('dashboard');
   
   const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
 
@@ -156,6 +156,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           <TabBtn id="dashboard" label="Dashboard" icon={Activity} />
           <TabBtn id="calendar" label="Appointments" icon={CalendarIcon} />
           <TabBtn id="records" label="Medical Records" icon={FileText} />
+          {isGuardianView && <TabBtn id="privacy" label="Privacy Controls" icon={ShieldAlert} />}
         </nav>
 
         <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid #f1f5f9' }}>
@@ -193,11 +194,13 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               {activeTab === 'dashboard' && 'Welcome Back,'}
               {activeTab === 'calendar' && 'Appointments'}
               {activeTab === 'records' && 'Medical Records'}
+              {activeTab === 'privacy' && 'Privacy Controls'}
             </h2>
             <p style={{ color: '#64748b', fontSize: '1rem', marginTop: '0.25rem' }}>
               {activeTab === 'dashboard' && "Here's what's happening with your health today."}
               {activeTab === 'calendar' && 'Schedule and manage your doctor visits.'}
               {activeTab === 'records' && 'Review your clinical history and lab results.'}
+              {activeTab === 'privacy' && 'Control what information the patient can see.'}
             </p>
           </div>
           {activeTab === 'dashboard' && (
@@ -416,6 +419,50 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                     </div>
                   ) : <PrivacyBar />}
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'privacy' && isGuardianView && currentGuardian && (
+            <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+              <div style={{ marginBottom: '2.5rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b' }}>Global Privacy Settings</h3>
+                <p style={{ color: '#64748b', fontSize: '0.9rem', marginTop: '0.5rem' }}>
+                  These settings affect what <strong style={{ color: '#1e293b' }}>{activeUser.name}</strong> sees when they log into their own Patient Portal account.
+                </p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                {[
+                  { label: 'Clinical Notes', key: 'showNotes', icon: <FileText size={22}/>, desc: 'Detailed diagnoses, doctor notes, and clinical histories.' },
+                  { label: 'Lab Results', key: 'showLabs', icon: <Beaker size={22}/>, desc: 'Test data, blood work, and pathology reports.' },
+                  { label: 'Surgery Data', key: 'showSurgeries', icon: <Scissors size={22}/>, desc: 'Operation schedules, procedures, and recovery logs.' },
+                ].map(({ label, key, icon, desc }) => (
+                  <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', padding: '2rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ background: 'white', padding: '0.75rem', borderRadius: '1rem', color: '#7c3aed', boxShadow: '0 4px 6px rgba(0,0,0,0.05)' }}>{icon}</div>
+                      <button 
+                        onClick={async () => {
+                          const newSettings = { ...currentGuardian.privacySettings, [key]: !(currentGuardian.privacySettings as any)[key] };
+                          await useEMR().updatePrivacy(currentGuardian.id, newSettings);
+                        }}
+                        style={{ 
+                          width: '48px', height: '24px', background: (currentGuardian.privacySettings as any)[key] ? '#7c3aed' : '#cbd5e1', 
+                          borderRadius: '12px', border: 'none', cursor: 'pointer', position: 'relative', transition: 'all 0.2s'
+                        }}
+                      >
+                        <div style={{ 
+                          position: 'absolute', top: '2px', left: (currentGuardian.privacySettings as any)[key] ? '26px' : '2px',
+                          width: '20px', height: '20px', background: 'white', borderRadius: '50%', transition: 'all 0.2s'
+                        }} />
+                      </button>
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: '800', fontSize: '1.1rem', color: '#1e293b' }}>{label}</div>
+                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.4rem', lineHeight: '1.5' }}>{desc}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
