@@ -210,6 +210,7 @@ const OperationManagement: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
       {requestEquipModal && (
         <div style={overlayStyle}>
           <div style={{ ...boxStyle, width: '560px' }}>
@@ -222,7 +223,7 @@ const OperationManagement: React.FC = () => {
                 <div key={a.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
                   <div>
                     <div style={{ fontWeight: '700' }}>{a.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{a.category} · {a.id}</div>
+                    <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{a.location} · {a.id}</div>
                   </div>
                   <button className="btn-primary" style={{ padding: '0.4rem 0.9rem', fontSize: '0.8rem' }} onClick={() => handleRequestEquipment(a.id)}>Allocate</button>
                 </div>
