@@ -33,6 +33,9 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedMrn, setSelectedMrn] = useState<string | null>(null);
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newAppt, setNewAppt] = useState({ patientMrn: '', startTime: '', notes: '' });
+  const { addAppointment } = useEMR();
 
   // ── Date Logic ────────────────────────────────────────────────
 
@@ -77,8 +80,14 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
   // ── Data Binding ──────────────────────────────────────────────
 
   const displayAppointments = useMemo(() => {
-    // Merge database appointments with context-level demo data
-    const actual = appointments.map(app => ({
+    // PERSONAL CALENDAR FILTERING
+    // Filter appointments by doctorId to ensure each staff member sees their own calendar
+    const filteredApps = appointments.filter(app => {
+      if (!currentStaff) return false;
+      return app.doctorId === currentStaff.id;
+    });
+
+    const actual = filteredApps.map(app => ({
       id: app.id,
       mrn: app.patientMrn,
       date: new Date(app.startTime),
@@ -86,19 +95,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
       color: '#2563eb'
     }));
 
-    // If actual is empty, the EMRContext already provides DEMO_APPOINTMENTS as fallback
-    // But we can add a local safeguard here for extra reliability during demos
-    const combined = actual;
-
-    return combined.map(item => {
+    return actual.map(item => {
       const patient = patients.find(p => p.mrn === item.mrn);
       return {
         ...item,
         name: patient?.name || 'Unknown Patient',
-        patient: patient // Keep the whole patient object for the detail view
+        patient: patient
       };
     });
-  }, [appointments, patients]);
+  }, [appointments, patients, currentStaff]);
 
   const selectedAppointment = useMemo(() => {
     return displayAppointments.find(app => app.mrn === selectedMrn);
@@ -289,7 +294,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn-primary" onClick={onNewAppointment} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn-primary" onClick={() => setShowNewModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Plus size={18} /> New Appointment
           </button>
         </div>
@@ -426,6 +431,75 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
           </div>
         )}
       </div>
+
+      {/* New Appointment Modal */}
+      {showNewModal && (
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
+          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.25rem', width: '450px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1e293b' }}>New Appointment</h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginBottom: '0.5rem' }}>Select Patient</label>
+                <select 
+                  value={newAppt.patientMrn} 
+                  onChange={(e) => setNewAppt({ ...newAppt, patientMrn: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                >
+                  <option value="">Choose Patient...</option>
+                  {patients.map(p => <option key={p.mrn} value={p.mrn}>{p.name} ({p.mrn})</option>)}
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginBottom: '0.5rem' }}>Date & Time</label>
+                <input 
+                  type="datetime-local" 
+                  value={newAppt.startTime}
+                  onChange={(e) => setNewAppt({ ...newAppt, startTime: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginBottom: '0.5rem' }}>Notes</label>
+                <textarea 
+                  value={newAppt.notes}
+                  onChange={(e) => setNewAppt({ ...newAppt, notes: e.target.value })}
+                  placeholder="Reason for appointment..."
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', height: '100px', resize: 'none' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
+                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowNewModal(false)}>Cancel</button>
+                <button 
+                  className="btn-primary" 
+                  style={{ flex: 1.5 }}
+                  disabled={!newAppt.patientMrn || !newAppt.startTime}
+                  onClick={async () => {
+                    if (!currentStaff) return;
+                    const start = new Date(newAppt.startTime);
+                    const end = new Date(start.getTime() + 30 * 60000); // Default 30 min
+                    await addAppointment({
+                      patientMrn: newAppt.patientMrn,
+                      doctorId: currentStaff.id,
+                      startTime: start.toISOString(),
+                      endTime: end.toISOString(),
+                      status: 'Scheduled',
+                      notes: newAppt.notes
+                    });
+                    setShowNewModal(false);
+                    setNewAppt({ patientMrn: '', startTime: '', notes: '' });
+                  }}
+                >
+                  Schedule
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         .view-selector {
