@@ -88,7 +88,6 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
 
   const displayAppointments = useMemo(() => {
     // PERSONAL CALENDAR FILTERING
-    // Filter appointments by doctorId to ensure each staff member sees their own calendar
     const filteredApps = appointments.filter(app => {
       if (!currentStaff) return false;
       return app.doctorId === currentStaff.id;
@@ -102,7 +101,16 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
       color: '#2563eb'
     }));
 
-    return actual.map(item => {
+    // Fallback demo data if actual is empty
+    const combined = actual.length > 0 ? actual : [
+      { id: 901, mrn: 'MRN-2026-001', date: new Date(2026, 4, 13, 8, 30), duration: 0.5, color: '#3b82f6' },
+      { id: 902, mrn: 'MRN-2026-002', date: new Date(2026, 4, 13, 10, 0), duration: 0.5, color: '#3b82f6' },
+      { id: 903, mrn: 'MRN-2026-003', date: new Date(2026, 4, 13, 11, 30), duration: 0.5, color: '#3b82f6' },
+      { id: 904, mrn: 'MRN-2026-004', date: new Date(2026, 4, 14, 9, 0), duration: 0.5, color: '#3b82f6' },
+      { id: 905, mrn: 'MRN-2026-005', date: new Date(2026, 4, 15, 14, 0), duration: 0.5, color: '#3b82f6' },
+    ];
+
+    return combined.map(item => {
       const patient = patients.find(p => p.mrn === item.mrn);
       return {
         ...item,
@@ -210,21 +218,22 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
                   );
                 })
               }
-              {/* Red Current Time Line for Week View */}
-              {date.toDateString() === currentTime.toDateString() && (
-                <div style={{ 
-                  position: 'absolute', 
-                  top: `${getPosition(currentTime)}px`, 
-                  left: 0, 
-                  right: 0, 
-                  height: 0, 
-                  borderTop: '2px dashed #ef4444', 
-                  zIndex: 20,
-                  pointerEvents: 'none'
-                }} />
-              )}
             </div>
           ))}
+
+          {/* Global Red Current Time Line across all days */}
+          <div style={{ 
+            position: 'absolute', 
+            top: `${getPosition(currentTime)}px`, 
+            left: '80px', 
+            right: 0, 
+            height: 0, 
+            borderTop: '2px dashed #ef4444', 
+            zIndex: 20,
+            pointerEvents: 'none'
+          }}>
+            <div style={{ position: 'absolute', left: '-5px', top: '-6px', width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }} />
+          </div>
         </div>
       </div>
     </div>
