@@ -22,7 +22,13 @@ interface Appointment {
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
-const DoctorDashboard: React.FC = () => {
+interface DoctorDashboardProps {
+  onStartConsult?: (patient: { mrn: string; name: string; amharic: string }) => void;
+  onViewHistory?: (patient: { mrn: string; name: string; amharic: string }) => void;
+  onNewAppointment?: () => void;
+}
+
+const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onViewHistory, onNewAppointment }) => {
   const { appointments, patients, currentStaff } = useEMR();
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -291,7 +297,7 @@ const DoctorDashboard: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn-primary" onClick={onNewAppointment} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <Plus size={18} /> New Appointment
           </button>
         </div>
@@ -392,8 +398,18 @@ const DoctorDashboard: React.FC = () => {
             </div>
 
             <div style={{ marginTop: 'auto', display: 'flex', gap: '1rem' }}>
-              <button className="btn-secondary" style={{ flex: 1, padding: '0.8rem' }}>History</button>
-              <button className="btn-primary" style={{ flex: 1.5, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+              <button 
+                className="btn-secondary" 
+                style={{ flex: 1, padding: '0.8rem' }}
+                onClick={() => onViewHistory && onViewHistory({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
+              >
+                History
+              </button>
+              <button 
+                className="btn-primary" 
+                style={{ flex: 1.5, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}
+                onClick={() => onStartConsult && onStartConsult({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
+              >
                 <Stethoscope size={20} /> Start Consult
               </button>
             </div>
