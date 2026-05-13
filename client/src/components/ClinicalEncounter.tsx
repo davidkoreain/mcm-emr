@@ -11,12 +11,47 @@ interface ClinicalEncounterProps {
   patientName: string;
 }
 
-type PrescriptionRecord = { id: number; date: string; doctor: string; diagnosis: string; meds: string };
+type PrescriptionRecord = { 
+  id: number; 
+  date: string; 
+  doctor: string; 
+  diagnosis: string; 
+  meds: string;
+  subjective?: string;
+  objective?: string;
+  labTests?: string[];
+  labResults?: { test: string; result: string; range: string }[];
+};
 
 const initialHistory: PrescriptionRecord[] = [
-  { id: 1, date: '2026-04-15', doctor: 'Dr. Solomon', diagnosis: 'Acute Bronchitis', meds: 'Amoxicillin 500mg, Salbutamol Inhaler' },
-  { id: 2, date: '2026-02-10', doctor: 'Dr. Abraham', diagnosis: 'Hypertension', meds: 'Amlodipine 5mg QD' },
-  { id: 3, date: '2025-11-20', doctor: 'Dr. Fitsum', diagnosis: 'Gastritis', meds: 'Omeprazole 20mg BID' },
+  { 
+    id: 1, date: '2026-04-15', doctor: 'Dr. Solomon', diagnosis: 'Acute Bronchitis', meds: 'Amoxicillin 500mg, Salbutamol Inhaler',
+    subjective: 'Patient reports persistent cough for 5 days, yellow sputum, and mild fever (38.2C). No chest pain.',
+    objective: 'Bilateral rhonchi on auscultation. Throat is mildly congested. Pulse 88, SpO2 96% on room air.',
+    labTests: ['Chest X-Ray', 'CBC'],
+    labResults: [
+      { test: 'WBC Count', result: '11.5 x10^3/uL', range: '4.5-11.0' },
+      { test: 'Neutrophils', result: '78%', range: '40-75%' }
+    ]
+  },
+  { 
+    id: 2, date: '2026-02-10', doctor: 'Dr. Abraham', diagnosis: 'Hypertension', meds: 'Amlodipine 5mg QD',
+    subjective: 'Routine follow-up. Patient complains of occasional morning headaches. Adherent to meds.',
+    objective: 'BP 155/95 mmHg. Heart sounds S1, S2 regular. No peripheral edema.',
+    labTests: ['Urinalysis', 'Serum Creatinine'],
+    labResults: [
+      { test: 'Creatinine', result: '0.9 mg/dL', range: '0.7-1.3' }
+    ]
+  },
+  { 
+    id: 3, date: '2025-11-20', doctor: 'Dr. Fitsum', diagnosis: 'Gastritis', meds: 'Omeprazole 20mg BID',
+    subjective: 'Epigastric burning pain, worse after meals. No melena or hematemesis.',
+    objective: 'Tenderness in epigastrium on deep palpation. No masses felt.',
+    labTests: ['H. pylori Stool Antigen'],
+    labResults: [
+      { test: 'H. pylori', result: 'Positive', range: 'Negative' }
+    ]
+  },
 ];
 
 type ImagingItem = { id: number; type: string; title: string; date: string; thumb: string; full: string; isVideo?: boolean };
@@ -44,6 +79,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
   const [imagingData, setImagingData] = useState<ImagingItem[]>(initialImaging);
   const [prescriptionHistory, setPrescriptionHistory] = useState<PrescriptionRecord[]>(initialHistory);
   const [maximizedImage, setMaximizedImage] = useState<string | null>(null);
+  const [selectedEncounter, setSelectedEncounter] = useState<PrescriptionRecord | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -96,6 +132,93 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
           <button style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%', padding: '0.5rem', color: 'white', cursor: 'pointer' }}
             onClick={() => setMaximizedImage(null)}><X size={24} /></button>
           <img src={maximizedImage} alt="Full view" style={{ maxWidth: '90vw', maxHeight: '90vh', objectFit: 'contain', borderRadius: '0.5rem' }} onClick={e => e.stopPropagation()} />
+        </div>
+      )}
+
+      {selectedEncounter && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2500, padding: '2rem' }}
+          onClick={() => setSelectedEncounter(null)}>
+          <div style={{ background: 'white', width: '100%', maxWidth: '800px', borderRadius: '1.5rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden', animation: 'modalSlideUp 0.3s ease-out' }} onClick={e => e.stopPropagation()}>
+            <div style={{ background: 'var(--primary-color)', color: 'white', padding: '1.5rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Past Encounter Record</div>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{selectedEncounter.diagnosis}</h3>
+              </div>
+              <button onClick={() => setSelectedEncounter(null)} style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', padding: '0.5rem', color: 'white', cursor: 'pointer' }}><X size={20} /></button>
+            </div>
+            
+            <div style={{ padding: '2rem', maxHeight: '70vh', overflowY: 'auto' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '1rem', border: '1px solid #e2e8f0' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', marginBottom: '0.25rem' }}>VISIT DATE</div>
+                  <div style={{ fontWeight: '700', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Calendar size={16} /> {selectedEncounter.date}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '700', marginBottom: '0.25rem' }}>ATTENDING DOCTOR</div>
+                  <div style={{ fontWeight: '700', color: '#1e293b' }}>{selectedEncounter.doctor}</div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <section>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#475569', borderBottom: '2px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <BookOpen size={18} /> CLINICAL NOTES (SOAP)
+                  </h4>
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', marginBottom: '0.25rem' }}>SUBJECTIVE</div>
+                      <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{selectedEncounter.subjective || 'No notes recorded.'}</p>
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', marginBottom: '0.25rem' }}>OBJECTIVE</div>
+                      <p style={{ fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>{selectedEncounter.objective || 'No physical exam recorded.'}</p>
+                    </div>
+                  </div>
+                </section>
+
+                <section>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#475569', borderBottom: '2px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Beaker size={18} /> LABS & DIAGNOSTICS
+                  </h4>
+                  {selectedEncounter.labResults && selectedEncounter.labResults.length > 0 ? (
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                      <thead>
+                        <tr style={{ background: '#f1f5f9' }}>
+                          <th style={{ textAlign: 'left', padding: '0.75rem', color: '#64748b' }}>Test Name</th>
+                          <th style={{ textAlign: 'center', padding: '0.75rem', color: '#64748b' }}>Result</th>
+                          <th style={{ textAlign: 'right', padding: '0.75rem', color: '#64748b' }}>Reference Range</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {selectedEncounter.labResults.map((lr, i) => (
+                          <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '0.75rem', fontWeight: '600', color: '#1e293b' }}>{lr.test}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '700', color: '#3b82f6' }}>{lr.result}</td>
+                            <td style={{ padding: '0.75rem', textAlign: 'right', color: '#94a3b8' }}>{lr.range}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  ) : (
+                    <p style={{ color: '#94a3b8', fontStyle: 'italic' }}>No laboratory data for this encounter.</p>
+                  )}
+                </section>
+
+                <section>
+                  <h4 style={{ fontSize: '0.9rem', fontWeight: '800', color: '#475569', borderBottom: '2px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <PillIcon size={18} /> PRESCRIPTIONS
+                  </h4>
+                  <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', padding: '1.25rem', borderRadius: '0.75rem', color: '#0369a1', fontSize: '1rem', fontWeight: '700' }}>
+                    {selectedEncounter.meds}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem 2rem', background: '#f8fafc', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'flex-end' }}>
+              <button onClick={() => setSelectedEncounter(null)} className="btn-primary" style={{ padding: '0.75rem 1.5rem' }}>Close Record</button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -216,7 +339,14 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                       </div>
                       <span style={{ fontSize: '0.85rem', fontWeight: '600', color: 'var(--primary-color)' }}>{hist.doctor}</span>
                     </div>
-                    <div style={{ fontWeight: '700', fontSize: '1rem', marginBottom: '0.5rem' }}>{hist.diagnosis}</div>
+                    <div 
+                      style={{ fontWeight: '700', fontSize: '1.25rem', marginBottom: '0.75rem', color: '#1e293b', cursor: 'pointer', transition: 'color 0.2s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-color)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#1e293b'}
+                      onClick={() => setSelectedEncounter(hist)}
+                    >
+                      {hist.diagnosis}
+                    </div>
                     <div style={{ background: '#f1f5f9', padding: '0.75rem', borderRadius: '0.5rem', fontSize: '0.9rem', display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
                       <PillIcon size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
                       <div>{hist.meds}</div>
@@ -241,6 +371,12 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
 const PillIcon: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size = 24, style }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
     <path d="m10.5 20.5 10-10a4.95 4.95 0 1 0-7-7l-10 10a4.95 4.95 0 1 0 7 7Z" /><path d="m8.5 8.5 7 7" />
+  </svg>
+);
+
+const Beaker: React.FC<{ size?: number; style?: React.CSSProperties }> = ({ size = 24, style }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={style}>
+    <path d="M4.5 3h15" /><path d="M6 3v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V3" /><path d="M6 14h12" />
   </svg>
 );
 
