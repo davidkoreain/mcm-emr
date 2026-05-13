@@ -12,9 +12,11 @@ interface PortalProps {
 }
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
-  const { currentUser, appointments, staff, addAppointment, labResults, surgeries, guardians } = useEMR();
+  const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians } = useEMR();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records'>('dashboard');
   
+  const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
+
   // Booking State
   const [bookingStep, setBookingStep] = useState<1 | 2 | 3>(1);
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -27,12 +29,12 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const [fGender, setFGender] = useState('');
   const [fAge, setFAge] = useState('');
 
-  if (!currentUser) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading profile...</div>;
+  if (!activeUser) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading profile...</div>;
 
-  const myGuardian = guardians.find(g => g.patientMrn === currentUser.mrn);
+  const myGuardian = guardians.find(g => g.patientMrn === activeUser.mrn);
   const privacy = myGuardian?.privacySettings || { showNotes: true, showLabs: true, showSurgeries: true };
   const canSeeNotes = isGuardianView || privacy.showNotes;
-  const filteredLabs = labResults.filter(r => r.patientMrn === currentUser.mrn).filter(() => isGuardianView || privacy.showLabs);
+  const filteredLabs = labResults.filter(r => r.patientMrn === activeUser.mrn).filter(() => isGuardianView || privacy.showLabs);
 
   const specs = useMemo(() => Array.from(new Set(staff.filter(s => s.role.includes('Doctor')).map(s => s.specialization))), [staff]);
   const doctors = useMemo(() => {
@@ -76,7 +78,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
     try {
       await addAppointment({
-        patientMrn: currentUser.mrn, doctorId: selDoc.id,
+        patientMrn: activeUser.mrn, doctorId: selDoc.id,
         startTime: start.toISOString(), endTime: end.toISOString(),
         status: 'Scheduled', notes: isGuardianView ? 'Guardian' : 'Patient'
       });
@@ -96,10 +98,10 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     <div style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
       <header style={{ background: 'white', padding: '1rem 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Avatar name={currentUser.name} size={40} />
+          <Avatar name={activeUser.name} size={40} />
           <div>
-            <h1 style={{ fontSize: '1rem', fontWeight: '800', margin: 0 }}>{currentUser.name}</h1>
-            <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>MRN: {currentUser.mrn} {isGuardianView && '(Guardian)'}</p>
+            <h1 style={{ fontSize: '1rem', fontWeight: '800', margin: 0 }}>{activeUser.name}</h1>
+            <p style={{ fontSize: '0.7rem', color: '#64748b', margin: 0 }}>MRN: {activeUser.mrn} {isGuardianView && '(Guardian)'}</p>
           </div>
         </div>
         <button onClick={onLogout} style={{ background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}>Logout</button>
@@ -116,16 +118,16 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Activity color="#ef4444" size={20}/> Vitals Summary</h3>
-              {currentUser.vitals[0] ? (
+              {activeUser.vitals[0] ? (
                 <div style={{ marginTop: '1rem' }}>
-                  <p style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>{currentUser.vitals[0].bpSystolic}/{currentUser.vitals[0].bpDiastolic}</p>
-                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Blood Pressure (Checked: {new Date(currentUser.vitals[0].recordedAt).toLocaleDateString()})</p>
+                  <p style={{ fontSize: '1.5rem', fontWeight: '800', margin: 0 }}>{activeUser.vitals[0].bpSystolic}/{activeUser.vitals[0].bpDiastolic}</p>
+                  <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Blood Pressure (Checked: {new Date(activeUser.vitals[0].recordedAt).toLocaleDateString()})</p>
                 </div>
               ) : <p style={{ color: '#94a3b8' }}>No vitals found.</p>}
             </div>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Heart color="#db2777" size={20}/> Next Appointment</h3>
-              {appointments.filter(a => a.patientMrn === currentUser.mrn && new Date(a.startTime) > new Date()).slice(0,1).map(a => (
+              {appointments.filter(a => a.patientMrn === activeUser.mrn && new Date(a.startTime) > new Date()).slice(0,1).map(a => (
                 <div key={a.id} style={{ marginTop: '1rem' }}>
                   <p style={{ fontWeight: '800', margin: 0 }}>{new Date(a.startTime).toLocaleString()}</p>
                   <p style={{ fontSize: '0.9rem', color: '#64748b' }}>With Dr. {staff.find(s => s.id === a.doctorId)?.name}</p>
@@ -203,7 +205,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           <div style={{ display: 'grid', gap: '1.5rem' }}>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><FileText color="#2563eb" size={20}/> Consultation Notes</h3>
-              {canSeeNotes ? <div style={{ marginTop: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '1rem' }}>{currentUser.diagnosisSummary || 'No recent notes.'}</div> : <PrivacyBar />}
+              {canSeeNotes ? <div style={{ marginTop: '1rem', background: '#f8fafc', padding: '1rem', borderRadius: '1rem' }}>{activeUser.diagnosisSummary || 'No recent notes.'}</div> : <PrivacyBar />}
             </div>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Beaker color="#b45309" size={20}/> Lab Results</h3>
@@ -220,8 +222,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Scissors color="#7c3aed" size={20}/> Surgery Records</h3>
               {(isGuardianView || privacy.showSurgeries) ? (
                 <div style={{ marginTop: '1rem' }}>
-                  {surgeries.filter(s => s.patientMrn === currentUser.mrn).length > 0 ? (
-                    surgeries.filter(s => s.patientMrn === currentUser.mrn).map((s, i) => (
+                  {surgeries.filter(s => s.patientMrn === activeUser.mrn).length > 0 ? (
+                    surgeries.filter(s => s.patientMrn === activeUser.mrn).map((s, i) => (
                       <div key={i} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '1rem', marginBottom: '1rem' }}>
                         <div style={{ fontWeight: '800' }}>{s.operationName}</div>
                         <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Date: {new Date(s.startTime).toLocaleDateString()}</div>
