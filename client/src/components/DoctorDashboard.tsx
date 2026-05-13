@@ -35,7 +35,14 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
   const [selectedMrn, setSelectedMrn] = useState<string | null>(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newAppt, setNewAppt] = useState({ patientMrn: '', startTime: '', notes: '' });
+  const [currentTime, setCurrentTime] = useState(new Date());
   const { addAppointment } = useEMR();
+
+  // Update current time every minute for the red line
+  React.useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   // ── Date Logic ────────────────────────────────────────────────
 
@@ -146,6 +153,21 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
             );
           })
         }
+        {/* Red Current Time Line */}
+        {selectedDate.toDateString() === currentTime.toDateString() && (
+          <div style={{ 
+            position: 'absolute', 
+            top: `${getPosition(currentTime)}px`, 
+            left: 0, 
+            right: 0, 
+            height: 0, 
+            borderTop: '2px dashed #ef4444', 
+            zIndex: 20,
+            pointerEvents: 'none'
+          }}>
+            <div style={{ position: 'absolute', left: '-5px', top: '-6px', width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }} />
+          </div>
+        )}
       </div>
     </div>
   );
@@ -188,6 +210,19 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
                   );
                 })
               }
+              {/* Red Current Time Line for Week View */}
+              {date.toDateString() === currentTime.toDateString() && (
+                <div style={{ 
+                  position: 'absolute', 
+                  top: `${getPosition(currentTime)}px`, 
+                  left: 0, 
+                  right: 0, 
+                  height: 0, 
+                  borderTop: '2px dashed #ef4444', 
+                  zIndex: 20,
+                  pointerEvents: 'none'
+                }} />
+              )}
             </div>
           ))}
         </div>
