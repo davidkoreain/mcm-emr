@@ -224,6 +224,42 @@ type EMRContextType = {
 
 const EMRContext = createContext<EMRContextType | null>(null);
 
+export const DEMO_PATIENTS: Patient[] = [
+  { 
+    mrn: 'MRN-2026-001', name: 'Abebe Bikila', amharic: 'አበበ ቢቂላ', visitType: 'OPD', status: 'Waiting', time: '08:30 AM', 
+    registeredAt: '2026-05-13', gender: 'Male', dob: '1992-04-15', phone: '+251 911 223344', city: 'Addis Ababa', 
+    woreda: '03', kebele: '12', vitals: [], medications: [], ward: 'OPD-1', photoUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=100'
+  },
+  { 
+    mrn: 'MRN-2026-002', name: 'Sara Tekle', amharic: 'ሳራ ተክለ', visitType: 'Emergency', status: 'Consulting', time: '09:15 AM', 
+    registeredAt: '2026-05-13', gender: 'Female', dob: '1995-11-20', phone: '+251 922 334455', city: 'Bishoftu', 
+    woreda: '01', kebele: '05', vitals: [], medications: [], ward: 'ER-A', photoUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100'
+  },
+  { 
+    mrn: 'MRN-2026-003', name: 'Dawit Lema', amharic: 'ዳዊት ለማ', visitType: 'Follow-up', status: 'Waiting', time: '10:00 AM', 
+    registeredAt: '2026-05-12', gender: 'Male', dob: '1988-07-30', phone: '+251 933 445566', city: 'Adama', 
+    woreda: '05', kebele: '08', vitals: [], medications: [], ward: 'OPD-2', photoUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=100'
+  },
+  { 
+    mrn: 'MRN-2026-004', name: 'Helina Yoseph', amharic: 'ሄሊና ዮሴፍ', visitType: 'Inpatient', status: 'In Progress', time: '11:45 AM', 
+    registeredAt: '2026-05-11', gender: 'Female', dob: '2000-02-14', phone: '+251 944 556677', city: 'Hawassa', 
+    woreda: '02', kebele: '03', vitals: [], medications: [], ward: 'Ward-B', photoUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100'
+  },
+  { 
+    mrn: 'MRN-2026-005', name: 'Martha Kassa', amharic: 'ማርታ ካሳ', visitType: 'OPD', status: 'Completed', time: '02:30 PM', 
+    registeredAt: '2026-05-10', gender: 'Female', dob: '1985-09-05', phone: '+251 955 667788', city: 'Gondar', 
+    woreda: '04', kebele: '10', vitals: [], medications: [], ward: 'OPD-1', photoUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=100'
+  }
+];
+
+export const DEMO_APPOINTMENTS: Appointment[] = [
+  { id: 101, patientMrn: 'MRN-2026-001', doctorId: 1, startTime: '2026-05-13T08:00:00Z', endTime: '2026-05-13T09:00:00Z', status: 'Scheduled', createdAt: '2026-05-10' },
+  { id: 102, patientMrn: 'MRN-2026-002', doctorId: 1, startTime: '2026-05-13T07:30:00Z', endTime: '2026-05-13T08:00:00Z', status: 'Scheduled', createdAt: '2026-05-10' },
+  { id: 103, patientMrn: 'MRN-2026-003', doctorId: 1, startTime: '2026-05-14T08:45:00Z', endTime: '2026-05-14T09:15:00Z', status: 'Scheduled', createdAt: '2026-05-10' },
+  { id: 104, patientMrn: 'MRN-2026-002', doctorId: 1, startTime: '2026-05-15T09:30:00Z', endTime: '2026-05-15T10:00:00Z', status: 'Scheduled', createdAt: '2026-05-10' },
+  { id: 105, patientMrn: 'MRN-2026-005', doctorId: 1, startTime: '2026-05-16T11:30:00Z', endTime: '2026-05-16T12:00:00Z', status: 'Scheduled', createdAt: '2026-05-10' },
+];
+
 export const useEMR = (): EMRContextType => {
   const ctx = useContext(EMRContext);
   if (!ctx) throw new Error('useEMR must be used within EMRProvider');
@@ -266,10 +302,10 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchSurgeries(), []),
         safeFetch(db.fetchGuardians(), [])
       ]);
-      setPatients(p);
+      setPatients(p.length > 0 ? p : DEMO_PATIENTS);
       setStaff(s);
       setAssets(a);
-      setAppointments(app);
+      setAppointments(app.length > 0 ? app : DEMO_APPOINTMENTS);
       setDrugs(dr);
       setPrescriptions(rx);
       setLabOrders(lo);
