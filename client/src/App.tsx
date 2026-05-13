@@ -67,7 +67,9 @@ const App: React.FC = () => {
       
       <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
         <div className="sidebar-header">
-          <img src="/mcm_logo.png" alt="Logo" style={{ height: '40px' }} />
+          <a href="https://mcm-emr-theta.vercel.app/" style={{ textDecoration: 'none' }}>
+            <img src="/mcm_logo.png" alt="Logo" style={{ height: '40px' }} />
+          </a>
           <button onClick={() => setMobileMenuOpen(false)} style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer' }} className="mobile-close"><X size={24} /></button>
         </div>
         <nav>

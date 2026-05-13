@@ -28,9 +28,11 @@ const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup
     <div className="login-container">
       {/* Left panel - hidden on mobile */}
       <div className="login-left">
-        <div className="login-logo-box">
-          <img src="/mcm_logo.png" alt="MCM Logo" />
-        </div>
+        <a href="https://mcm-emr-theta.vercel.app/" className="login-logo-link">
+          <div className="login-logo-box">
+            <img src="/mcm_logo.png" alt="MCM Logo" />
+          </div>
+        </a>
         <h1 className="login-title">
           MCM Comprehensive<br />Specialized Hospital
         </h1>
@@ -50,9 +52,11 @@ const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup
         <div className="login-right-content">
           {/* Logo for mobile */}
           <div className="login-logo-mobile">
-            <div className="login-mobile-logo-box">
-              <img src="/mcm_logo.png" alt="MCM Logo" />
-            </div>
+            <a href="https://mcm-emr-theta.vercel.app/" className="login-logo-link">
+              <div className="login-mobile-logo-box">
+                <img src="/mcm_logo.png" alt="MCM Logo" />
+              </div>
+            </a>
           </div>
           
           <h2 className="select-role-title">Select Your Role</h2>
