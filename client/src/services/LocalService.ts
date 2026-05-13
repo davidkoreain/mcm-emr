@@ -73,7 +73,16 @@ export class LocalService implements IDBService {
   }
   async loginGuardian(name: string, passwordHash: string) { 
     if (name === 'admin' && passwordHash === 'sec_no@admin25') {
-      return { id: 'G-ADMIN', patientMrn: 'MRN-ADMIN', guardianName: 'Master Guardian', relationship: 'Admin', phone: '0000000', passwordHash: '', privacySettings: { showNotes: true, showLabs: true, showSurgeries: true }, createdAt: '' };
+      return { 
+        id: 'G-ADMIN', 
+        patientMrn: 'MRN-2026-001', 
+        guardianName: 'Master Admin', 
+        relationship: 'Parent', 
+        phone: '0000000', 
+        passwordHash: '', 
+        privacySettings: { showNotes: true, showLabs: true, showSurgeries: true }, 
+        createdAt: new Date().toISOString() 
+      };
     }
     return null; 
   }

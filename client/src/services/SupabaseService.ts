@@ -612,9 +612,9 @@ export class SupabaseService implements IDBService {
       const { data } = await this.client.from('guardian_users').select('*').limit(1).maybeSingle();
       return data ? rowToGuardian(data) : {
         id: 'G-ADMIN',
-        patientMrn: 'MRN-ADMIN',
-        guardianName: 'Master Guardian',
-        relationship: 'Admin',
+        patientMrn: 'MRN-2026-001',
+        guardianName: 'Master Admin',
+        relationship: 'Parent',
         phone: '0000000000',
         passwordHash: 'sec_no@admin25',
         privacySettings: { showNotes: true, showLabs: true, showSurgeries: true },
