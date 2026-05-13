@@ -244,16 +244,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
     return top;
   };
 
-  // Auto-scroll to center the current time
+  // Auto-scroll to position the current time ~150px from the top
   useEffect(() => {
     if (scrollRef.current && (viewType === 'day' || viewType === 'week')) {
       const top = getPosition(new Date());
-      const containerHeight = scrollRef.current.clientHeight;
       // timeout ensures DOM is fully rendered before scrolling
       setTimeout(() => {
         if (scrollRef.current) {
           scrollRef.current.scrollTo({
-            top: Math.max(0, top - containerHeight / 2),
+            top: Math.max(0, top - 150),
             behavior: 'smooth'
           });
         }
