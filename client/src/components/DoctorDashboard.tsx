@@ -19,6 +19,23 @@ interface Appointment {
   color: string;
 }
 
+interface HistoryItem {
+  id: number;
+  date: string;
+  doctor: string;
+  diagnosis: string;
+  summary: string;
+}
+
+const MOCK_HISTORY: HistoryItem[] = [
+  { id: 1, date: '2026-04-15', doctor: 'Dr. Solomon', diagnosis: 'Acute Bronchitis', summary: 'Persistent cough, fever (38.2C). Prescribed Amoxicillin.' },
+  { id: 2, date: '2026-02-10', doctor: 'Dr. Abraham', diagnosis: 'Hypertension', summary: 'Routine follow-up. BP 155/95. Adherent to meds.' },
+  { id: 3, date: '2025-11-20', doctor: 'Dr. Fitsum', diagnosis: 'Gastritis', summary: 'Epigastric burning pain. H. pylori Positive.' },
+  { id: 4, date: '2025-08-05', doctor: 'Dr. Solomon', diagnosis: 'Common Cold', summary: 'Mild congestion, sore throat. Rest and fluids recommended.' },
+  { id: 5, date: '2025-05-12', doctor: 'Dr. Tadesse', diagnosis: 'Annual Checkup', summary: 'All vitals within normal range. Blood work clear.' },
+  { id: 6, date: '2025-01-20', doctor: 'Dr. Abraham', diagnosis: 'Sprained Ankle', summary: 'RICE protocol, NSAIDs for pain management.' },
+];
+
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -438,20 +455,38 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
               </div>
             </div>
 
+            <div>
+              <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                Medical History
+                {MOCK_HISTORY.length > 5 && (
+                  <button 
+                    onClick={() => onViewHistory && onViewHistory({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
+                    style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    View More
+                  </button>
+                )}
+              </h4>
+              <div style={{ position: 'relative', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ position: 'absolute', left: '4px', top: '5px', bottom: '5px', width: '2px', background: '#e2e8f0' }} />
+                {MOCK_HISTORY.slice(0, 5).map((h) => (
+                  <div key={h.id} style={{ position: 'relative' }}>
+                    <div style={{ position: 'absolute', left: '-1.5rem', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: '#3b82f6', border: '2px solid white', boxShadow: '0 0 0 2px #eff6ff' }} />
+                    <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '2px' }}>{h.date} • {h.doctor}</div>
+                    <div style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b' }}>{h.diagnosis}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '2px', lineHeight: 1.4 }}>{h.summary}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <div style={{ marginTop: 'auto', display: 'flex', gap: '1rem' }}>
               <button 
-                className="btn-secondary" 
-                style={{ flex: 1, padding: '0.8rem' }}
-                onClick={() => onViewHistory && onViewHistory({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
-              >
-                History
-              </button>
-              <button 
                 className="btn-primary" 
-                style={{ flex: 1.5, padding: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}
+                style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '1rem' }}
                 onClick={() => onStartConsult && onStartConsult({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
               >
-                <Stethoscope size={20} /> Start Consult
+                <Stethoscope size={22} /> Start Consult
               </button>
             </div>
           </div>
