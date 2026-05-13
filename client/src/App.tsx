@@ -74,9 +74,9 @@ const App: React.FC = () => {
         </div>
         <nav>
           <ul className="nav-list">
-            <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}><LayoutDashboard size={20}/> <span>Dashboard</span></li>
-            <li className={`nav-item ${view === 'patients' ? 'active' : ''}`} onClick={() => { setView('patients'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Patients</span></li>
-            <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => { setView('calendar'); setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Calendar</span></li>
+            <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}><LayoutDashboard size={20}/> <span>Flow Board</span></li>
+            <li className={`nav-item ${view === 'patients' ? 'active' : ''}`} onClick={() => { setView('patients'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Patient Details</span></li>
+            <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => { setView('calendar'); setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Appointments</span></li>
             <li className={`nav-item ${view === 'registration' ? 'active' : ''}`} onClick={() => { setView('registration'); setMobileMenuOpen(false); }}><UserPlus size={20}/> <span>Registration</span></li>
             <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => { setView('inpatient'); setMobileMenuOpen(false); }}><Bed size={20}/> <span>Inpatient Ward</span></li>
             <li className={`nav-item ${view === 'staff' ? 'active' : ''}`} onClick={() => { setView('staff'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Staff</span></li>
@@ -95,7 +95,9 @@ const App: React.FC = () => {
       <main className="main-content">
         <header className="main-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 2rem', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
           <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Menu size={24} /></button>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>{view.toUpperCase()}</h1>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>
+            {view === 'dashboard' ? 'FLOW BOARD' : view === 'patients' ? 'PATIENT DETAILS' : view === 'calendar' ? 'APPOINTMENTS' : view.toUpperCase()}
+          </h1>
         </header>
         <div style={{ padding: '2rem' }}>
           <ErrorBoundary>
