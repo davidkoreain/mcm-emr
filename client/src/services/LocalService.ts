@@ -35,6 +35,8 @@ export class LocalService implements IDBService {
   async updateAppointment(id: number, changes: Partial<Appointment>) {}
   async matchPatientRecord(name: string, dob: string, phone: string) { return null; }
   async registerPortalUser(mrn: string, passwordHash: string) {}
+  async loginPortalUser(mrn: string, passwordHash: string) { return null; }
+  async isPortalUserRegistered(mrn: string) { return false; }
   async fetchDrugs() { return []; }
   async updateDrugStock(id: number, newStock: number) {}
   async fetchPrescriptions() { return []; }

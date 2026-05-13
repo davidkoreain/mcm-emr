@@ -3,8 +3,8 @@ import { UserPlus, Search, ShieldCheck, ArrowRight, X, UserSearch } from 'lucide
 import { useEMR, type Patient } from '../context/EMRContext';
 
 const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => void }> = ({ onBack, onLogin }) => {
-  const { matchPatient, registerPatientUser, setCurrentUser, addPatient } = useEMR();
-  const [step, setStep] = useState<'selection' | 'match' | 'register' | 'new'>('selection');
+  const { matchPatient, registerPatientUser, setCurrentUser, addPatient, isPortalUserRegistered, loginPortalUser } = useEMR();
+  const [step, setStep] = useState<'selection' | 'match' | 'register' | 'new' | 'login-direct' | 'login-password'>('selection');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,6 +25,9 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Direct Login Form
+  const [loginData, setLoginData] = useState({ mrn: '', password: '' });
+
   const generateMRN = () => `MRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
 
   const handleMatch = async (e: React.FormEvent) => {
@@ -35,12 +38,39 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
       const p = await matchPatient(matchData.name.trim(), matchData.dob, matchData.phone.trim());
       if (p) {
         setMatchedPatient(p);
-        setStep('register');
+        const registered = await isPortalUserRegistered(p.mrn);
+        if (registered) {
+          setStep('login-password');
+        } else {
+          setStep('register');
+        }
       } else {
         setError('No matching patient record found. Please ensure your Name, DOB, and Phone match your hospital record. (기존 환자 기록을 찾을 수 없습니다. 이름, 생년월일, 전화번호가 병원 기록과 일치하는지 확인해 주세요.)');
       }
     } catch (err: any) {
       setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    try {
+      const mrn = step === 'login-password' ? matchedPatient.mrn : loginData.mrn;
+      const pwd = step === 'login-password' ? password : loginData.password;
+      
+      const p = await loginPortalUser(mrn, pwd);
+      if (p) {
+        setCurrentUser(p);
+        onLogin(p.mrn);
+      } else {
+        setError('Invalid MRN or Password. (의료등록번호 또는 비밀번호가 올바르지 않습니다.)');
+      }
+    } catch (err: any) {
+      setError('Login failed. (로그인에 실패했습니다.)');
     } finally {
       setLoading(false);
     }
@@ -113,12 +143,16 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
               {step === 'match' && 'Find My Record (기본 정보 찾기)'}
               {step === 'new' && 'New Registration (신규 가입)'}
               {step === 'register' && 'Create Your Account (계정 생성)'}
+              {step === 'login-direct' && 'Portal Login (포털 로그인)'}
+              {step === 'login-password' && 'Enter Password (비밀번호 입력)'}
             </h2>
             <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.25rem' }}>
               {step === 'selection' && 'Choose your entry path (가입 방법을 선택해 주세요)'}
               {step === 'match' && 'Verify your hospital record to continue (병원 기록을 확인해 주세요)'}
               {step === 'new' && 'Enter your details to create a new record (기본 정보를 입력해 주세요)'}
               {step === 'register' && 'Set your secure password (보안 비밀번호를 설정해 주세요)'}
+              {step === 'login-direct' && 'Sign in with your MRN and password (ID와 비밀번호로 로그인)'}
+              {step === 'login-password' && `Welcome back, ${matchedPatient?.name}`}
             </p>
           </div>
           <button onClick={onBack} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={24} /></button>
@@ -133,17 +167,36 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
         {step === 'selection' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <button 
+              onClick={() => setStep('login-direct')}
+              style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.5rem', background: '#f8fafc', border: '2px solid #2563eb', borderRadius: '1rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
+            >
+              <div style={{ background: '#dbeafe', padding: '1rem', borderRadius: '0.75rem' }}>
+                <ShieldCheck size={28} color="#2563eb" />
+              </div>
+              <div>
+                <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>I have an account (이미 계정이 있습니다)</div>
+                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Login with MRN and Password (로그인하기)</div>
+              </div>
+            </button>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '0.5rem 0' }}>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '600' }}>OR (또는)</div>
+              <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+            </div>
+
+            <button 
               onClick={() => setStep('match')}
               style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', padding: '1.5rem', background: '#f8fafc', border: '2px solid #e2e8f0', borderRadius: '1rem', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' }}
               onMouseOver={e => (e.currentTarget.style.borderColor = '#2563eb')}
               onMouseOut={e => (e.currentTarget.style.borderColor = '#e2e8f0')}
             >
-              <div style={{ background: '#dbeafe', padding: '1rem', borderRadius: '0.75rem' }}>
-                <Search size={28} color="#2563eb" />
+              <div style={{ background: '#f1f5f9', padding: '1rem', borderRadius: '0.75rem' }}>
+                <Search size={28} color="#64748b" />
               </div>
               <div>
-                <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>Existing Patient (기존 환자 정보 찾기)</div>
-                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>I have visited MCM Hospital before (병원 방문 이력이 있는 경우)</div>
+                <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>Existing Patient (병원 기록 찾기)</div>
+                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>First time portal user with hospital record (병원 기록은 있지만 포털이 처음인 경우)</div>
               </div>
             </button>
 
@@ -157,8 +210,8 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
                 <UserPlus size={28} color="#db2777" />
               </div>
               <div>
-                <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>New Patient (신규 가입하기)</div>
-                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>I am a new patient at MCM (처음 방문하시는 경우)</div>
+                <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>New Patient (신규 환자 가입)</div>
+                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>I am a completely new patient at MCM (병원 방문이 처음인 경우)</div>
               </div>
             </button>
           </div>
@@ -230,7 +283,7 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
         {step === 'register' && (
           <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ background: '#f0fdf4', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #dcfce7', marginBottom: '0.5rem' }}>
-              <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: '600', textTransform: 'uppercase' }}>Record Linked (기록 연결됨)</div>
+              <div style={{ fontSize: '0.75rem', color: '#166534', fontWeight: '600', textTransform: 'uppercase' }}>Record Found (기록 찾음)</div>
               <div style={{ fontWeight: '700', color: '#166534' }}>{matchedPatient.name}</div>
               <div style={{ fontSize: '0.8rem', color: '#166534' }}>MRN: {matchedPatient.mrn}</div>
             </div>
@@ -248,6 +301,44 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
               {loading ? 'Creating...' : <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Complete Signup <ShieldCheck size={18} /></span>}
             </button>
             <button type="button" onClick={() => setStep('selection')} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.875rem', cursor: 'pointer' }}>Change Record (다른 기록 선택)</button>
+          </form>
+        )}
+
+        {step === 'login-direct' && (
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div>
+              <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>Medical Record Number (MRN)</label>
+              <input type="text" required placeholder="e.g. MRN-2026-0001" value={loginData.mrn} onChange={e => setLoginData(d => ({ ...d, mrn: e.target.value }))} 
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.75rem', fontSize: '1rem' }} />
+            </div>
+            <div>
+              <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>Password (비밀번호)</label>
+              <input type="password" required value={loginData.password} onChange={e => setLoginData(d => ({ ...d, password: e.target.value }))}
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.75rem', fontSize: '1rem' }} />
+            </div>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', borderRadius: '0.75rem', marginTop: '1rem' }}>
+              {loading ? 'Logging in...' : <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Login <ArrowRight size={18} /></span>}
+            </button>
+            <button type="button" onClick={() => setStep('selection')} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.875rem', cursor: 'pointer' }}>Back to selection (이전으로)</button>
+          </form>
+        )}
+
+        {step === 'login-password' && (
+          <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            <div style={{ background: '#eff6ff', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #bfdbfe', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.75rem', color: '#1e40af', fontWeight: '600', textTransform: 'uppercase' }}>Existing Account Found (기존 계정 찾음)</div>
+              <div style={{ fontWeight: '700', color: '#1e40af' }}>{matchedPatient.name}</div>
+              <div style={{ fontSize: '0.8rem', color: '#1e40af' }}>MRN: {matchedPatient.mrn}</div>
+            </div>
+            <div>
+              <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>Enter Password (비밀번호 입력)</label>
+              <input type="password" required value={password} onChange={e => setPassword(e.target.value)}
+                style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.75rem', fontSize: '1rem' }} />
+            </div>
+            <button type="submit" disabled={loading} className="btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', borderRadius: '0.75rem', marginTop: '1rem', background: '#2563eb' }}>
+              {loading ? 'Logging in...' : <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Login <ArrowRight size={18} /></span>}
+            </button>
+            <button type="button" onClick={() => setStep('selection')} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: '0.875rem', cursor: 'pointer' }}>Back to selection (이전으로)</button>
           </form>
         )}
       </div>

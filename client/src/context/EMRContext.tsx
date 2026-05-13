@@ -211,6 +211,8 @@ type EMRContextType = {
   updatePrivacy: (guardianId: string, settings: GuardianUser['privacySettings']) => Promise<void>;
   matchPatient: (name: string, dob: string, phone: string) => Promise<Patient | null>;
   registerPatientUser: (mrn: string, passwordHash: string) => Promise<void>;
+  loginPortalUser: (mrn: string, passwordHash: string) => Promise<Patient | null>;
+  isPortalUserRegistered: (mrn: string) => Promise<boolean>;
   // Pharmacy
   dispenseMedication: (prescriptionId: number, drugId: number, qty: number) => Promise<void>;
   // Lab
@@ -329,6 +331,14 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await db.registerPortalUser(mrn, passwordHash);
   };
 
+  const loginPortalUser = async (mrn: string, passwordHash: string) => {
+    return await db.loginPortalUser(mrn, passwordHash);
+  };
+
+  const isPortalUserRegistered = async (mrn: string) => {
+    return await db.isPortalUserRegistered(mrn);
+  };
+
   const addSurgery = async (s: Omit<Surgery, 'id' | 'createdAt'>) => {
     await db.insertSurgery(s);
     await refreshData();
@@ -369,7 +379,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian,
       addPatient, updatePatient, addVitals, addStaff, addAsset, updateAsset,
-      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser,
+      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered,
       dispenseMedication, submitLabResult
     }}>
       {children}

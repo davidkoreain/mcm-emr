@@ -25,6 +25,12 @@
  *   status TEXT DEFAULT 'Functional', location TEXT DEFAULT '', added_at TEXT DEFAULT '',
  *   rfid_tag TEXT, barcode TEXT, photo_url TEXT
  * );
+ *
+ * CREATE TABLE patient_users (
+ *   patient_mrn TEXT PRIMARY KEY REFERENCES patients(mrn),
+ *   password_hash TEXT NOT NULL,
+ *   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+ * );
  * ─────────────────────────────────────────────────────────────────
  *
  * Migration path to Express + PostgreSQL:
@@ -407,6 +413,28 @@ export class SupabaseService implements IDBService {
       password_hash: passwordHash,
     });
     if (error) throw new Error(error.message);
+  }
+
+  async loginPortalUser(mrn: string, passwordHash: string): Promise<Patient | null> {
+    const { data, error } = await this.client
+      .from('patient_users')
+      .select('*, patients(*)')
+      .eq('patient_mrn', mrn)
+      .eq('password_hash', passwordHash)
+      .single();
+    
+    if (error || !data) return null;
+    return rowToPatient(data.patients);
+  }
+
+  async isPortalUserRegistered(mrn: string): Promise<boolean> {
+    const { count, error } = await this.client
+      .from('patient_users')
+      .select('*', { count: 'exact', head: true })
+      .eq('patient_mrn', mrn);
+    
+    if (error) return false;
+    return (count ?? 0) > 0;
   }
 
   // Pharmacy
