@@ -27,14 +27,93 @@ interface HistoryItem {
   summary: string;
 }
 
-const MOCK_HISTORY: HistoryItem[] = [
-  { id: 1, date: '2026-04-15', doctor: 'Dr. Solomon', diagnosis: 'Acute Bronchitis', summary: 'Persistent cough, fever (38.2C). Prescribed Amoxicillin.' },
-  { id: 2, date: '2026-02-10', doctor: 'Dr. Abraham', diagnosis: 'Hypertension', summary: 'Routine follow-up. BP 155/95. Adherent to meds.' },
-  { id: 3, date: '2025-11-20', doctor: 'Dr. Fitsum', diagnosis: 'Gastritis', summary: 'Epigastric burning pain. H. pylori Positive.' },
-  { id: 4, date: '2025-08-05', doctor: 'Dr. Solomon', diagnosis: 'Common Cold', summary: 'Mild congestion, sore throat. Rest and fluids recommended.' },
-  { id: 5, date: '2025-05-12', doctor: 'Dr. Tadesse', diagnosis: 'Annual Checkup', summary: 'All vitals within normal range. Blood work clear.' },
-  { id: 6, date: '2025-01-20', doctor: 'Dr. Abraham', diagnosis: 'Sprained Ankle', summary: 'RICE protocol, NSAIDs for pain management.' },
-];
+const PATIENT_HISTORY_MAP: Record<string, HistoryItem[]> = {
+  'MRN-2026-001': [
+    { id: 101, date: '2026-04-15', doctor: 'Dr. Solomon', diagnosis: 'Acute Bronchitis', summary: 'Persistent cough, fever (38.2C). Prescribed Amoxicillin.' },
+    { id: 102, date: '2026-02-10', doctor: 'Dr. Abraham', diagnosis: 'Hypertension', summary: 'Routine follow-up. BP 155/95. Adherent to meds.' },
+    { id: 103, date: '2025-11-20', doctor: 'Dr. Fitsum', diagnosis: 'Gastritis', summary: 'Epigastric burning pain. H. pylori Positive.' },
+    { id: 104, date: '2025-08-05', doctor: 'Dr. Solomon', diagnosis: 'Common Cold', summary: 'Mild congestion, sore throat. Rest and fluids.' },
+    { id: 105, date: '2025-05-12', doctor: 'Dr. Tadesse', diagnosis: 'Annual Checkup', summary: 'All vitals normal. Blood work clear.' },
+    { id: 106, date: '2025-01-20', doctor: 'Dr. Abraham', diagnosis: 'Sprained Ankle', summary: 'RICE protocol, NSAIDs for pain management.' },
+  ],
+  'MRN-2026-002': [
+    { id: 201, date: '2026-04-20', doctor: 'Dr. Abraham', diagnosis: 'Gestational Diabetes', summary: 'Elevated fasting glucose 128 mg/dL. Dietary counseling provided.' },
+    { id: 202, date: '2026-03-05', doctor: 'Dr. Solomon', diagnosis: 'Iron Deficiency Anemia', summary: 'Hemoglobin 9.8 g/dL. Started ferrous sulfate 325mg daily.' },
+    { id: 203, date: '2025-12-15', doctor: 'Dr. Fitsum', diagnosis: 'Prenatal Visit', summary: 'Routine 20-week scan. No abnormalities detected.' },
+  ],
+  'MRN-2026-003': [
+    { id: 301, date: '2026-05-01', doctor: 'Dr. Tadesse', diagnosis: 'Annual Physical', summary: 'All labs within normal limits. Cholesterol borderline 210 mg/dL.' },
+    { id: 302, date: '2025-09-10', doctor: 'Dr. Solomon', diagnosis: 'Hyperlipidemia', summary: 'LDL 165 mg/dL. Started Atorvastatin 20mg. Diet modification advised.' },
+    { id: 303, date: '2025-03-22', doctor: 'Dr. Abraham', diagnosis: 'Seasonal Allergies', summary: 'Sneezing, rhinorrhea. Prescribed Cetirizine 10mg daily.' },
+    { id: 304, date: '2024-11-05', doctor: 'Dr. Fitsum', diagnosis: 'Lower Back Pain', summary: 'Muscle spasm L4-L5 region. Prescribed diclofenac and PT referral.' },
+  ],
+  'MRN-2026-004': [
+    { id: 401, date: '2026-05-10', doctor: 'Dr. Solomon', diagnosis: 'Pneumonia', summary: 'Right lower lobe consolidation on X-ray. Started IV Ceftriaxone.' },
+    { id: 402, date: '2026-01-18', doctor: 'Dr. Abraham', diagnosis: 'Acute Sinusitis', summary: 'Facial pain, purulent discharge. Amoxicillin-Clavulanate 7 days.' },
+    { id: 403, date: '2025-07-25', doctor: 'Dr. Tadesse', diagnosis: 'Migraine', summary: 'Recurrent throbbing headache with aura. Prescribed Sumatriptan.' },
+  ],
+  'MRN-2026-005': [
+    { id: 501, date: '2026-04-08', doctor: 'Dr. Fitsum', diagnosis: 'Lumbar Disc Herniation', summary: 'MRI confirms L5-S1 disc protrusion. Referral to orthopedics.' },
+    { id: 502, date: '2026-01-22', doctor: 'Dr. Solomon', diagnosis: 'Chronic Back Pain', summary: 'Pain score 7/10. Started Gabapentin 300mg. Physical therapy 2x/week.' },
+    { id: 503, date: '2025-10-14', doctor: 'Dr. Abraham', diagnosis: 'Sciatica', summary: 'Left leg radiculopathy. Epidural injection recommended.' },
+    { id: 504, date: '2025-06-30', doctor: 'Dr. Tadesse', diagnosis: 'Muscle Strain', summary: 'Acute onset after lifting. NSAID and muscle relaxant prescribed.' },
+    { id: 505, date: '2025-02-11', doctor: 'Dr. Fitsum', diagnosis: 'Vitamin D Deficiency', summary: '25-OH Vitamin D: 12 ng/mL. Cholecalciferol 50000 IU weekly x8.' },
+    { id: 506, date: '2024-09-20', doctor: 'Dr. Solomon', diagnosis: 'Annual Checkup', summary: 'CBC normal. Lipid panel within range. BMI 21.5.' },
+  ],
+  'MRN-2026-006': [
+    { id: 601, date: '2026-04-28', doctor: 'Dr. Abraham', diagnosis: 'Type 2 Diabetes', summary: 'HbA1c 8.2%. Added Metformin 1000mg BID. Glucometer provided.' },
+    { id: 602, date: '2026-02-15', doctor: 'Dr. Fitsum', diagnosis: 'Diabetic Neuropathy', summary: 'Tingling in feet bilateral. Started Pregabalin 75mg BID.' },
+    { id: 603, date: '2025-11-03', doctor: 'Dr. Solomon', diagnosis: 'Obesity Management', summary: 'BMI 30.4. Dietary plan and exercise regimen discussed.' },
+  ],
+  'MRN-2026-007': [
+    { id: 701, date: '2026-05-05', doctor: 'Dr. Tadesse', diagnosis: 'Post-Op Appendectomy', summary: 'Wound clean and dry. Sutures removed. No signs of infection.' },
+    { id: 702, date: '2026-04-22', doctor: 'Dr. Solomon', diagnosis: 'Acute Appendicitis', summary: 'Emergency appendectomy performed. Uncomplicated recovery.' },
+    { id: 703, date: '2025-08-18', doctor: 'Dr. Abraham', diagnosis: 'Food Poisoning', summary: 'Nausea, vomiting, diarrhea x2 days. IV fluids and antiemetics.' },
+  ],
+  'MRN-2026-008': [
+    { id: 801, date: '2026-05-08', doctor: 'Dr. Fitsum', diagnosis: 'Recurrent UTI', summary: 'Dysuria, frequency. Urine culture: E. coli. Nitrofurantoin 7 days.' },
+    { id: 802, date: '2026-02-28', doctor: 'Dr. Solomon', diagnosis: 'UTI', summary: 'Second episode this year. Prophylactic cranberry extract advised.' },
+    { id: 803, date: '2025-12-10', doctor: 'Dr. Abraham', diagnosis: 'Vaginal Candidiasis', summary: 'Pruritis and discharge. Fluconazole 150mg single dose.' },
+    { id: 804, date: '2025-09-05', doctor: 'Dr. Tadesse', diagnosis: 'Pelvic Pain', summary: 'US pelvis normal. Suspected dysmenorrhea. Ibuprofen PRN.' },
+  ],
+  'MRN-2026-009': [
+    { id: 901, date: '2026-05-11', doctor: 'Dr. Solomon', diagnosis: 'Chest Pain - NSTEMI R/O', summary: 'Troponin I: 0.04. Serial ECGs ordered. Aspirin 325mg stat.' },
+    { id: 902, date: '2026-03-15', doctor: 'Dr. Abraham', diagnosis: 'Hypertension Stage 2', summary: 'BP 165/100. Added Lisinopril 20mg. 24h ambulatory BP monitoring.' },
+    { id: 903, date: '2025-10-28', doctor: 'Dr. Fitsum', diagnosis: 'Atrial Fibrillation', summary: 'Palpitations, irregular pulse. Started Rivaroxaban. Cardiology referral.' },
+  ],
+  'MRN-2026-010': [
+    { id: 1001, date: '2026-05-06', doctor: 'Dr. Tadesse', diagnosis: 'Prenatal Visit - 28w', summary: 'GTT result: 148 mg/dL. Borderline. Repeat in 1 week.' },
+    { id: 1002, date: '2026-04-01', doctor: 'Dr. Solomon', diagnosis: 'Prenatal Visit - 24w', summary: 'Fetal growth on track. Maternal weight +6kg. Iron supplement.' },
+    { id: 1003, date: '2026-02-20', doctor: 'Dr. Abraham', diagnosis: 'Prenatal Visit - 18w', summary: 'Anomaly scan normal. Gender disclosure declined.' },
+  ],
+  'MRN-2026-011': [
+    { id: 1101, date: '2026-05-09', doctor: 'Dr. Abraham', diagnosis: 'Hypertensive Crisis', summary: 'BP 210/120. IV Labetalol administered. ICU admission considered.' },
+    { id: 1102, date: '2026-03-25', doctor: 'Dr. Fitsum', diagnosis: 'Resistant Hypertension', summary: 'On triple therapy. Added Spironolactone 25mg. Renal artery US ordered.' },
+    { id: 1103, date: '2025-12-30', doctor: 'Dr. Solomon', diagnosis: 'Chronic Kidney Disease', summary: 'eGFR 52 mL/min. Stage 3A CKD. Nephrology referral made.' },
+    { id: 1104, date: '2025-08-15', doctor: 'Dr. Tadesse', diagnosis: 'Gout Flare', summary: 'Acute monoarthritis right great toe. Colchicine 0.6mg BID.' },
+  ],
+  'MRN-2026-012': [
+    { id: 1201, date: '2026-05-02', doctor: 'Dr. Solomon', diagnosis: 'Allergic Rhinitis', summary: 'Seasonal exacerbation. Fluticasone nasal spray. Loratadine PRN.' },
+    { id: 1202, date: '2025-11-08', doctor: 'Dr. Fitsum', diagnosis: 'Asthma Exacerbation', summary: 'Wheezing bilateral. Peak flow 280. Salbutamol nebulizer x3.' },
+    { id: 1203, date: '2025-06-20', doctor: 'Dr. Abraham', diagnosis: 'Conjunctivitis', summary: 'Bilateral eye redness, tearing. Olopatadine eye drops prescribed.' },
+  ],
+  'MRN-2026-013': [
+    { id: 1301, date: '2026-04-25', doctor: 'Dr. Fitsum', diagnosis: 'H. pylori Follow-up', summary: 'Post-eradication breath test: Negative. Treatment successful.' },
+    { id: 1302, date: '2026-01-10', doctor: 'Dr. Solomon', diagnosis: 'Peptic Ulcer Disease', summary: 'EGD: Duodenal ulcer 8mm. H. pylori positive. Triple therapy started.' },
+    { id: 1303, date: '2025-09-18', doctor: 'Dr. Abraham', diagnosis: 'GERD', summary: 'Heartburn, regurgitation. Omeprazole 20mg BID. Lifestyle changes.' },
+  ],
+  'MRN-2026-014': [
+    { id: 1401, date: '2026-05-07', doctor: 'Dr. Tadesse', diagnosis: 'Bilateral Knee OA', summary: 'Crepitus both knees. X-ray: joint space narrowing. Hyaluronic acid injection.' },
+    { id: 1402, date: '2026-02-22', doctor: 'Dr. Solomon', diagnosis: 'Physical Therapy Review', summary: 'ROM improved 15 degrees. Continue quadriceps strengthening.' },
+    { id: 1403, date: '2025-10-05', doctor: 'Dr. Fitsum', diagnosis: 'Knee Pain', summary: 'Bilateral medial joint line tenderness. MRI ordered.' },
+    { id: 1404, date: '2025-05-30', doctor: 'Dr. Abraham', diagnosis: 'Obesity', summary: 'BMI 29.1. Weight loss target 10kg. Dietitian referral made.' },
+  ],
+  'MRN-2026-015': [
+    { id: 1501, date: '2026-04-30', doctor: 'Dr. Abraham', diagnosis: 'Iron Deficiency Anemia', summary: 'Hb 10.2 g/dL (was 8.5). Improving on oral iron. Continue 3 more months.' },
+    { id: 1502, date: '2026-01-15', doctor: 'Dr. Solomon', diagnosis: 'Severe Anemia', summary: 'Hb 8.5 g/dL. Ferritin 5 ng/mL. IV iron infusion administered.' },
+    { id: 1503, date: '2025-10-20', doctor: 'Dr. Fitsum', diagnosis: 'Fatigue & Pallor', summary: 'Generalized weakness 2 weeks. CBC shows microcytic anemia. Iron studies ordered.' },
+  ],
+};
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -60,8 +139,6 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const { addAppointment } = useEMR();
 
   const canDeleteHistory = role === 'Admin' || role === 'Doctor';
-  const visibleHistory = MOCK_HISTORY.filter(h => !deletedHistoryIds.includes(h.id));
-
   // Update current time every minute for the red line
   React.useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -153,6 +230,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
     if (selectedMrn) return patients.find(p => p.mrn === selectedMrn) || null;
     return null;
   }, [selectedAppointment, selectedMrn, patients]);
+
+  const visibleHistory = useMemo(() => {
+    const historyList = selectedPatient ? (PATIENT_HISTORY_MAP[selectedPatient.mrn] || []) : [];
+    return historyList.filter(h => !deletedHistoryIds.includes(h.id));
+  }, [selectedPatient, deletedHistoryIds]);
 
   const getPosition = (date: Date) => {
     const h = date.getHours();
@@ -444,7 +526,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             <div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>Reason for Visit</h4>
               <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '0.75rem', fontSize: '0.95rem', color: '#334155', borderLeft: '4px solid #3b82f6', lineHeight: 1.6 }}>
-                Patient reports persistent headache and fatigue for 3 days. History of hypertension. Requires review of current medication plan.
+                {selectedPatient.diagnosisSummary || 'Patient reports persistent headache and fatigue for 3 days. History of hypertension. Requires review of current medication plan.'}
               </div>
             </div>
 
@@ -453,15 +535,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
                 <div style={{ textAlign: 'center', padding: '1rem 0.5rem', background: '#fff1f2', borderRadius: '0.75rem', border: '1px solid #ffe4e6' }}>
                   <div style={{ fontSize: '0.7rem', color: '#be123c', fontWeight: '800', marginBottom: '0.25rem' }}>HR</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#9f1239' }}>78</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#9f1239' }}>{selectedPatient.vitals?.[0]?.heartRate || '78'}</div>
                 </div>
                 <div style={{ textAlign: 'center', padding: '1rem 0.5rem', background: '#ecfdf5', borderRadius: '0.75rem', border: '1px solid #d1fae5' }}>
                   <div style={{ fontSize: '0.7rem', color: '#047857', fontWeight: '800', marginBottom: '0.25rem' }}>BP</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#065f46' }}>120/80</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#065f46' }}>{selectedPatient.vitals?.[0]?.bpSystolic || '120'}/{selectedPatient.vitals?.[0]?.bpDiastolic || '80'}</div>
                 </div>
                 <div style={{ textAlign: 'center', padding: '1rem 0.5rem', background: '#eff6ff', borderRadius: '0.75rem', border: '1px solid #dbeafe' }}>
                   <div style={{ fontSize: '0.7rem', color: '#1d4ed8', fontWeight: '800', marginBottom: '0.25rem' }}>SPO2</div>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e40af' }}>98%</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e40af' }}>{selectedPatient.vitals?.[0]?.spo2 || '98'}%</div>
                 </div>
               </div>
             </div>
