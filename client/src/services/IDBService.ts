@@ -45,6 +45,7 @@ export interface IDBService {
   fetchGuardians(): Promise<GuardianUser[]>;
   insertGuardian(g: Omit<GuardianUser, 'id' | 'createdAt'>): Promise<void>;
   updateGuardianPrivacy(id: string, settings: GuardianUser['privacySettings']): Promise<void>;
+  loginGuardian(name: string, passwordHash: string): Promise<GuardianUser | null>;
   // staff auth
   loginStaff(name: string, passwordHash: string): Promise<StaffMember | null>;
 }

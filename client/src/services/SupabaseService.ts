@@ -567,4 +567,16 @@ export class SupabaseService implements IDBService {
     }).eq('id', id);
     if (error) throw new Error(error.message);
   }
+
+  async loginGuardian(name: string, passwordHash: string): Promise<GuardianUser | null> {
+    const { data, error } = await this.client
+      .from('guardian_users')
+      .select('*')
+      .eq('guardian_name', name)
+      .eq('password_hash', passwordHash)
+      .maybeSingle();
+    
+    if (error || !data) return null;
+    return rowToGuardian(data);
+  }
 }

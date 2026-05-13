@@ -52,4 +52,5 @@ export class LocalService implements IDBService {
   async insertGuardian(g: Omit<GuardianUser, 'id' | 'createdAt'>) {}
   async updateGuardianPrivacy(id: string, settings: any) {}
   async loginStaff(name: string, passwordHash: string) { return null; }
+  async loginGuardian(name: string, passwordHash: string) { return null; }
 }
