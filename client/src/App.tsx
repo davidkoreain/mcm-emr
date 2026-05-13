@@ -113,7 +113,11 @@ const App: React.FC = () => {
         <div style={{ padding: '2rem' }}>
           <ErrorBoundary>
             {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : (
-              <FlowBoard onStartConsult={(p) => { setSelectedPatient(p); setView('encounter'); }} />
+              <DoctorDashboard 
+                onStartConsult={(p) => { setSelectedPatient(p); setView('encounter'); }}
+                onViewHistory={(p) => { setSelectedPatient(p); setView('patients'); }}
+                onNewAppointment={() => setView('calendar')}
+              />
             ))}
             {view === 'patients' && (
               <PatientManagement 

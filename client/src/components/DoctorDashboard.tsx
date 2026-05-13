@@ -76,24 +76,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
 
   // ── Data Binding ──────────────────────────────────────────────
 
-  const selectedPatient = useMemo(() => {
-    if (!selectedMrn) return null;
-    return patients.find(p => p.mrn === selectedMrn) || null;
-  }, [selectedMrn, patients]);
-
   const displayAppointments = useMemo(() => {
-    const mock = [
-      { id: 1, mrn: 'MRN-2026-001', date: new Date(2026, 4, 11, 8, 0), duration: 1, color: '#3b82f6' },
-      { id: 2, mrn: 'MRN-2026-002', date: new Date(2026, 4, 11, 7, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 3, mrn: 'MRN-2026-003', date: new Date(2026, 4, 12, 8, 45), duration: 0.5, color: '#3b82f6' },
-      { id: 4, mrn: 'MRN-2026-002', date: new Date(2026, 4, 13, 9, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 5, mrn: 'MRN-2026-005', date: new Date(2026, 4, 14, 11, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 6, mrn: 'MRN-2026-005', date: new Date(2026, 4, 14, 10, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 7, mrn: 'MRN-2026-001', date: new Date(2026, 4, 15, 8, 15), duration: 0.5, color: '#3b82f6' },
-      { id: 8, mrn: 'MRN-2026-001', date: new Date(2026, 4, 16, 10, 0), duration: 0.5, color: '#3b82f6' },
-      { id: 9, mrn: 'MRN-2026-003', date: new Date(2026, 4, 16, 8, 45), duration: 0.5, color: '#3b82f6' },
-    ];
-
+    // Merge database appointments with context-level demo data
     const actual = appointments.map(app => ({
       id: app.id,
       mrn: app.patientMrn,
@@ -102,17 +86,25 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ onStartConsult, onVie
       color: '#2563eb'
     }));
 
-    const combined = actual.length > 0 ? actual : mock;
+    // If actual is empty, the EMRContext already provides DEMO_APPOINTMENTS as fallback
+    // But we can add a local safeguard here for extra reliability during demos
+    const combined = actual;
 
-    // Always fetch the name from the current patients list to ensure consistency
     return combined.map(item => {
       const patient = patients.find(p => p.mrn === item.mrn);
       return {
         ...item,
-        name: patient?.name || 'Unknown Patient'
+        name: patient?.name || 'Unknown Patient',
+        patient: patient // Keep the whole patient object for the detail view
       };
     });
   }, [appointments, patients]);
+
+  const selectedAppointment = useMemo(() => {
+    return displayAppointments.find(app => app.mrn === selectedMrn);
+  }, [selectedMrn, displayAppointments]);
+
+  const selectedPatient = selectedAppointment?.patient || null;
 
   const getPosition = (date: Date) => {
     const h = date.getHours();
