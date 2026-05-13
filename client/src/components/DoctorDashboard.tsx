@@ -298,7 +298,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                 {apps.map(app => (
                   <div 
                     key={app.id} 
-                    onClick={(e) => { e.stopPropagation(); setSelectedMrn(app.mrn); }}
+                    onClick={(e) => { e.stopPropagation(); onSelectMrn && onSelectMrn(app.mrn); }}
                     style={{ 
                       fontSize: '0.65rem', 
                       background: selectedMrn === app.mrn ? '#1e40af' : app.color, 
