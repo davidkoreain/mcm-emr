@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Clock, User, MoreVertical, Plus, CheckCircle, 
   Search, Filter, LayoutGrid, List as ListIcon,
-  Activity, Stethoscope
+  Activity, Stethoscope, X
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import Avatar from './Avatar';
@@ -143,7 +143,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
     return displayAppointments.find(app => app.mrn === selectedMrn);
   }, [selectedMrn, displayAppointments]);
 
-  const selectedPatient = selectedAppointment?.patient || null;
+  const selectedPatient = useMemo(() => {
+    if (selectedAppointment?.patient) return selectedAppointment.patient;
+    if (selectedMrn) return patients.find(p => p.mrn === selectedMrn) || null;
+    return null;
+  }, [selectedAppointment, selectedMrn, patients]);
 
   const getPosition = (date: Date) => {
     const h = date.getHours();
