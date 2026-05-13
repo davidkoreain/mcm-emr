@@ -25,7 +25,7 @@ export interface IDBService {
   // portal auth
   matchPatientRecord(name: string, dob: string, phone: string): Promise<Patient | null>;
   registerPortalUser(mrn: string, passwordHash: string): Promise<void>;
-  loginPortalUser(mrn: string, passwordHash: string): Promise<Patient | null>;
+  loginPortalUser(name: string, passwordHash: string): Promise<Patient | null>;
   isPortalUserRegistered(mrn: string): Promise<boolean>;
   // pharmacy
   fetchDrugs(): Promise<Drug[]>;

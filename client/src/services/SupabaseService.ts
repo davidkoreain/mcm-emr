@@ -415,15 +415,15 @@ export class SupabaseService implements IDBService {
     if (error) throw new Error(error.message);
   }
 
-  async loginPortalUser(mrn: string, passwordHash: string): Promise<Patient | null> {
+  async loginPortalUser(name: string, passwordHash: string): Promise<Patient | null> {
     const { data, error } = await this.client
       .from('patient_users')
-      .select('*, patients(*)')
-      .eq('patient_mrn', mrn)
+      .select('*, patients!inner(*)')
+      .eq('patients.name', name)
       .eq('password_hash', passwordHash)
       .single();
     
-    if (error || !data) return null;
+    if (error || !data || !data.patients) return null;
     return rowToPatient(data.patients);
   }
 

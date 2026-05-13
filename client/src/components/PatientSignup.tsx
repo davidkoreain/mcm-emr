@@ -26,7 +26,7 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Direct Login Form
-  const [loginData, setLoginData] = useState({ mrn: '', password: '' });
+  const [loginData, setLoginData] = useState({ name: '', password: '' });
 
   const generateMRN = () => `MRN-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
 
@@ -59,10 +59,10 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
     setLoading(true);
     setError(null);
     try {
-      const mrn = step === 'login-password' ? matchedPatient.mrn : loginData.mrn;
+      const loginName = step === 'login-password' ? matchedPatient.name : loginData.name;
       const pwd = step === 'login-password' ? password : loginData.password;
       
-      const p = await loginPortalUser(mrn, pwd);
+      const p = await loginPortalUser(loginName, pwd);
       if (p) {
         setCurrentUser(p);
         onLogin(p.mrn);
@@ -151,7 +151,7 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
               {step === 'match' && 'Verify your hospital record to continue (병원 기록을 확인해 주세요)'}
               {step === 'new' && 'Enter your details to create a new record (기본 정보를 입력해 주세요)'}
               {step === 'register' && 'Set your secure password (보안 비밀번호를 설정해 주세요)'}
-              {step === 'login-direct' && 'Sign in with your MRN and password (ID와 비밀번호로 로그인)'}
+              {step === 'login-direct' && 'Sign in with your Name and password (이름과 비밀번호로 로그인)'}
               {step === 'login-password' && `Welcome back, ${matchedPatient?.name}`}
             </p>
           </div>
@@ -175,7 +175,7 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
               </div>
               <div>
                 <div style={{ fontWeight: '700', fontSize: '1.1rem', color: '#1e293b' }}>I have an account (이미 계정이 있습니다)</div>
-                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Login with MRN and Password (로그인하기)</div>
+                <div style={{ fontSize: '0.875rem', color: '#64748b' }}>Login with Name and Password (로그인하기)</div>
               </div>
             </button>
 
@@ -307,8 +307,8 @@ const PatientSignup: React.FC<{ onBack: () => void; onLogin: (mrn: string) => vo
         {step === 'login-direct' && (
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div>
-              <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>Medical Record Number (MRN)</label>
-              <input type="text" required placeholder="e.g. MRN-2026-0001" value={loginData.mrn} onChange={e => setLoginData(d => ({ ...d, mrn: e.target.value }))} 
+              <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.5rem' }}>Full Name (영문 성함)</label>
+              <input type="text" required placeholder="e.g. Abebe Bikila" value={loginData.name} onChange={e => setLoginData(d => ({ ...d, name: e.target.value }))} 
                 style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.75rem', fontSize: '1rem' }} />
             </div>
             <div>
