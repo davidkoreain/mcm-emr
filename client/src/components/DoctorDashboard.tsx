@@ -10,6 +10,15 @@ import Avatar from './Avatar';
 
 // ── Types & Mock Data ──────────────────────────────────────────
 
+interface Appointment {
+  id: number;
+  name: string;
+  day: number;
+  time: string;
+  duration: number;
+  color: string;
+}
+
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -31,21 +40,32 @@ const DoctorDashboard: React.FC = () => {
 
   // Mock Appointments for visualization (if DB is empty)
   const displayAppointments = useMemo(() => {
-    if (appointments.length > 0) return appointments;
-    
-    // Fallback mock data matching the user's requested style
-    return [
-      { id: 1, patientName: 'John Smith', day: 0, time: '8:00', duration: 1, color: '#3b82f6' },
-      { id: 2, patientName: 'Sarah Khan', day: 0, time: '7:30', duration: 0.5, color: '#3b82f6' },
-      { id: 3, patientName: 'Igra', day: 1, time: '8:45', duration: 0.5, color: '#3b82f6' },
-      { id: 4, patientName: 'Sarah Khan', day: 2, time: '9:30', duration: 0.5, color: '#3b82f6' },
-      { id: 5, patientName: 'Emily Davis', day: 3, time: '11:30', duration: 0.5, color: '#3b82f6' },
-      { id: 6, patientName: 'Emily Davis', day: 3, time: '10:30', duration: 0.5, color: '#3b82f6' },
-      { id: 7, patientName: 'John Smith', day: 4, time: '8:15', duration: 0.5, color: '#3b82f6' },
-      { id: 8, patientName: 'John Smith', day: 5, time: '10:00', duration: 0.5, color: '#3b82f6' },
-      { id: 9, patientName: 'Igra', day: 5, time: '8:45', duration: 0.5, color: '#3b82f6' },
+    const mock = [
+      { id: 1, name: 'John Smith', day: 0, time: '8:00', duration: 1, color: '#3b82f6' },
+      { id: 2, name: 'Sarah Khan', day: 0, time: '7:30', duration: 0.5, color: '#3b82f6' },
+      { id: 3, name: 'Igra', day: 1, time: '8:45', duration: 0.5, color: '#3b82f6' },
+      { id: 4, name: 'Sarah Khan', day: 2, time: '9:30', duration: 0.5, color: '#3b82f6' },
+      { id: 5, name: 'Emily Davis', day: 3, time: '11:30', duration: 0.5, color: '#3b82f6' },
+      { id: 6, name: 'Emily Davis', day: 3, time: '10:30', duration: 0.5, color: '#3b82f6' },
+      { id: 7, name: 'John Smith', day: 4, time: '8:15', duration: 0.5, color: '#3b82f6' },
+      { id: 8, name: 'John Smith', day: 5, time: '10:00', duration: 0.5, color: '#3b82f6' },
+      { id: 9, name: 'Igra', day: 5, time: '8:45', duration: 0.5, color: '#3b82f6' },
     ];
-  }, [appointments]);
+
+    if (appointments.length === 0) return mock;
+
+    return appointments.map(app => {
+      const patient = patients.find(p => p.mrn === app.patientMrn);
+      return {
+        id: app.id,
+        name: patient?.name || 'Unknown',
+        day: new Date(app.startTime).getDay() - 1, // Adjusted for Monday start
+        time: new Date(app.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }),
+        duration: 0.5,
+        color: '#2563eb'
+      };
+    });
+  }, [appointments, patients]);
 
   const formatMonth = (date: Date) => {
     return date.toLocaleString('default', { month: 'long' });
@@ -154,7 +174,7 @@ const DoctorDashboard: React.FC = () => {
                           background: (app.color as string) || '#2563eb'
                         }}
                       >
-                        {app.patientName as string}
+                        {app.name}
                       </div>
                     );
                   })

@@ -1,3 +1,4 @@
+import React from 'react';
 import {
   LayoutDashboard, Activity, Package, Beaker, CreditCard, Users, Heart, Shield,
   User, Lock, ArrowLeft, Loader2
