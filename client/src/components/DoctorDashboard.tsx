@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Clock, User, MoreVertical, Plus, CheckCircle, 
   Search, Filter, LayoutGrid, List as ListIcon,
-  Activity, Stethoscope, X
+  Activity, Stethoscope, X, Trash2
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import Avatar from './Avatar';
@@ -48,14 +48,19 @@ interface DoctorDashboardProps {
 }
 
 const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelectMrn, onStartConsult, onViewHistory, onNewAppointment }) => {
-  const { appointments, patients, currentStaff } = useEMR();
+  const { appointments, patients, currentStaff, role } = useEMR();
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<HistoryItem | null>(null);
+  const [deletedHistoryIds, setDeletedHistoryIds] = useState<number[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
   const [newAppt, setNewAppt] = useState({ patientMrn: '', startTime: '', notes: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
   const { addAppointment } = useEMR();
+
+  const canDeleteHistory = role === 'Admin' || role === 'Doctor';
+  const visibleHistory = MOCK_HISTORY.filter(h => !deletedHistoryIds.includes(h.id));
 
   // Update current time every minute for the red line
   React.useEffect(() => {
@@ -464,7 +469,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             <div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 Medical History
-                {MOCK_HISTORY.length > 5 && (
+                {visibleHistory.length > 5 && (
                   <button 
                     onClick={() => onViewHistory && onViewHistory({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
                     style={{ background: 'none', border: 'none', color: '#2563eb', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}
@@ -475,7 +480,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               </h4>
               <div style={{ position: 'relative', paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{ position: 'absolute', left: '4px', top: '5px', bottom: '5px', width: '2px', background: '#e2e8f0' }} />
-                {MOCK_HISTORY.slice(0, 5).map((h) => (
+                {visibleHistory.slice(0, 5).map((h) => (
                   <div key={h.id} style={{ position: 'relative', cursor: 'pointer' }} onClick={() => setSelectedHistoryItem(h)}>
                     <div style={{ position: 'absolute', left: '-1.5rem', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: '#3b82f6', border: '2px solid white', boxShadow: '0 0 0 2px #eff6ff' }} />
                     <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '2px' }}>{h.date} • {h.doctor}</div>
@@ -554,8 +559,44 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               </div>
             </div>
 
-            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-              <button className="btn-primary" onClick={() => setSelectedHistoryItem(null)} style={{ padding: '0.75rem 2rem' }}>Close Record</button>
+            <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {canDeleteHistory ? (
+                !showDeleteConfirm ? (
+                  <button 
+                    onClick={() => setShowDeleteConfirm(true)} 
+                    style={{ 
+                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      padding: '0.6rem 1.2rem', background: '#fef2f2', color: '#dc2626', 
+                      border: '1px solid #fecaca', borderRadius: '0.75rem', 
+                      fontSize: '0.85rem', fontWeight: '700', cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <Trash2 size={16} /> Delete Record
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: '700' }}>Confirm delete?</span>
+                    <button 
+                      onClick={() => {
+                        setDeletedHistoryIds(prev => [...prev, selectedHistoryItem!.id]);
+                        setSelectedHistoryItem(null);
+                        setShowDeleteConfirm(false);
+                      }}
+                      style={{ padding: '0.4rem 1rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      Yes
+                    </button>
+                    <button 
+                      onClick={() => setShowDeleteConfirm(false)}
+                      style={{ padding: '0.4rem 1rem', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}
+                    >
+                      No
+                    </button>
+                  </div>
+                )
+              ) : <div />}
+              <button className="btn-primary" onClick={() => { setSelectedHistoryItem(null); setShowDeleteConfirm(false); }} style={{ padding: '0.75rem 2rem' }}>Close Record</button>
             </div>
           </div>
         </div>
