@@ -232,8 +232,11 @@ const DoctorDashboard: React.FC = () => {
                 <span className="info-value">{selectedPatient.gender || '—'}</span>
               </div>
               <div className="info-card">
-                <span className="info-label">AGE</span>
-                <span className="info-value">{selectedPatient.age || '—'}</span>
+                <span className="info-label">DOB / AGE</span>
+                <span className="info-value">
+                  {selectedPatient.dob || '—'} 
+                  {selectedPatient.dob ? ` (${new Date().getFullYear() - new Date(selectedPatient.dob).getFullYear()})` : ''}
+                </span>
               </div>
               <div className="info-card">
                 <span className="info-label">STATUS</span>
