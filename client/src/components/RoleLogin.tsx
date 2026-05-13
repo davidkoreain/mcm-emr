@@ -71,8 +71,7 @@ const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup
             onClick={() => {
               if (id === 'Patient' && onPatientSignup) onPatientSignup();
               else if (id === 'Guardian' && onGuardianSignup) onGuardianSignup();
-              else if (id === 'Doctor' || id === 'Nurse' || id === 'Admin') setLoginRole(id);
-              else onLogin(id);
+              else setLoginRole(id);
             }}
             className="role-card"
           >

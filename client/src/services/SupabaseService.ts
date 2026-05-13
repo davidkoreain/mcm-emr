@@ -417,8 +417,25 @@ export class SupabaseService implements IDBService {
 
   async loginPortalUser(name: string, passwordHash: string): Promise<Patient | null> {
     if (name === 'admin' && passwordHash === 'sec_no@admin25') {
-      const { data } = await this.client.from('patients').select('*').limit(1).single();
-      return data ? rowToPatient(data) : null;
+      const { data } = await this.client.from('patients').select('*').limit(1).maybeSingle();
+      return data ? rowToPatient(data) : {
+        mrn: 'MRN-ADMIN',
+        name: 'Master Patient',
+        amharic: '',
+        visitType: 'OPD',
+        status: 'Waiting',
+        time: '00:00',
+        registeredAt: new Date().toISOString().slice(0, 10),
+        gender: 'Male',
+        dob: '1990-01-01',
+        phone: '0000000000',
+        city: 'Addis Ababa',
+        woreda: '',
+        kebele: '',
+        vitals: [],
+        medications: [],
+        ward: '',
+      };
     }
     const { data, error } = await this.client
       .from('patient_users')
@@ -447,6 +464,9 @@ export class SupabaseService implements IDBService {
         id: 0,
         name: 'Master Admin',
         role: 'Admin',
+        specialization: 'System Management',
+        gender: 'Male',
+        age: 35,
         shift: 'All',
         status: 'On Duty',
         education: 'System Master',
@@ -589,8 +609,17 @@ export class SupabaseService implements IDBService {
 
   async loginGuardian(name: string, passwordHash: string): Promise<GuardianUser | null> {
     if (name === 'admin' && passwordHash === 'sec_no@admin25') {
-      const { data } = await this.client.from('guardian_users').select('*').limit(1).single();
-      return data ? rowToGuardian(data) : null;
+      const { data } = await this.client.from('guardian_users').select('*').limit(1).maybeSingle();
+      return data ? rowToGuardian(data) : {
+        id: 'G-ADMIN',
+        patientMrn: 'MRN-ADMIN',
+        guardianName: 'Master Guardian',
+        relationship: 'Admin',
+        phone: '0000000000',
+        passwordHash: 'sec_no@admin25',
+        privacySettings: { showNotes: true, showLabs: true, showSurgeries: true },
+        createdAt: new Date().toISOString()
+      };
     }
     const { data, error } = await this.client
       .from('guardian_users')
