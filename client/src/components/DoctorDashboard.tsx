@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Clock, User, MoreVertical, Plus, CheckCircle, 
@@ -137,10 +137,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const [newAppt, setNewAppt] = useState({ patientMrn: '', startTime: '', notes: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
   const { addAppointment } = useEMR();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const canDeleteHistory = role === 'Admin' || role === 'Doctor';
   // Update current time every minute for the red line
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
@@ -243,10 +244,27 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
     return top;
   };
 
+  // Auto-scroll to center the current time
+  useEffect(() => {
+    if (scrollRef.current && (viewType === 'day' || viewType === 'week')) {
+      const top = getPosition(new Date());
+      const containerHeight = scrollRef.current.clientHeight;
+      // timeout ensures DOM is fully rendered before scrolling
+      setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTo({
+            top: Math.max(0, top - containerHeight / 2),
+            behavior: 'smooth'
+          });
+        }
+      }, 50);
+    }
+  }, [viewType, selectedDate]);
+
   // ── Render Helpers ────────────────────────────────────────────
 
   const renderDayView = () => (
-    <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', flex: 1, overflowY: 'auto' }}>
+    <div ref={scrollRef} style={{ display: 'grid', gridTemplateColumns: '80px 1fr', flex: 1, overflowY: 'auto' }}>
       <div style={{ borderRight: '1px solid #f1f5f9', background: '#f8fafc' }}>
         {HOURS.map(h => (
           <div key={h} style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>{h}:00</div>
@@ -301,7 +319,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
           </div>
         ))}
       </div>
-      <div style={{ position: 'relative', overflowY: 'auto', flex: 1 }}>
+      <div ref={scrollRef} style={{ position: 'relative', overflowY: 'auto', flex: 1 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)', height: `${HOURS.length * 80}px` }}>
           <div style={{ borderRight: '1px solid #f1f5f9', background: '#f8fafc' }}>
             {HOURS.map(h => (
