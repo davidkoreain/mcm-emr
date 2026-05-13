@@ -77,30 +77,35 @@ const DoctorDashboard: React.FC = () => {
 
   const displayAppointments = useMemo(() => {
     const mock = [
-      { id: 1, mrn: 'MRN-2026-001', name: 'John Smith', date: new Date(2026, 4, 11, 8, 0), duration: 1, color: '#3b82f6' },
-      { id: 2, mrn: 'MRN-2026-002', name: 'Sarah Khan', date: new Date(2026, 4, 11, 7, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 3, mrn: 'MRN-2026-003', name: 'Igra', date: new Date(2026, 4, 12, 8, 45), duration: 0.5, color: '#3b82f6' },
-      { id: 4, mrn: 'MRN-2026-002', name: 'Sarah Khan', date: new Date(2026, 4, 13, 9, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 5, mrn: 'MRN-2026-005', name: 'Emily Davis', date: new Date(2026, 4, 14, 11, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 6, mrn: 'MRN-2026-005', name: 'Emily Davis', date: new Date(2026, 4, 14, 10, 30), duration: 0.5, color: '#3b82f6' },
-      { id: 7, mrn: 'MRN-2026-001', name: 'John Smith', date: new Date(2026, 4, 15, 8, 15), duration: 0.5, color: '#3b82f6' },
-      { id: 8, mrn: 'MRN-2026-001', name: 'John Smith', date: new Date(2026, 4, 16, 10, 0), duration: 0.5, color: '#3b82f6' },
-      { id: 9, mrn: 'MRN-2026-003', name: 'Igra', date: new Date(2026, 4, 16, 8, 45), duration: 0.5, color: '#3b82f6' },
+      { id: 1, mrn: 'MRN-2026-001', date: new Date(2026, 4, 11, 8, 0), duration: 1, color: '#3b82f6' },
+      { id: 2, mrn: 'MRN-2026-002', date: new Date(2026, 4, 11, 7, 30), duration: 0.5, color: '#3b82f6' },
+      { id: 3, mrn: 'MRN-2026-003', date: new Date(2026, 4, 12, 8, 45), duration: 0.5, color: '#3b82f6' },
+      { id: 4, mrn: 'MRN-2026-002', date: new Date(2026, 4, 13, 9, 30), duration: 0.5, color: '#3b82f6' },
+      { id: 5, mrn: 'MRN-2026-005', date: new Date(2026, 4, 14, 11, 30), duration: 0.5, color: '#3b82f6' },
+      { id: 6, mrn: 'MRN-2026-005', date: new Date(2026, 4, 14, 10, 30), duration: 0.5, color: '#3b82f6' },
+      { id: 7, mrn: 'MRN-2026-001', date: new Date(2026, 4, 15, 8, 15), duration: 0.5, color: '#3b82f6' },
+      { id: 8, mrn: 'MRN-2026-001', date: new Date(2026, 4, 16, 10, 0), duration: 0.5, color: '#3b82f6' },
+      { id: 9, mrn: 'MRN-2026-003', date: new Date(2026, 4, 16, 8, 45), duration: 0.5, color: '#3b82f6' },
     ];
 
-    const actual = appointments.map(app => {
-      const patient = patients.find(p => p.mrn === app.patientMrn);
+    const actual = appointments.map(app => ({
+      id: app.id,
+      mrn: app.patientMrn,
+      date: new Date(app.startTime),
+      duration: 0.5,
+      color: '#2563eb'
+    }));
+
+    const combined = actual.length > 0 ? actual : mock;
+
+    // Always fetch the name from the current patients list to ensure consistency
+    return combined.map(item => {
+      const patient = patients.find(p => p.mrn === item.mrn);
       return {
-        id: app.id,
-        mrn: app.patientMrn,
-        name: patient?.name || 'Unknown',
-        date: new Date(app.startTime),
-        duration: 0.5,
-        color: '#2563eb'
+        ...item,
+        name: patient?.name || 'Unknown Patient'
       };
     });
-
-    return actual.length > 0 ? actual : mock;
   }, [appointments, patients]);
 
   const getPosition = (date: Date) => {
