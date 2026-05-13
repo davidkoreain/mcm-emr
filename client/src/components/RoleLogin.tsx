@@ -125,7 +125,6 @@ const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup
           {loading ? <Loader2 className="animate-spin" /> : 'Login'}
         </button>
         
-        <p className="test-creds">Test: David / 1234</p>
       </form>
     </div>
   );
