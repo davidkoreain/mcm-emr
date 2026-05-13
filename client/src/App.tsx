@@ -32,9 +32,10 @@ import Avatar from './components/Avatar';
 import FlowBoard from './components/FlowBoard';
 
 const App: React.FC = () => {
-  const { role, setRole, loading, currentStaff } = useEMR();
+  const { role, setRole, loading, currentStaff, patients } = useEMR();
   const [view, setView] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
+  const [selectedMrn, setSelectedMrn] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<'soap' | 'imaging' | 'history'>('soap');
   const [signupFlow, setSignupFlow] = useState<'none' | 'patient' | 'guardian'>('none');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -115,8 +116,14 @@ const App: React.FC = () => {
           <ErrorBoundary>
             {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : (
               <DoctorDashboard 
-                onStartConsult={(p) => { setSelectedPatient(p); setSelectedTab('soap'); setView('encounter'); }}
-                onViewHistory={(p) => { setSelectedPatient(p); setSelectedTab('history'); setView('encounter'); }}
+                selectedMrn={selectedMrn}
+                onSelectMrn={(mrn) => {
+                  setSelectedMrn(mrn);
+                  const patient = patients.find(p => p.mrn === mrn);
+                  setSelectedPatient(patient ? { mrn: patient.mrn, name: patient.name, amharic: patient.amharic } : null);
+                }}
+                onStartConsult={(p) => { setSelectedPatient(p); setSelectedMrn(p.mrn); setSelectedTab('soap'); setView('encounter'); }}
+                onViewHistory={(p) => { setSelectedPatient(p); setSelectedMrn(p.mrn); setSelectedTab('history'); setView('encounter'); }}
                 onNewAppointment={() => setView('calendar')}
               />
             ))}
