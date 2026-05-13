@@ -35,6 +35,7 @@ const App: React.FC = () => {
   const { role, setRole, loading, currentStaff } = useEMR();
   const [view, setView] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
+  const [selectedTab, setSelectedTab] = useState<'soap' | 'imaging' | 'history'>('soap');
   const [signupFlow, setSignupFlow] = useState<'none' | 'patient' | 'guardian'>('none');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -114,15 +115,15 @@ const App: React.FC = () => {
           <ErrorBoundary>
             {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : (
               <DoctorDashboard 
-                onStartConsult={(p) => { setSelectedPatient(p); setView('encounter'); }}
-                onViewHistory={(p) => { setSelectedPatient(p); setView('patients'); }}
+                onStartConsult={(p) => { setSelectedPatient(p); setSelectedTab('soap'); setView('encounter'); }}
+                onViewHistory={(p) => { setSelectedPatient(p); setSelectedTab('history'); setView('encounter'); }}
                 onNewAppointment={() => setView('calendar')}
               />
             ))}
             {view === 'patients' && (
               <PatientManagement 
                 onViewVitals={(p) => { setSelectedPatient(p); setView('vitals'); }}
-                onViewEncounter={(p) => { setSelectedPatient(p); setView('encounter'); }}
+                onViewEncounter={(p) => { setSelectedPatient(p); setSelectedTab('soap'); setView('encounter'); }}
                 onRegister={() => setView('registration')}
               />
             )}
@@ -137,7 +138,8 @@ const App: React.FC = () => {
             {view === 'encounter' && selectedPatient && (
               <ClinicalEncounter 
                 patientName={selectedPatient.name}
-                onClose={() => setView('patients')}
+                onClose={() => setView('dashboard')}
+                defaultTab={selectedTab}
               />
             )}
             {view === 'registration' && <PatientRegistration onClose={() => setView('dashboard')} />}
