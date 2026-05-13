@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import {
   Clipboard, BookOpen, PenTool, CheckCircle, Save, X, Activity,
   Image as ImageIcon, Video, History, FileText, Plus, Maximize2,
-  Calendar, ChevronRight, Download, Eye
+  Calendar, ChevronRight, Download, Eye, Trash2
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 
@@ -64,7 +64,7 @@ const initialImaging: ImagingItem[] = [
 ];
 
 const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientName, defaultTab = 'soap' }) => {
-  const { patients, updatePatient } = useEMR();
+  const { patients, updatePatient, role } = useEMR();
   const currentPatient = patients.find(p => p.name === patientName);
 
   const [activeTab, setActiveTab] = useState<'soap' | 'imaging' | 'history'>(defaultTab);
@@ -81,7 +81,10 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
   const [prescriptionHistory, setPrescriptionHistory] = useState<PrescriptionRecord[]>(initialHistory);
   const [maximizedImage, setMaximizedImage] = useState<string | null>(null);
   const [selectedEncounter, setSelectedEncounter] = useState<PrescriptionRecord | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canDeleteHistory = role === 'Admin' || role === 'Doctor';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -352,7 +355,34 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                       <PillIcon size={16} style={{ marginTop: '2px', flexShrink: 0 }} />
                       <div>{hist.meds}</div>
                     </div>
-                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                    <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      {canDeleteHistory ? (
+                        deleteConfirmId === hist.id ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.8rem', color: '#dc2626', fontWeight: '700' }}>Delete?</span>
+                            <button 
+                              onClick={() => {
+                                setPrescriptionHistory(prev => prev.filter(h => h.id !== hist.id));
+                                setDeleteConfirmId(null);
+                              }}
+                              style={{ padding: '0.3rem 0.8rem', background: '#dc2626', color: 'white', border: 'none', borderRadius: '0.4rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}
+                            >Yes</button>
+                            <button 
+                              onClick={() => setDeleteConfirmId(null)}
+                              style={{ padding: '0.3rem 0.8rem', background: '#f1f5f9', color: '#64748b', border: 'none', borderRadius: '0.4rem', fontSize: '0.8rem', fontWeight: '700', cursor: 'pointer' }}
+                            >No</button>
+                          </div>
+                        ) : (
+                          <button 
+                            onClick={() => setDeleteConfirmId(hist.id)}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: '#dc2626', border: 'none', background: 'none', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer', padding: '0.3rem 0.5rem', borderRadius: '0.4rem', transition: 'background 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#fef2f2'}
+                            onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                          >
+                            <Trash2 size={14} /> Delete
+                          </button>
+                        )
+                      ) : <div />}
                       <button style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: '#3b82f6', border: 'none', background: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer' }}
                         onClick={() => handleRepeatPrescription(hist)}>
                         Repeat Prescription <ChevronRight size={14} />
