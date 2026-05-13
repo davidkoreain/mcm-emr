@@ -45,7 +45,7 @@ const App: React.FC = () => {
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading EMR...</div>;
 
   if (signupFlow === 'patient') return <PatientSignup onBack={() => setSignupFlow('none')} onLogin={(mrn) => { setRole('Patient'); setSignupFlow('none'); }} />;
-  if (signupFlow === 'guardian') return <GuardianSignup onBack={() => setSignupFlow('none')} />;
+  if (signupFlow === 'guardian') return <GuardianSignup onBack={() => setSignupFlow('none')} onLogin={() => setSignupFlow('none')} />;
 
   if (!role) {
     return <RoleLogin 

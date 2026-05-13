@@ -4,7 +4,7 @@ import { useEMR } from '../context/EMRContext';
 
 const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m) };
 
-const GuardianSignup: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const GuardianSignup: React.FC<{ onBack: () => void; onLogin: () => void }> = ({ onBack, onLogin }) => {
   const { matchPatient, registerGuardian, loginGuardian, setRole, setCurrentGuardian } = useEMR();
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [loading, setLoading] = useState(false);
@@ -29,6 +29,7 @@ const GuardianSignup: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         if (guardian) {
           setCurrentGuardian(guardian);
           setRole('Guardian');
+          onLogin();
           toast.success(`Welcome back, ${guardian.guardianName}!`);
         } else {
           toast.error('Invalid name or password.');

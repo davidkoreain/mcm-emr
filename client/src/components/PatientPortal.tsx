@@ -207,12 +207,27 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             </div>
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Beaker color="#b45309" size={20}/> Lab Results</h3>
-              {filteredLabs.length > 0 ? (
+              {(isGuardianView || privacy.showLabs) && filteredLabs.length > 0 ? (
                 <div style={{ marginTop: '1rem' }}>
                   {filteredLabs.map((l, i) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: '1px solid #f1f5f9' }}>
                     <span style={{ fontWeight: '600' }}>{l.test}</span>
                     <span>{l.value} {l.unit}</span>
                   </div>)}
+                </div>
+              ) : <PrivacyBar />}
+            </div>
+            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '1.25rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+              <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}><Scissors color="#7c3aed" size={20}/> Surgery Records</h3>
+              {(isGuardianView || privacy.showSurgeries) ? (
+                <div style={{ marginTop: '1rem' }}>
+                  {surgeries.filter(s => s.patientMrn === currentUser.mrn).length > 0 ? (
+                    surgeries.filter(s => s.patientMrn === currentUser.mrn).map((s, i) => (
+                      <div key={i} style={{ padding: '1rem', background: '#f8fafc', borderRadius: '1rem', marginBottom: '1rem' }}>
+                        <div style={{ fontWeight: '800' }}>{s.operationName}</div>
+                        <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Date: {new Date(s.startTime).toLocaleDateString()}</div>
+                      </div>
+                    ))
+                  ) : <div style={{ color: '#94a3b8' }}>No surgical history.</div>}
                 </div>
               ) : <PrivacyBar />}
             </div>
