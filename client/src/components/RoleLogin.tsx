@@ -1,7 +1,8 @@
-import React from 'react';
 import {
-  LayoutDashboard, Activity, Package, Beaker, CreditCard, Users, Heart, Shield
+  LayoutDashboard, Activity, Package, Beaker, CreditCard, Users, Heart, Shield,
+  User, Lock, ArrowLeft, Loader2
 } from 'lucide-react';
+import { useEMR } from '../context/EMRContext';
 import './RoleLogin.css';
 
 type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier' | 'Patient' | 'Guardian';
@@ -24,6 +25,111 @@ const roles: { id: UserRole; label: string; desc: string; icon: React.FC<{ size:
 ];
 
 const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup }) => {
+  const { loginStaff, setCurrentStaff } = useEMR();
+  const [loginRole, setLoginRole] = React.useState<UserRole | null>(null);
+  const [staffName, setStaffName] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState('');
+
+  const handleStaffLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!staffName || !password) {
+      setError('Please enter both name and password.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const staffMember = await loginStaff(staffName, password);
+      if (staffMember) {
+        setCurrentStaff(staffMember);
+        onLogin(loginRole!);
+      } else {
+        setError('Invalid name or password.');
+      }
+    } catch (err) {
+      setError('An error occurred during login.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const renderRoleSelection = () => (
+    <>
+      <h2 className="select-role-title">Select Your Role</h2>
+      <p className="select-role-desc">
+        Choose your department to continue to the dashboard
+      </p>
+
+      <div className="login-grid">
+        {roles.map(({ id, label, desc, icon: Icon, color, bg }) => (
+          <button
+            key={id}
+            onClick={() => {
+              if (id === 'Patient' && onPatientSignup) onPatientSignup();
+              else if (id === 'Guardian' && onGuardianSignup) onGuardianSignup();
+              else if (id === 'Doctor' || id === 'Nurse' || id === 'Admin') setLoginRole(id);
+              else onLogin(id);
+            }}
+            className="role-card"
+          >
+            <div className="role-icon-box" style={{ background: bg }}>
+              <Icon size={22} color={color} />
+            </div>
+            <div className="role-text-box">
+              <div className="role-label">{label}</div>
+              <div className="role-desc">{desc}</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </>
+  );
+
+  const renderLoginForm = () => (
+    <div className="staff-login-form">
+      <button onClick={() => setLoginRole(null)} className="back-btn">
+        <ArrowLeft size={18} /> Back to Roles
+      </button>
+      
+      <h2 className="select-role-title">{loginRole} Login</h2>
+      <p className="select-role-desc">Enter your credentials to access the medical system</p>
+
+      <form onSubmit={handleStaffLogin} className="login-form">
+        <div className="input-group">
+          <label><User size={16} /> Name</label>
+          <input 
+            type="text" 
+            placeholder="Enter your full name"
+            value={staffName}
+            onChange={(e) => setStaffName(e.target.value)}
+            autoFocus
+          />
+        </div>
+
+        <div className="input-group">
+          <label><Lock size={16} /> Password</label>
+          <input 
+            type="password" 
+            placeholder="Enter password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </div>
+
+        {error && <div className="login-error">{error}</div>}
+
+        <button type="submit" className="login-submit-btn" disabled={loading}>
+          {loading ? <Loader2 className="animate-spin" /> : 'Login'}
+        </button>
+        
+        <p className="test-creds">Test: David / 1234</p>
+      </form>
+    </div>
+  );
+
   return (
     <div className="login-container">
       {/* Left panel - hidden on mobile */}
@@ -59,32 +165,7 @@ const RoleLogin: React.FC<Props> = ({ onLogin, onPatientSignup, onGuardianSignup
             </a>
           </div>
           
-          <h2 className="select-role-title">Select Your Role</h2>
-          <p className="select-role-desc">
-            Choose your department to continue to the dashboard
-          </p>
-
-          <div className="login-grid">
-            {roles.map(({ id, label, desc, icon: Icon, color, bg }) => (
-              <button
-                key={id}
-                onClick={() => {
-                  if (id === 'Patient' && onPatientSignup) onPatientSignup();
-                  else if (id === 'Guardian' && onGuardianSignup) onGuardianSignup();
-                  else onLogin(id);
-                }}
-                className="role-card"
-              >
-                <div className="role-icon-box" style={{ background: bg }}>
-                  <Icon size={22} color={color} />
-                </div>
-                <div className="role-text-box">
-                  <div className="role-label">{label}</div>
-                  <div className="role-desc">{desc}</div>
-                </div>
-              </button>
-            ))}
-          </div>
+          {loginRole ? renderLoginForm() : renderRoleSelection()}
         </div>
       </div>
     </div>

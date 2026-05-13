@@ -437,6 +437,18 @@ export class SupabaseService implements IDBService {
     return (count ?? 0) > 0;
   }
 
+  async loginStaff(name: string, passwordHash: string): Promise<StaffMember | null> {
+    const { data, error } = await this.client
+      .from('staff_users')
+      .select('*, staff!inner(*)')
+      .eq('staff.name', name)
+      .eq('password_hash', passwordHash)
+      .maybeSingle();
+    
+    if (error || !data || !data.staff) return null;
+    return rowToStaff(data.staff as Record<string, unknown>);
+  }
+
   // Pharmacy
   async fetchDrugs(): Promise<Drug[]> {
     const { data, error } = await this.client.from('drugs').select('*').order('name');

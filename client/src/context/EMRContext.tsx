@@ -192,9 +192,11 @@ type EMRContextType = {
   role: UserRole | null;
   currentUser: Patient | null;
   currentGuardian: GuardianUser | null;
+  currentStaff: StaffMember | null;
   setRole: (role: UserRole | null) => void;
   setCurrentUser: (user: Patient | null) => void;
   setCurrentGuardian: (g: GuardianUser | null) => void;
+  setCurrentStaff: (s: StaffMember | null) => void;
   addPatient: (p: Patient) => Promise<void>;
   updatePatient: (mrn: string, changes: Partial<Patient>) => Promise<void>;
   addVitals: (mrn: string, v: VitalsRecord) => Promise<void>;
@@ -213,6 +215,7 @@ type EMRContextType = {
   registerPatientUser: (mrn: string, passwordHash: string) => Promise<void>;
   loginPortalUser: (mrn: string, passwordHash: string) => Promise<Patient | null>;
   isPortalUserRegistered: (mrn: string) => Promise<boolean>;
+  loginStaff: (name: string, passwordHash: string) => Promise<StaffMember | null>;
   // Pharmacy
   dispenseMedication: (prescriptionId: number, drugId: number, qty: number) => Promise<void>;
   // Lab
@@ -241,6 +244,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [role, setRole] = useState<UserRole | null>(null);
   const [currentUser, setCurrentUser] = useState<Patient | null>(null);
   const [currentGuardian, setCurrentGuardian] = useState<GuardianUser | null>(null);
+  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -339,6 +343,10 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return await db.isPortalUserRegistered(mrn);
   };
 
+  const loginStaff = async (name: string, passwordHash: string) => {
+    return await db.loginStaff(name, passwordHash);
+  };
+
   const addSurgery = async (s: Omit<Surgery, 'id' | 'createdAt'>) => {
     await db.insertSurgery(s);
     await refreshData();
@@ -377,9 +385,9 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <EMRContext.Provider value={{
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults,
       loading, error, role, setRole,
-      currentUser, setCurrentUser, currentGuardian, setCurrentGuardian,
+      currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, addAsset, updateAsset,
-      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered,
+      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff,
       dispenseMedication, submitLabResult
     }}>
       {children}

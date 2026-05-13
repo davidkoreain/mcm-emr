@@ -28,9 +28,10 @@ import PatientManagement from './components/PatientManagement';
 import VitalsEntry from './components/VitalsEntry';
 import ClinicalEncounter from './components/ClinicalEncounter';
 import ErrorBoundary from './components/ErrorBoundary';
+import Avatar from './components/Avatar';
 
 const App: React.FC = () => {
-  const { role, setRole, loading } = useEMR();
+  const { role, setRole, loading, currentStaff } = useEMR();
   const [view, setView] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
   const [signupFlow, setSignupFlow] = useState<'none' | 'patient' | 'guardian'>('none');
@@ -95,9 +96,18 @@ const App: React.FC = () => {
       <main className="main-content">
         <header className="main-header" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem 2rem', background: 'white', borderBottom: '1px solid #e2e8f0' }}>
           <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><Menu size={24} /></button>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0 }}>
+          <h1 style={{ fontSize: '1.25rem', fontWeight: '800', margin: 0, flex: 1 }}>
             {view === 'dashboard' ? 'FLOW BOARD' : view === 'patients' ? 'PATIENT DETAILS' : view === 'calendar' ? 'APPOINTMENTS' : view.toUpperCase()}
           </h1>
+          {currentStaff && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.4rem 1rem', background: '#f8fafc', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
+              <Avatar name={currentStaff.name} photoUrl={currentStaff.photoUrl} size={32} />
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', lineHeight: 1 }}>{currentStaff.name}</span>
+                <span style={{ fontSize: '0.65rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{currentStaff.role}</span>
+              </div>
+            </div>
+          )}
         </header>
         <div style={{ padding: '2rem' }}>
           <ErrorBoundary>
