@@ -29,6 +29,7 @@ import VitalsEntry from './components/VitalsEntry';
 import ClinicalEncounter from './components/ClinicalEncounter';
 import ErrorBoundary from './components/ErrorBoundary';
 import Avatar from './components/Avatar';
+import FlowBoard from './components/FlowBoard';
 
 const App: React.FC = () => {
   const { role, setRole, loading, currentStaff } = useEMR();
@@ -112,11 +113,7 @@ const App: React.FC = () => {
         <div style={{ padding: '2rem' }}>
           <ErrorBoundary>
             {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : (
-              <DoctorDashboard 
-                onStartConsult={(p) => { setSelectedPatient(p); setView('encounter'); }}
-                onViewHistory={(p) => { setSelectedPatient(p); setView('patients'); }}
-                onNewAppointment={() => setView('calendar')}
-              />
+              <FlowBoard onStartConsult={(p) => { setSelectedPatient(p); setView('encounter'); }} />
             ))}
             {view === 'patients' && (
               <PatientManagement 

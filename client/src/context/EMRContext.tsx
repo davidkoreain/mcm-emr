@@ -302,18 +302,6 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchSurgeries(), []),
         safeFetch(db.fetchGuardians(), [])
       ]);
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd] = await Promise.all([
-        safeFetch(db.fetchPatients(), []),
-        safeFetch(db.fetchStaff(), []),
-        safeFetch(db.fetchAssets(), []),
-        safeFetch(db.fetchAppointments(), []),
-        safeFetch(db.fetchDrugs(), []),
-        safeFetch(db.fetchPrescriptions(), []),
-        safeFetch(db.fetchLabOrders(), []),
-        safeFetch(db.fetchLabResults(), []),
-        safeFetch(db.fetchSurgeries(), []),
-        safeFetch(db.fetchGuardians(), [])
-      ]);
       
       // Always merge demo data to ensure a rich demo experience
       const mergedPatients = [...p, ...DEMO_PATIENTS];
