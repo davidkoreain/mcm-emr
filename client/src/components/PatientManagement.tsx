@@ -69,8 +69,8 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                 <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{detailModal.mrn} • {detailModal.name}</p>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                  <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${detailModal.mrn}`} size={48} level="H" />
+                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                  <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${detailModal.mrn}`} size={120} level="H" includeMargin={true} />
                 </div>
                 <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
               </div>
@@ -270,8 +270,8 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                   <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`} style={{ height: 'fit-content' }}>
                     {p.status}
                   </span>
-                  <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
-                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${p.mrn}`} size={44} level="M" />
+                  <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
+                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${p.mrn}`} size={80} level="M" includeMargin={true} />
                   </div>
                 </div>
               </div>
