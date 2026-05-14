@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, Users, UserPlus, Package, 
   Menu, X, Pill, Scissors, Beaker, LogOut,
-  Bed, CreditCard, CalendarDays
+  Bed, CreditCard, CalendarDays, ChevronDown, ChevronUp
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useEMR } from './context/EMRContext';
 
 // Portals
@@ -39,6 +40,8 @@ const App: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState<'soap' | 'imaging' | 'history'>('soap');
   const [signupFlow, setSignupFlow] = useState<'none' | 'patient' | 'guardian'>('none');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isHrmOpen, setIsHrmOpen] = useState(false);
+  const [staffTab, setStaffTab] = useState<'portfolio' | 'leave' | 'performance'>('portfolio');
 
   const handleLogout = () => {
     setRole(null);
@@ -83,7 +86,52 @@ const App: React.FC = () => {
             <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => { setView('calendar'); setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Appointments</span></li>
             <li className={`nav-item ${view === 'registration' ? 'active' : ''}`} onClick={() => { setView('registration'); setMobileMenuOpen(false); }}><UserPlus size={20}/> <span>Registration</span></li>
             <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => { setView('inpatient'); setMobileMenuOpen(false); }}><Bed size={20}/> <span>Inpatient Ward</span></li>
-            <li className={`nav-item ${view === 'staff' ? 'active' : ''}`} onClick={() => { setView('staff'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Staff</span></li>
+            
+            {/* HRM 2nd Level Menu */}
+            <li 
+              className={`nav-item ${view === 'staff' ? 'active' : ''}`} 
+              onClick={() => setIsHrmOpen(!isHrmOpen)}
+              style={{ justifyContent: 'space-between' }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Users size={20}/> <span>HRM</span>
+              </div>
+              <div className="menu-arrow">
+                {isHrmOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </div>
+            </li>
+            
+            <AnimatePresence>
+              {isHrmOpen && (
+                <motion.ul
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}
+                >
+                  <li 
+                    className={`sub-nav-item ${view === 'staff' && staffTab === 'portfolio' ? 'active' : ''}`} 
+                    onClick={() => { setView('staff'); setStaffTab('portfolio'); setMobileMenuOpen(false); }}
+                  >
+                    <span>Members</span>
+                  </li>
+                  <li 
+                    className={`sub-nav-item ${view === 'staff' && staffTab === 'leave' ? 'active' : ''}`} 
+                    onClick={() => { setView('staff'); setStaffTab('leave'); setMobileMenuOpen(false); }}
+                  >
+                    <span>Leave Mgmt</span>
+                  </li>
+                  <li 
+                    className={`sub-nav-item ${view === 'staff' && staffTab === 'performance' ? 'active' : ''}`} 
+                    onClick={() => { setView('staff'); setStaffTab('performance'); setMobileMenuOpen(false); }}
+                  >
+                    <span>Performance</span>
+                  </li>
+                </motion.ul>
+              )}
+            </AnimatePresence>
+
             <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => { setView('lab'); setMobileMenuOpen(false); }}><Beaker size={20}/> <span>Laboratory</span></li>
             <li className={`nav-item ${view === 'operation' ? 'active' : ''}`} onClick={() => { setView('operation'); setMobileMenuOpen(false); }}><Scissors size={20}/> <span>Operations</span></li>
             <li className={`nav-item ${view === 'pharmacy' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setMobileMenuOpen(false); }}><Pill size={20}/> <span>Pharmacy</span></li>
@@ -151,7 +199,7 @@ const App: React.FC = () => {
             )}
             {view === 'registration' && <PatientRegistration onClose={() => setView('dashboard')} />}
             {view === 'inpatient' && <InpatientManagement />}
-            {view === 'staff' && <StaffManagement />}
+            {view === 'staff' && <StaffManagement activeTab={staffTab} />}
             {view === 'lab' && <LabManagement />}
             {view === 'operation' && <OperationManagement />}
             {view === 'pharmacy' && <PharmacyManagement />}

@@ -127,6 +127,43 @@ body {
   color: white;
 }
 
+.sub-nav-item {
+  padding: 0.6rem 0.75rem 0.6rem 28px;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #94a3b8;
+  font-size: 0.85rem;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.sub-nav-item:hover,
+.sub-nav-item.active {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: white;
+}
+
+.sub-nav-item span {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar:hover .sub-nav-item span,
+.sidebar.mobile-open .sub-nav-item span {
+  opacity: 1;
+}
+
+.menu-arrow {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.sidebar:hover .menu-arrow,
+.sidebar.mobile-open .menu-arrow {
+  opacity: 1;
+}
+
 .main-content {
   flex: 1;
   padding: 2rem;

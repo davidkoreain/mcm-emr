@@ -28,9 +28,18 @@ const initialPerf: PerformanceRecord[] = [
 
 const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' as const, age: 30, shift: 'Day', status: 'On Duty', education: '', license: '', licenseNo: '', npi: '', upin: '', taxId: '', experience: '' };
 
-const StaffManagement: React.FC = () => {
+interface StaffManagementProps {
+  activeTab?: 'leave' | 'performance' | 'portfolio';
+}
+
+const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab }) => {
   const { staff, addStaff } = useEMR();
-  const [activeTab, setActiveTab] = useState<'leave' | 'performance' | 'portfolio'>('portfolio');
+  const [internalTab, setInternalTab] = useState<'leave' | 'performance' | 'portfolio'>('portfolio');
+  
+  // Use prop if provided, otherwise fallback to internal state
+  const activeTab = propTab || internalTab;
+  const setActiveTab = setInternalTab;
+
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeave);
@@ -390,19 +399,7 @@ const StaffManagement: React.FC = () => {
         </div>
       )}
 
-      <div className="pharmacy-tabs">
-        <button className={`tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`} onClick={() => setActiveTab('portfolio')}>
-          <BookOpen size={20} /> Credentials & Portfolio
-        </button>
-        <button className={`tab-btn ${activeTab === 'leave' ? 'active' : ''}`} onClick={() => { setActiveTab('leave'); setSelectedStaff(null); }}>
-          <Coffee size={20} /> Leave Mgmt {leaveRequests.filter((l) => l.status === 'Pending').length > 0 && <span style={{ background: '#f59e0b', color: 'white', borderRadius: '9999px', padding: '0.1rem 0.4rem', fontSize: '0.75rem' }}>{leaveRequests.filter((l) => l.status === 'Pending').length}</span>}
-        </button>
-        <button className={`tab-btn ${activeTab === 'performance' ? 'active' : ''}`} onClick={() => { setActiveTab('performance'); setSelectedStaff(null); }}>
-          <Award size={20} /> Performance
-        </button>
-      </div>
-
-      <div className="staff-content" style={{ marginTop: '1.5rem' }}>
+      <div className="staff-content" style={{ marginTop: '0rem' }}>
         {showCSVModal && <CSVImportModal title="Medical Staff & HR" onClose={() => setShowCSVModal(false)} onImport={(data) => console.log('Imported Staff:', data)} />}
 
         {activeTab === 'portfolio' && selectedStaff && activeStaff ? (
