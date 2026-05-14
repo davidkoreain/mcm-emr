@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -106,6 +106,16 @@ function rowToLabResult(r: Record<string, unknown>): LabResult {
     range: r.range as string,
     status: r.status as 'Normal' | 'Abnormal',
     createdAt: r.created_at as string,
+  };
+}
+
+function rowToStaffLeave(r: Record<string, unknown>): StaffLeave {
+  return {
+    id: r.id as number,
+    staffId: r.staff_id as number,
+    leaveDate: r.leave_date as string,
+    status: r.status as 'Pending' | 'Confirmed' | 'Rejected',
+    reason: r.reason as string,
   };
 }
 
@@ -722,5 +732,11 @@ export class SupabaseService implements IDBService {
     
     if (error || !data) return null;
     return rowToGuardian(data);
+  }
+
+  async fetchStaffLeave(): Promise<StaffLeave[]> {
+    const { data, error } = await this.client.from('staff_leave').select('*');
+    if (error) throw error;
+    return (data || []).map(rowToStaffLeave);
   }
 }

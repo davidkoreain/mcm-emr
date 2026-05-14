@@ -222,6 +222,7 @@ type EMRContextType = {
   labOrders: LabOrder[];
   labResults: LabResult[];
   medicalHistory: MedicalHistoryItem[];
+  staffLeave: StaffLeave[];
   loading: boolean;
   error: string | null;
   role: UserRole | null;
@@ -314,6 +315,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
   const [guardians, setGuardians] = useState<GuardianUser[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
+  const [staffLeave, setStaffLeave] = useState<StaffLeave[]>([]);
   const [role, setRole] = useState<UserRole | null>(null);
   const [currentUser, setCurrentUser] = useState<Patient | null>(null);
   const [currentGuardian, setCurrentGuardian] = useState<GuardianUser | null>(null);
@@ -327,7 +329,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -338,7 +340,8 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchLabResults(), []),
         safeFetch(db.fetchSurgeries(), []),
         safeFetch(db.fetchGuardians(), []),
-        safeFetch(db.fetchMedicalHistory(), [])
+        safeFetch(db.fetchMedicalHistory(), []),
+        safeFetch(db.fetchStaffLeave(), [])
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -360,6 +363,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSurgeries(sur);
       setGuardians(gd);
       setMedicalHistory(mh);
+      setStaffLeave(l);
     } catch (err: any) {
       setError(err.message);
     } finally {

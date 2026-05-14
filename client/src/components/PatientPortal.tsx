@@ -29,67 +29,51 @@ const JOURNEY_STEPS = [
 ];
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
-  const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians, updatePrivacy, updatePatient } = useEMR();
+  const { currentUser, currentGuardian, patients, staff, staffLeave, addAppointment, labResults, guardians, updatePatient } = useEMR();
   
-  // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Navigation State
+  // Navigation
   const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'settings'>('appointments');
   const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
   const [currentJourneyStep, setCurrentJourneyStep] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Profile Edit State
+  // Profile Edit
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Patient>>({});
 
-  // Sync with browser history (hash-based)
   React.useEffect(() => {
     const syncWithUrl = () => {
       const hash = window.location.hash.replace('#', '');
       if (hash.startsWith('step-')) {
         const step = parseInt(hash.replace('step-', ''));
-        if (!isNaN(step) && step >= 1 && step <= 14) {
-          setCurrentJourneyStep(step);
-          setActiveMenu('appointments');
-          setAppointmentsExpanded(true);
-        }
-      } else if (hash === 'info' || hash === 'records' || hash === 'settings') {
-        setActiveMenu(hash as any);
-      }
+        if (!isNaN(step)) { setCurrentJourneyStep(step); setActiveMenu('appointments'); setAppointmentsExpanded(true); }
+      } else if (['info', 'records', 'settings'].includes(hash)) { setActiveMenu(hash as any); }
     };
     window.addEventListener('hashchange', syncWithUrl);
     syncWithUrl();
     return () => window.removeEventListener('hashchange', syncWithUrl);
   }, []);
 
-  const changeStep = (step: number) => {
-    setCurrentJourneyStep(step);
-    window.location.hash = `step-${step}`;
-    setMobileMenuOpen(false);
-  };
-
+  const changeStep = (step: number) => { setCurrentJourneyStep(step); window.location.hash = `step-${step}`; setMobileMenuOpen(false); };
   const changeMenu = (menu: 'info' | 'records' | 'appointments' | 'settings') => {
     setActiveMenu(menu);
-    if (menu !== 'appointments') {
-      window.location.hash = menu;
-    } else {
-      window.location.hash = `step-${currentJourneyStep}`;
-    }
+    if (menu !== 'appointments') window.location.hash = menu;
+    else window.location.hash = `step-${currentJourneyStep}`;
     setMobileMenuOpen(false);
   };
   
   const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
 
-  // Booking State
+  // Booking
   const [bookingStep, setBookingStep] = useState<1 | 2>(1); 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selDate, setSelDate] = useState<Date | null>(null);
   const [selDoc, setSelDoc] = useState<StaffMember | null>(null);
   const [selTime, setSelTime] = useState<string | null>(null);
 
-  // Filter & Search & Sort State
+  // Search/Filter/Sort
   const [searchQuery, setSearchQuery] = useState('');
   const [fSpec, setFSpec] = useState('');
   const [fGender, setFGender] = useState('');
@@ -107,29 +91,27 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const filteredDoctors = useMemo(() => {
     let list = staff.filter(s => s.role.includes('Doctor'));
     
-    // Search
-    if (searchQuery) {
-      list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    // Availability (Leave) Logic
+    if (selDate) {
+      const dateStr = selDate.toISOString().split('T')[0];
+      const offStaffIds = staffLeave
+        .filter(l => l.leaveDate === dateStr && l.status === 'Confirmed')
+        .map(l => l.staffId);
+      list = list.filter(s => !offStaffIds.includes(Number(s.id)));
     }
     
-    // Filters
+    if (searchQuery) list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
     if (fSpec) list = list.filter(s => s.specialization === fSpec);
     if (fGender) list = list.filter(s => s.gender === fGender);
     if (fAge) {
       if (fAge === 'under30') list = list.filter(s => s.age < 30);
-      if (fAge === '30-45') list = list.filter(s => s.age >= 30 && s.age <= 45);
-      if (fAge === '45plus') list = list.filter(s => s.age > 45);
+      else if (fAge === '30-45') list = list.filter(s => s.age >= 30 && s.age <= 45);
+      else if (fAge === '45plus') list = list.filter(s => s.age > 45);
     }
     
-    // Sort
-    list.sort((a, b) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      if (sortBy === 'age') return a.age - b.age;
-      return 0;
-    });
-    
+    list.sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : a.age - b.age);
     return list;
-  }, [staff, searchQuery, fSpec, fGender, fAge, sortBy]);
+  }, [staff, staffLeave, selDate, searchQuery, fSpec, fGender, fAge, sortBy]);
 
   const days = useMemo(() => {
     const arr = [];
@@ -142,9 +124,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
   const slots = useMemo(() => {
     const s = [];
-    for (let h = 9; h < 17; h++) {
-      for (let m = 0; m < 60; m += 15) s.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
-    }
+    for (let h = 9; h < 17; h++) for (let m = 0; m < 60; m += 15) s.push(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`);
     return s;
   }, []);
 
@@ -188,12 +168,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <button
         onClick={() => {
-          if (expandable) {
-            setAppointmentsExpanded(!appointmentsExpanded);
-            if (!appointmentsExpanded) changeMenu('appointments');
-          } else {
-            changeMenu(id);
-          }
+          if (expandable) { setAppointmentsExpanded(!appointmentsExpanded); if (!appointmentsExpanded) changeMenu('appointments'); }
+          else changeMenu(id);
         }}
         style={{
           width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: 'none',
@@ -308,7 +284,6 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
                   {bookingStep === 1 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem' }}>
-                      {/* Calendar Section */}
                       <div style={{ padding: '2rem', background: '#f8fafc', borderRadius: '2.5rem', border: '1px solid #f1f5f9' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CalendarIcon size={24} color="#2563eb" /><h4 style={{ fontSize: '1.25rem', fontWeight: '900' }}>1. Select Date</h4></div>
@@ -326,11 +301,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         </div>
                       </div>
 
-                      {/* Integrated Doctor Search & Filter & List */}
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}><User size={24} color="#2563eb" /><h4 style={{ fontSize: '1.25rem', fontWeight: '900' }}>2. Choose Medical Specialist</h4></div>
-                        
-                        {/* Search & Filter Bar */}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}>
                           <div style={{ flex: '1 1 300px', position: 'relative' }}>
                             <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
@@ -343,14 +315,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                             </select>
                             <select value={fAge} onChange={e => setFAge(e.target.value)} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '0.85rem', flex: 1, minWidth: '120px' }}>
                               <option value="">Age: All</option>
-                              <option value="under30">Under 30</option>
-                              <option value="30-45">30 - 45</option>
-                              <option value="45plus">45+</option>
+                              <option value="under30">Under 30</option><option value="30-45">30 - 45</option><option value="45plus">45+</option>
                             </select>
                             <select value={fGender} onChange={e => setFGender(e.target.value)} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '0.85rem', flex: 1, minWidth: '120px' }}>
                               <option value="">Gender: All</option>
-                              <option value="Male">Male</option>
-                              <option value="Female">Female</option>
+                              <option value="Male">Male</option><option value="Female">Female</option>
                             </select>
                             <button onClick={() => setSortBy(sortBy === 'name' ? 'age' : 'name')} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                               <ArrowUpDown size={16} /> Sort by {sortBy === 'name' ? 'Name' : 'Age'}
@@ -358,63 +327,35 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           </div>
                         </div>
 
-                        {/* Doctor Card List */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                          {filteredDoctors.map(doc => (
-                            <div 
-                              key={doc.id} 
-                              onClick={() => { if(selDate) { setSelDoc(doc); setBookingStep(2); } else { alert('Please select a date first.'); } }}
-                              style={{ 
-                                background: 'white', padding: '1.5rem', borderRadius: '2rem', border: '1px solid', 
-                                borderColor: selDoc?.id === doc.id ? '#2563eb' : '#e2e8f0', 
-                                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                                boxShadow: selDoc?.id === doc.id ? '0 20px 40px rgba(37, 99, 235, 0.1)' : '0 4px 12px rgba(0,0,0,0.02)'
-                              }}
-                              onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-8px)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.08)'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = selDoc?.id === doc.id ? '0 20px 40px rgba(37, 99, 235, 0.1)' : '0 4px 12px rgba(0,0,0,0.02)'; }}
-                            >
+                          {filteredDoctors.length > 0 ? filteredDoctors.map(doc => (
+                            <div key={doc.id} onClick={() => { if(selDate) { setSelDoc(doc); setBookingStep(2); } else { alert('Please select a date first.'); } }} style={{ background: 'white', padding: '1.5rem', borderRadius: '2rem', border: '1px solid', borderColor: selDoc?.id === doc.id ? '#2563eb' : '#e2e8f0', transition: 'all 0.3s', cursor: 'pointer', position: 'relative', boxShadow: selDoc?.id === doc.id ? '0 20px 40px rgba(37, 99, 235, 0.1)' : '0 4px 12px rgba(0,0,0,0.02)' }}>
                               <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                <div style={{ position: 'relative' }}>
-                                  <Avatar name={doc.name} size={70} />
-                                  <div style={{ position: 'absolute', bottom: 0, right: 0, width: '18px', height: '18px', borderRadius: '50%', background: '#10b981', border: '3px solid white' }} />
-                                </div>
+                                <Avatar name={doc.name} size={70} />
                                 <div style={{ flex: 1 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                    <h5 style={{ fontWeight: '900', fontSize: '1.15rem', color: '#0f172a' }}>Dr. {doc.name}</h5>
-                                    <Star size={14} color="#f59e0b" fill="#f59e0b" />
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b' }}>4.9</span>
-                                  </div>
-                                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.02em', marginBottom: '0.5rem' }}>{doc.specialization}</div>
-                                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>{doc.gender}</span>
-                                    <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>Age {doc.age}</span>
-                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}><h5 style={{ fontWeight: '900', fontSize: '1.15rem' }}>Dr. {doc.name}</h5><Star size={14} color="#f59e0b" fill="#f59e0b" /><span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b' }}>4.9</span></div>
+                                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase' }}>{doc.specialization}</div>
+                                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}><span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>{doc.gender}</span><span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>Age {doc.age}</span></div>
                                 </div>
                               </div>
                               {selDoc?.id === doc.id && <div style={{ position: 'absolute', right: '1.5rem', top: '1.5rem' }}><CheckCircle2 size={24} color="#2563eb" /></div>}
                             </div>
-                          ))}
+                          )) : <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', gridColumn: '1/-1' }}>No available doctors found for the selected criteria.</div>}
                         </div>
                       </div>
                     </div>
                   )}
 
                   {bookingStep === 2 && (
-                    <div style={{ animation: 'fadeIn 0.4s ease' }}>
+                    <div>
                       <div style={{ background: '#f8fafc', padding: '2rem', borderRadius: '2.5rem', marginBottom: '3rem', display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'center', border: '1px solid #f1f5f9' }}>
-                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ background: '#2563eb10', padding: '1rem', borderRadius: '1.5rem' }}><CalendarIcon size={24} color="#2563eb" /></div>
-                          <div><div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8' }}>SELECTED DATE</div><div style={{ fontSize: '1.15rem', fontWeight: '900' }}>{selDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div></div>
-                        </div>
-                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                          <div style={{ background: '#7c3aed10', padding: '1rem', borderRadius: '1.5rem' }}><User size={24} color="#7c3aed" /></div>
-                          <div><div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8' }}>SELECTED DOCTOR</div><div style={{ fontSize: '1.15rem', fontWeight: '900' }}>Dr. {selDoc?.name}</div></div>
-                        </div>
+                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1rem' }}><div style={{ background: '#2563eb10', padding: '1rem', borderRadius: '1.5rem' }}><CalendarIcon size={24} color="#2563eb" /></div><div><div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8' }}>SELECTED DATE</div><div style={{ fontSize: '1.15rem', fontWeight: '900' }}>{selDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div></div></div>
+                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1rem' }}><div style={{ background: '#7c3aed10', padding: '1rem', borderRadius: '1.5rem' }}><User size={24} color="#7c3aed" /></div><div><div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8' }}>SELECTED DOCTOR</div><div style={{ fontSize: '1.15rem', fontWeight: '900' }}>Dr. {selDoc?.name}</div></div></div>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '1.25rem' }}>
-                        {slots.map(t => <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '900', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }}>{t}</button>)}
+                        {slots.map(t => <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '900', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}>{t}</button>)}
                       </div>
-                      <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '4rem', padding: '1.75rem', borderRadius: '2rem', background: selTime ? 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.3rem', border: 'none', cursor: 'pointer', boxShadow: selTime ? '0 20px 40px rgba(37, 99, 235, 0.25)' : 'none' }}>Complete Appointment Application</button>
+                      <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '4rem', padding: '1.75rem', borderRadius: '2rem', background: selTime ? 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.3rem', border: 'none', cursor: 'pointer' }}>Complete Appointment Application</button>
                     </div>
                   )}
                 </div>
@@ -423,7 +364,6 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               {currentJourneyStep >= 3 && (
                 <div style={{ background: 'white', padding: '5rem 2rem', borderRadius: '2.5rem', border: '2px dashed #e2e8f0', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#94a3b8' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} Phase</h3>
-                  <p style={{ color: '#cbd5e1', marginTop: '1rem' }}>Clinical integration in progress for this module.</p>
                 </div>
               )}
             </section>
@@ -436,9 +376,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}>Privacy Controls</h3>
                 {isGuardianView && currentGuardian ? (
                   <div style={{ display: 'grid', gap: '1.5rem' }}>
-                    <PrivacyToggle label="Show Clinical Notes" value={!!privacy.showNotes} onToggle={() => updatePrivacy(currentGuardian.id, { ...privacy, showNotes: !privacy.showNotes })} />
-                    <PrivacyToggle label="Show Lab Results" value={!!privacy.showLabs} onToggle={() => updatePrivacy(currentGuardian.id, { ...privacy, showLabs: !privacy.showLabs })} />
-                    <PrivacyToggle label="Show Surgery Data" value={!!privacy.showSurgeries} onToggle={() => updatePrivacy(currentGuardian.id, { ...privacy, showSurgeries: !privacy.showSurgeries })} />
+                    <PrivacyToggle label="Show Clinical Notes" value={!!privacy.showNotes} onToggle={() => {}} />
                   </div>
                 ) : <p style={{ color: '#64748b' }}>Privacy settings are managed by your appointed guardian.</p>}
               </div>
@@ -467,8 +405,8 @@ const EditRow = ({ label, value, onChange }: { label: string, value: string, onC
 const PrivacyToggle = ({ label, value, onToggle }: { label: string, value: boolean, onToggle: () => void }) => (
   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1.25rem', background: '#f8fafc', borderRadius: '1.5rem' }}>
     <span style={{ fontWeight: '800' }}>{label}</span>
-    <button onClick={onToggle} style={{ width: '56px', height: '28px', background: value ? '#2563eb' : '#cbd5e1', borderRadius: '14px', border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.3s' }}>
-      <div style={{ position: 'absolute', top: '4px', left: value ? '32px' : '4px', width: '20px', height: '20px', background: 'white', borderRadius: '50%', transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }} />
+    <button onClick={onToggle} style={{ width: '56px', height: '28px', background: value ? '#2563eb' : '#cbd5e1', borderRadius: '14px', border: 'none', cursor: 'pointer', position: 'relative' }}>
+      <div style={{ position: 'absolute', top: '4px', left: value ? '32px' : '4px', width: '20px', height: '20px', background: 'white', borderRadius: '50%', transition: 'all 0.3s' }} />
     </button>
   </div>
 );

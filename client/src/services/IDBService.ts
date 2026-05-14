@@ -50,4 +50,6 @@ export interface IDBService {
   loginGuardian(name: string, passwordHash: string): Promise<GuardianUser | null>;
   // staff auth
   loginStaff(name: string, passwordHash: string): Promise<StaffMember | null>;
+  // staff leave
+  fetchStaffLeave(): Promise<StaffLeave[]>;
 }

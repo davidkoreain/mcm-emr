@@ -1,5 +1,5 @@
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 export class LocalService implements IDBService {
@@ -105,4 +105,6 @@ export class LocalService implements IDBService {
     }
     return null;
   }
+
+  async fetchStaffLeave(): Promise<StaffLeave[]> { return []; }
 }
