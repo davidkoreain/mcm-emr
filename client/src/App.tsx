@@ -45,15 +45,30 @@ const App: React.FC = () => {
   const [autoOpenId, setAutoOpenId] = useState<string | null>(null);
 
   React.useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const type = params.get('type');
-    const id = params.get('id');
+    // Handle Deep Linking from URL or SessionStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlType = urlParams.get('type');
+    const urlId = urlParams.get('id');
 
-    if (type && id && role && !autoOpenId) {
-      const normalizedType = type.toLowerCase();
-      const normalizedId = id.trim();
+    // 1. If we have URL params, always save them to sessionStorage first
+    if (urlType && urlId) {
+      sessionStorage.setItem('pending_type', urlType);
+      sessionStorage.setItem('pending_id', urlId);
+      // Clean URL immediately to keep it tidy
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // 2. If logged in and we have pending items in sessionStorage, process them
+    const pendingType = sessionStorage.getItem('pending_type');
+    const pendingId = sessionStorage.getItem('pending_id');
+
+    if (role && pendingType && pendingId && !autoOpenId) {
+      const normalizedType = pendingType.toLowerCase();
+      const normalizedId = pendingId.trim();
       
+      console.log('Processing deep link:', normalizedType, normalizedId);
       setAutoOpenId(normalizedId);
+      
       if (normalizedType === 'patient') setView('patients');
       else if (normalizedType === 'staff') {
         setView('staff');
@@ -61,10 +76,10 @@ const App: React.FC = () => {
         setIsHrmOpen(true);
       }
       else if (normalizedType === 'asset') setView('assets');
-      
-      // Clear URL parameters after processing
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+
+      // Clear after processing
+      sessionStorage.removeItem('pending_type');
+      sessionStorage.removeItem('pending_id');
     }
   }, [role, autoOpenId, loading]);
 
