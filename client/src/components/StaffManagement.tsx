@@ -7,6 +7,7 @@ import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
 import { useEMR, type StaffMember as Staff } from '../context/EMRContext';
 import Avatar from './Avatar';
+import { QRCodeSVG } from 'qrcode.react';
 
 const fmtStaffId = (id: number) => `STF-${String(id).padStart(3, '0')}`;
 
@@ -276,7 +277,12 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab })
           <div style={{ ...boxStyle, width: '640px', maxHeight: '88vh' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Staff Profile</h3>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+              <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                <QRCodeSVG value={`EMR://staff/${profileModal.id}`} size={48} level="H" />
+              </div>
               <button onClick={() => setProfileModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
+            </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -458,7 +464,12 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab })
                                     <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700' }}>{fmtStaffId(s.id)}</div>
                                     <h3 onClick={() => setProfileModal(s)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{s.name}</h3>
                                   </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                                   <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
+                                  <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
+                                    <QRCodeSVG value={`EMR://staff/${s.id}`} size={44} level="M" />
+                                  </div>
+                                </div>
                                 </div>
                                 
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>

@@ -3,6 +3,7 @@ import { Monitor, Wrench, Trash2, Plus, AlertTriangle, MapPin, Scale, FileText, 
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
 import { useEMR, type Asset } from '../context/EMRContext';
+import { QRCodeSVG } from 'qrcode.react';
 
 type MaintenanceLog = { id: number; asset: string; task: string; technician: string; date: string; status: string };
 type LossRecord = { id: number; asset: string; type: string; reason: string; date: string; action: string };
@@ -131,7 +132,12 @@ const AssetManagement: React.FC = () => {
           <div style={boxStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3>Asset Details</h3>
-              <button onClick={() => setDetailModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                  <QRCodeSVG value={`EMR://asset/${detailModal.id}`} size={48} level="H" />
+                </div>
+                <button onClick={() => setDetailModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
@@ -305,7 +311,12 @@ const AssetManagement: React.FC = () => {
                         <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{asset.id} | S/N: {asset.serial}</div>
                         <h3 style={{ fontSize: '1rem', marginTop: '0.2rem', fontWeight: '700' }}>{asset.name}</h3>
                       </div>
-                      <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{asset.status}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                        <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{asset.status}</span>
+                        <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
+                          <QRCodeSVG value={`EMR://asset/${asset.id}`} size={44} level="M" />
+                        </div>
+                      </div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><MapPin size={14} color="var(--text-secondary)" /><span>{asset.location}</span></div>

@@ -1,8 +1,6 @@
-import React, { useState, useMemo } from 'react';
-import { PlusCircle, Users, X, Info, Activity, Stethoscope, Clock, Calendar } from 'lucide-react';
-import { useEMR, type Patient } from '../context/EMRContext';
 import ListFilterControl from './ListFilterControl';
 import Avatar from './Avatar';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface PatientManagementProps {
   onViewVitals: (patient: { mrn: string; name: string; amharic: string }) => void;
@@ -49,7 +47,12 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Patient Profile</h3>
                 <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{detailModal.mrn} • {detailModal.name}</p>
               </div>
-              <button onClick={() => { setDetailModal(null); setModalTab('demographic'); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                  <QRCodeSVG value={`EMR://patient/${detailModal.mrn}`} size={48} level="H" />
+                </div>
+                <button onClick={() => { setDetailModal(null); setModalTab('demographic'); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              </div>
             </div>
 
             {/* Modal Tabs */}
@@ -242,9 +245,14 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                   <h3 onClick={() => setDetailModal(p)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{p.name}</h3>
                   <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{p.amharic}</div>
                 </div>
-                <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`} style={{ height: 'fit-content' }}>
-                  {p.status}
-                </span>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                  <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`} style={{ height: 'fit-content' }}>
+                    {p.status}
+                  </span>
+                  <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
+                    <QRCodeSVG value={`EMR://patient/${p.mrn}`} size={44} level="M" />
+                  </div>
+                </div>
               </div>
               
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
