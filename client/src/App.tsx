@@ -49,17 +49,24 @@ const App: React.FC = () => {
     const type = params.get('type');
     const id = params.get('id');
 
-    if (type && id) {
-      setAutoOpenId(id);
-      if (type === 'patient') setView('patients');
-      else if (type === 'staff') {
+    if (type && id && role && !autoOpenId) {
+      const normalizedType = type.toLowerCase();
+      const normalizedId = id.trim();
+      
+      setAutoOpenId(normalizedId);
+      if (normalizedType === 'patient') setView('patients');
+      else if (normalizedType === 'staff') {
         setView('staff');
         setStaffTab('portfolio');
         setIsHrmOpen(true);
       }
-      else if (type === 'asset') setView('assets');
+      else if (normalizedType === 'asset') setView('assets');
+      
+      // Clear URL parameters after processing
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
     }
-  }, []);
+  }, [role, autoOpenId, loading]);
 
   const handleLogout = () => {
     setRole(null);

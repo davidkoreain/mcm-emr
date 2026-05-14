@@ -65,7 +65,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
 
   useEffect(() => {
     if (autoOpenId && staff.length > 0) {
-      const s = staff.find(member => String(member.id) === autoOpenId);
+      const s = staff.find(member => String(member.id).toLowerCase().trim() === autoOpenId.toLowerCase().trim());
       if (s) {
         setProfileModal(s);
       }

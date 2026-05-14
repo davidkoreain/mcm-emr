@@ -54,7 +54,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
 
   useEffect(() => {
     if (autoOpenId && assets.length > 0) {
-      const a = assets.find(item => item.id === autoOpenId);
+      const a = assets.find(item => String(item.id).toLowerCase().trim() === autoOpenId.toLowerCase().trim());
       if (a) {
         setDetailModal(a);
       }

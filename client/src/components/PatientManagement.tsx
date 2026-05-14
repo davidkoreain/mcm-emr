@@ -24,7 +24,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
 
   useEffect(() => {
     if (autoOpenId && patients.length > 0) {
-      const patient = patients.find(p => p.mrn === autoOpenId);
+      const patient = patients.find(p => p.mrn.toLowerCase().trim() === autoOpenId.toLowerCase().trim());
       if (patient) {
         setDetailModal(patient);
         setModalTab('demographic');
@@ -305,7 +305,8 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
             </div>
           </div>
         ))}
-        {filteredPatients.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No patients match your search criteria.</div>}
+        {filteredPatients.length === 0 && !autoOpenId && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No patients match your search criteria.</div>}
+        {filteredPatients.length === 0 && autoOpenId && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Loading patient details...</div>}
       </div>
     </div>
   );
