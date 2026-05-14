@@ -61,6 +61,18 @@ const ListFilterControl: React.FC<ListFilterControlProps> = ({
   return (
     <div style={{ marginBottom: '1.25rem' }}>
       <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', flexWrap: 'wrap' }}>
+        
+        {/* Search Input Box */}
+        <div style={{ ...chipStyle, flex: '1', minWidth: '200px', maxWidth: '400px', background: 'white' }}>
+          <Search size={14} color="#64748b" />
+          <input
+            type="text"
+            value={searchValue}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder={searchPlaceholder}
+            style={{ ...selectStyle, background: 'none', border: 'none', padding: '0', width: '100%', cursor: 'text' }}
+          />
+        </div>
 
         {filters.map((field) => (
           <div key={field.key} style={chipStyle}>
