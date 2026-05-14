@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
-  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star, BookOpen, Briefcase, Medal
+  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search as SearchIcon, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star, BookOpen, Briefcase, Medal
 } from 'lucide-react';
 import { useEMR, type StaffMember, type Patient } from '../context/EMRContext';
 import Avatar from './Avatar';
@@ -13,7 +13,7 @@ interface PortalProps {
 }
 
 const JOURNEY_STEPS = [
-  { id: 1, label: 'Discovery', icon: Search, color: '#3b82f6', desc: 'Find doctors and available appointment dates' },
+  { id: 1, label: 'Discovery', icon: SearchIcon, color: '#3b82f6', desc: 'Find doctors and available appointment dates' },
   { id: 2, label: 'Application', icon: CalendarIcon, color: '#6366f1', desc: 'Request an appointment on your preferred date' },
   { id: 3, label: 'Confirmation', icon: Award, color: '#10b981', desc: 'Finalizing your medical appointment schedule' },
   { id: 4, label: 'Visit', icon: Clock, color: '#f59e0b', desc: 'Hospital visit and arrival notification' },
@@ -371,7 +371,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                     <div style={{ animation: 'fadeIn 0.4s ease' }}>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}>
                         <div style={{ flex: '1 1 300px', position: 'relative' }}>
-                          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                          <SearchIcon size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
                           <input type="text" placeholder="Search by specialist name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 3rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', fontWeight: '600' }} />
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', flex: '1 1 auto' }}>
