@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
-  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info
+  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera
 } from 'lucide-react';
-import { useEMR, type StaffMember } from '../context/EMRContext';
+import { useEMR, type StaffMember, type Patient } from '../context/EMRContext';
 import Avatar from './Avatar';
 
 interface PortalProps {
@@ -29,13 +29,17 @@ const JOURNEY_STEPS = [
 ];
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
-  const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians, updatePrivacy } = useEMR();
+  const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians, updatePrivacy, updatePatient } = useEMR();
   
   // Navigation State
   const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'settings'>('appointments');
   const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
   const [currentJourneyStep, setCurrentJourneyStep] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Profile Edit State
+  const [isEditing, setIsEditing] = useState(false);
+  const [editData, setEditData] = useState<Partial<Patient>>({});
 
   // Sync with browser history (hash-based)
   React.useEffect(() => {
@@ -91,7 +95,6 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
   const myGuardian = guardians.find(g => g.patientMrn === activeUser.mrn);
   const privacy = myGuardian?.privacySettings || { showNotes: true, showLabs: true, showSurgeries: true };
-  const canSeeNotes = isGuardianView || privacy.showNotes;
   const filteredLabs = labResults.filter(r => r.patientMrn === activeUser.mrn).filter(() => isGuardianView || privacy.showLabs);
 
   const specs = useMemo(() => Array.from(new Set(staff.filter(s => s.role.includes('Doctor')).map(s => s.specialization))), [staff]);
@@ -143,6 +146,14 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       alert(`Appointment scheduled: Dr. ${selDoc.name}`);
       changeStep(3);
     } catch (e) { alert('Failed to book.'); }
+  };
+
+  const handleSaveProfile = async () => {
+    try {
+      await updatePatient(activeUser.mrn, editData);
+      setIsEditing(false);
+      alert('Profile updated successfully.');
+    } catch (e) { alert('Failed to update profile.'); }
   };
 
   const MainMenuItem = ({ id, label, icon: Icon, expandable = false }: { id: any, label: string, icon: any, expandable?: boolean }) => (
@@ -240,7 +251,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '1rem' }}>
-            <Avatar name={activeUser.name} size={36} />
+            {activeUser.photoUrl ? (
+              <img src={activeUser.photoUrl} alt="Profile" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+            ) : (
+              <Avatar name={activeUser.name} size={36} />
+            )}
             <div style={{ overflow: 'hidden' }}>
               <div style={{ fontSize: '0.9rem', fontWeight: '800', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeUser.name}</div>
               <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: '600' }}>{activeUser.mrn}</div>
@@ -279,25 +294,111 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           {/* Patient Information View */}
           {activeMenu === 'info' && (
             <section>
-              <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '2rem' }}>Patient Information</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b' }}>Demographics</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <InfoRow label="Full Name" value={activeUser.name} />
-                    <InfoRow label="Date of Birth" value={activeUser.dob} />
-                    <InfoRow label="Gender" value={activeUser.gender} />
-                    <InfoRow label="Phone" value={activeUser.phone} />
-                  </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '0.5rem' }}>Patient Information</h2>
+                  <p style={{ color: '#64748b', fontWeight: '600' }}>Manage your personal profile and clinical identifiers</p>
                 </div>
-                <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b' }}>Clinical Identifiers</h3>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <InfoRow label="Medical Record Number (MRN)" value={activeUser.mrn} />
-                    <InfoRow label="Primary Language" value={activeUser.language || 'English'} />
-                  </div>
-                </div>
+                {!isEditing && (
+                  <button 
+                    onClick={() => { setEditData(activeUser); setIsEditing(true); }}
+                    style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.85rem 1.5rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' }}
+                  >
+                    <Edit size={18} /> Edit Profile
+                  </button>
+                )}
               </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
+                {/* Photo & Basic Info */}
+                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
+                    {isEditing ? (
+                      <div style={{ position: 'relative' }}>
+                        {editData.photoUrl ? (
+                          <img src={editData.photoUrl} alt="Preview" style={{ width: '120px', height: '120px', borderRadius: '2.5rem', objectFit: 'cover', border: '4px solid #f1f5f9' }} />
+                        ) : (
+                          <div style={{ width: '120px', height: '120px', borderRadius: '2.5rem', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px dashed #e2e8f0' }}>
+                            <Camera size={40} color="#cbd5e1" />
+                          </div>
+                        )}
+                        <label style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#2563eb', color: 'white', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
+                          <Camera size={18} />
+                          <input 
+                            type="text" 
+                            placeholder="Image URL" 
+                            style={{ position: 'absolute', opacity: 0, width: 0 }} 
+                            onChange={(e) => setEditData({ ...editData, photoUrl: e.target.value })} 
+                            onBlur={(e) => {
+                              const url = prompt('Enter Profile Image URL:');
+                              if (url) setEditData({ ...editData, photoUrl: url });
+                            }}
+                          />
+                        </label>
+                      </div>
+                    ) : (
+                      activeUser.photoUrl ? (
+                        <img src={activeUser.photoUrl} alt="Profile" style={{ width: '120px', height: '120px', borderRadius: '2.5rem', objectFit: 'cover', border: '4px solid #f1f5f9' }} />
+                      ) : (
+                        <Avatar name={activeUser.name} size={120} />
+                      )
+                    )}
+                  </div>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#0f172a' }}>{activeUser.name}</h3>
+                  <p style={{ color: '#64748b', fontWeight: '700', fontSize: '0.9rem' }}>MRN: {activeUser.mrn}</p>
+                </div>
+
+                {/* Demographics */}
+                <div style={{ background: 'white', padding: '2rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demographics</h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    {isEditing ? (
+                      <>
+                        <EditRow label="Full Name" value={editData.name || ''} onChange={(v) => setEditData({ ...editData, name: v })} />
+                        <EditRow label="Date of Birth" value={editData.dob || ''} onChange={(v) => setEditData({ ...editData, dob: v })} />
+                        <EditRow label="Gender" value={editData.gender || ''} onChange={(v) => setEditData({ ...editData, gender: v })} />
+                        <EditRow label="Phone" value={editData.phone || ''} onChange={(v) => setEditData({ ...editData, phone: v })} />
+                      </>
+                    ) : (
+                      <>
+                        <InfoRow label="Full Name" value={activeUser.name} />
+                        <InfoRow label="Date of Birth" value={activeUser.dob} />
+                        <InfoRow label="Gender" value={activeUser.gender} />
+                        <InfoRow label="Phone" value={activeUser.phone} />
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Identifiers */}
+                {!isEditing && (
+                  <div style={{ background: 'white', padding: '2rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Clinical Status</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      <InfoRow label="Visit Type" value={activeUser.visitType} />
+                      <InfoRow label="Registration Status" value={activeUser.status} />
+                      <InfoRow label="Primary Language" value={activeUser.language || 'English'} />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {isEditing && (
+                <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                  <button 
+                    onClick={() => setIsEditing(false)}
+                    style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    <X size={18} /> Cancel
+                  </button>
+                  <button 
+                    onClick={handleSaveProfile}
+                    style={{ background: '#2563eb', color: 'white', border: 'none', padding: '1rem 3rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 10px 20px rgba(37, 99, 235, 0.2)' }}
+                  >
+                    <Save size={18} /> Save Changes
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
@@ -451,6 +552,18 @@ const InfoRow = ({ label, value }: { label: string, value: any }) => (
   <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
     <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>{label}</div>
     <div style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b', marginTop: '0.25rem' }}>{value}</div>
+  </div>
+);
+
+const EditRow = ({ label, value, onChange }: { label: string, value: string, onChange: (v: string) => void }) => (
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+    <label style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase' }}>{label}</label>
+    <input 
+      type="text" 
+      value={value} 
+      onChange={(e) => onChange(e.target.value)} 
+      style={{ padding: '0.85rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontWeight: '600', color: '#1e293b' }}
+    />
   </div>
 );
 
