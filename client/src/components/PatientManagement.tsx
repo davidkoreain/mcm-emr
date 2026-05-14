@@ -305,8 +305,17 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
             </div>
           </div>
         ))}
-        {filteredPatients.length === 0 && !autoOpenId && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No patients match your search criteria.</div>}
-        {filteredPatients.length === 0 && autoOpenId && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>Loading patient details...</div>}
+        {filteredPatients.length === 0 && !autoOpenId && (
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+            일치하는 환자 데이터가 없습니다.
+          </div>
+        )}
+        {autoOpenId && !detailModal && (
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
+            <p style={{ fontWeight: '700' }}>환자 정보를 불러오는 중입니다...</p>
+            <p style={{ fontSize: '0.8rem' }}>ID: {autoOpenId}</p>
+          </div>
+        )}
       </div>
     </div>
   );
