@@ -70,7 +70,8 @@ body {
   transition: padding 0.25s, margin 0.25s;
 }
 
-.sidebar:hover .sidebar-header {
+.sidebar:hover .sidebar-header,
+.sidebar.mobile-open .sidebar-header {
   padding: 1rem;
   margin: 0.75rem;
 }
@@ -115,7 +116,8 @@ body {
   text-overflow: ellipsis;
 }
 
-.sidebar:hover .nav-item span {
+.sidebar:hover .nav-item span,
+.sidebar.mobile-open .nav-item span {
   opacity: 1;
 }
 
