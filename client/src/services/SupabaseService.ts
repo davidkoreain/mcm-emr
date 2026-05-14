@@ -211,7 +211,7 @@ function patientToRow(p: Patient) {
     ...(p.genderIdentity !== undefined && { gender_identity: p.genderIdentity }),
     ...(p.sexualOrientation !== undefined && { sexual_orientation: p.sexualOrientation }),
     ...(p.pronouns !== undefined && { pronouns: p.pronouns }),
-    ...(p.birthSex !== undefined && { birth_sex: p.birth_sex }),
+    ...(p.birthSex !== undefined && { birth_sex: p.birthSex }),
     ...(p.ethnicity !== undefined && { ethnicity: p.ethnicity }),
     ...(p.race !== undefined && { race: p.race }),
     ...(p.nationality !== undefined && { nationality: p.nationality }),
@@ -252,6 +252,18 @@ function rowToStaff(r: Record<string, unknown>): StaffMember {
     awards: (r.awards as string[]) ?? [],
     photoUrl: (r.photo_url as string) || undefined,
     signatureUrl: r.signature_url as string || undefined,
+  };
+}
+
+function staffToRow(s: StaffMember | Omit<StaffMember, 'id'>) {
+  return {
+    ...('id' in s && { id: s.id }),
+    name: s.name, role: s.role, specialization: s.specialization,
+    gender: s.gender, age: s.age, shift: s.shift, status: s.status,
+    education: s.education, license: s.license, experience: s.experience,
+    license_no: s.licenseNo, npi: s.npi, upin: s.upin, tax_id: s.taxId,
+    surgeries: s.surgeries, training: s.training, awards: s.awards,
+    photo_url: s.photoUrl, signature_url: s.signatureUrl,
   };
 }
 
@@ -306,13 +318,7 @@ export class SupabaseService implements IDBService {
     // Check if staff exist
     const { count: staffCount } = await this.client.from('staff').select('*', { count: 'exact', head: true });
     if (staffCount === 0) {
-      await this.client.from('staff').insert(initialStaff.map(s => ({
-        id: s.id, name: s.name, role: s.role, specialization: s.specialization,
-        gender: s.gender, age: s.age, shift: s.shift, status: s.status,
-        education: s.education, license: s.license, experience: s.experience,
-        surgeries: s.surgeries, training: s.training, awards: s.awards,
-        photo_url: s.photoUrl
-      })));
+      await this.client.from('staff').insert(initialStaff.map(staffToRow));
     }
 
     // Check if assets exist
@@ -420,15 +426,7 @@ export class SupabaseService implements IDBService {
   async insertStaff(s: Omit<StaffMember, 'id'>): Promise<StaffMember> {
     const { data, error } = await this.client
       .from('staff')
-      .insert({
-        name: s.name, role: s.role, specialization: s.specialization,
-        gender: s.gender, age: s.age,
-        shift: s.shift, status: s.status,
-        education: s.education, license: s.license, experience: s.experience,
-        license_no: s.licenseNo, npi: s.npi, upin: s.upin, tax_id: s.taxId,
-        surgeries: s.surgeries, training: s.training, awards: s.awards,
-        photo_url: s.photoUrl, signature_url: s.signatureUrl,
-      })
+      .insert(staffToRow(s))
       .select().single();
     if (error) throw new Error(error.message);
     return rowToStaff(data as Record<string, unknown>);
