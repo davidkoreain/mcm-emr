@@ -47,11 +47,21 @@ const App: React.FC = () => {
   React.useEffect(() => {
     // Handle Deep Linking from URL or SessionStorage
     const urlParams = new URLSearchParams(window.location.search);
-    const urlType = urlParams.get('type');
-    const urlId = urlParams.get('id');
+    let urlType = urlParams.get('type');
+    let urlId = urlParams.get('id');
+
+    // Fallback for some mobile browsers that might struggle with URLSearchParams
+    if (!urlType || !urlId) {
+      const matchType = window.location.search.match(/[?&]type=([^&]+)/);
+      const matchId = window.location.search.match(/[?&]id=([^&]+)/);
+      if (matchType) urlType = matchType[1];
+      if (matchId) urlId = matchId[1];
+    }
 
     // 1. If we have URL params, always save them to sessionStorage first
     if (urlType && urlId) {
+      // DEBUG ALERT for mobile
+      alert(`Detected QR Scan: ${urlType} / ${urlId}`);
       sessionStorage.setItem('pending_type', urlType);
       sessionStorage.setItem('pending_id', urlId);
       // Clean URL immediately to keep it tidy
@@ -112,7 +122,7 @@ const App: React.FC = () => {
     <div className="app-container">
       {/* Debug Banner to verify deployment version */}
       <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#fef08a', color: '#854d0e', fontSize: '0.6rem', fontWeight: 'bold', textAlign: 'center', zIndex: 10000, padding: '2px', pointerEvents: 'none' }}>
-        V1.1.0 - QR DEBUG ACTIVE (Role: {role})
+        V1.1.1 - QR: {autoOpenId || 'None'} | View: {view} | Role: {role || 'Guest'}
       </div>
       {mobileMenuOpen && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} onClick={() => setMobileMenuOpen(false)} />}
       
