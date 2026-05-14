@@ -129,17 +129,22 @@ body {
   flex: 1;
   padding: 2rem;
   overflow-y: auto;
-  margin-left: 64px;
   padding-top: calc(1.5rem + env(safe-area-inset-top));
   padding-right: calc(1.5rem + env(safe-area-inset-right));
   padding-left: calc(64px + env(safe-area-inset-left));
-  margin-left: 0; /* Changed from margin-left to padding-left for better containment */
 }
 
 @media (max-width: 768px) {
   .main-content {
-    padding-left: calc(0.75rem + env(safe-area-inset-left));
-    padding-right: calc(0.75rem + env(safe-area-inset-right));
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+  }
+  .main-content-inner {
+    padding: 1rem !important;
+  }
+  .main-header {
+    padding: 1rem !important;
   }
 }
 
@@ -550,15 +555,13 @@ body {
   .data-table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border-radius: 0;
-    margin: 0 -1.25rem;
-    padding: 0 1.25rem;
-    border-left: none;
-    border-right: none;
+    border-radius: 0.5rem;
+    margin: 0;
+    border: 1px solid var(--border-color);
   }
 
   .data-table {
-    min-width: 700px; /* Ensure enough room to prevent text squashing */
+    min-width: 800px;
   }
 
   .pharmacy-tabs {
@@ -570,6 +573,28 @@ body {
   .tab-btn {
     white-space: nowrap;
     padding: 0.5rem 1rem;
+  }
+
+  /* ── Mobile Modal & Overlay ────────────────────────────── */
+  .modal-content {
+    width: 95vw !important;
+    max-height: 90vh;
+    padding: 1.5rem !important;
+    overflow-y: auto;
+  }
+
+  .form-grid, .stats-grid, .vitals-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Flow Board Mobile Stacking */
+  .flow-board-wrapper {
+    flex-direction: column !important;
+  }
+
+  .calendar-section, .detail-section {
+    flex: none !important;
+    width: 100% !important;
   }
 }
 

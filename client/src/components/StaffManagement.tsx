@@ -241,81 +241,29 @@ const StaffManagement: React.FC = () => {
         <div style={overlayStyle} onClick={() => setProfileModal(null)}>
           <div style={{ ...boxStyle, width: '640px', maxHeight: '88vh' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                <Avatar name={profileModal.name} photoUrl={profileModal.photoUrl} size={80} />
-                <div>
-                  <h2 style={{ fontSize: '1.4rem', margin: 0 }}>{profileModal.name}</h2>
-                  <p style={{ color: 'var(--primary-color)', fontWeight: '600', margin: '0.2rem 0 0' }}>{profileModal.role}</p>
-                  <p style={{ fontSize: '0.8rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700', margin: '0.2rem 0 0' }}>{fmtStaffId(profileModal.id)}</p>
-                </div>
-              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Staff Profile</h3>
               <button onClick={() => setProfileModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {[
-                { label: 'SHIFT', value: profileModal.shift },
-                { label: 'STATUS', value: profileModal.status },
+                { label: 'Staff ID', value: fmtStaffId(profileModal.id) },
+                { label: 'Name', value: profileModal.name },
+                { label: 'Role', value: profileModal.role },
+                { label: 'Specialization', value: profileModal.specialization },
+                { label: 'Shift', value: profileModal.shift },
+                { label: 'Status', value: profileModal.status },
+                { label: 'License No.', value: profileModal.license },
+                { label: 'Education', value: profileModal.education },
+                { label: 'Experience', value: profileModal.experience },
+                { label: 'Surgery Log', value: profileModal.surgeries.join(', ') || 'None' },
+                { label: 'Training', value: profileModal.training.join(', ') || 'None' },
               ].map(({ label, value }) => (
-                <div key={label} style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.2rem' }}>{label}</div>
-                  <div style={{ fontWeight: '600' }}>{value}</div>
+                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                  <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '600' }}>{label}</span>
+                  <span style={{ fontWeight: '700', color: label === 'Status' && value === 'On Duty' ? '#10b981' : 'inherit' }}>{value}</span>
                 </div>
               ))}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {[{ label: 'EDUCATION', value: profileModal.education }, { label: 'EXPERIENCE', value: profileModal.experience }].map(({ label, value }) => (
-                  <div key={label} style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.25rem' }}>{label}</div>
-                    <div style={{ fontSize: '0.9rem' }}>{value}</div>
-                  </div>
-                ))}
-                <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.25rem' }}>MEDICAL LICENSE</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <ShieldCheck size={14} color="#10b981" />
-                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{profileModal.license}</span>
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {profileModal.surgeries.length > 0 && (
-                  <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.4rem' }}>SURGERY LOG</div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                      {profileModal.surgeries.map((s, i) => (
-                        <span key={i} style={{ padding: '0.2rem 0.6rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '1rem', fontSize: '0.78rem' }}>{s}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                {profileModal.training.length > 0 && (
-                  <div style={{ background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', marginBottom: '0.4rem' }}>CME / TRAINING</div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      {profileModal.training.map((t, i) => (
-                        <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <CheckCircle size={12} color="var(--primary-color)" /> {t}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {profileModal.awards.length > 0 && (
-                  <div style={{ background: '#fef3c7', padding: '0.75rem 1rem', borderRadius: '0.75rem' }}>
-                    <div style={{ fontSize: '0.7rem', fontWeight: '700', color: '#92400e', marginBottom: '0.4rem' }}>AWARDS</div>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                      {profileModal.awards.map((a, i) => (
-                        <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                          <Award size={12} color="#b45309" /> {a}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
@@ -451,52 +399,48 @@ const StaffManagement: React.FC = () => {
                   onSortChange={setRosterSort} totalCount={staff.length} filteredCount={filteredRoster.length}
                 />
                 <div className="mobile-scroll-hint">← Swipe to see more →</div>
-                <div className="data-table-container">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Staff</th><th>Role</th>
-                        {activeTab === 'roster' ? <><th>Current Shift</th><th>Status</th><th>Duty Log</th></> : <><th>License</th><th>Experience</th><th>Full Portfolio</th></>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {filteredRoster.map((s) => (
-                        <tr key={s.id}>
-                          <td>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                              <Avatar name={s.name} photoUrl={s.photoUrl} size={52} />
-                              <div>
-                                <button
-                                style={{ fontWeight: '600', background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'inherit', textAlign: 'left' }}
-                                onClick={() => setProfileModal(s)}
-                              >{s.name}</button>
-                                <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '600' }}>{fmtStaffId(s.id)}</div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>{s.role}</td>
-                          {activeTab === 'roster' ? (
-                            <>
-                              <td>{s.shift}</td>
-                              <td><span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`}>{s.status}</span></td>
-                              <td><button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setLogsModal(s)}>View Logs</button></td>
-                            </>
-                          ) : (
-                            <>
-                              <td>{s.license}</td>
-                              <td>{s.experience}</td>
-                              <td>
-                                <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => setSelectedStaff(s.id)}>
-                                  View Profile <ChevronRight size={14} />
-                                </button>
-                              </td>
-                            </>
-                          )}
-                        </tr>
-                      ))}
-                      {filteredRoster.length === 0 && <tr><td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8' }}>No staff match your search criteria.</td></tr>}
-                    </tbody>
-                  </table>
+                <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                  {filteredRoster.map((s) => (
+                    <div key={s.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                      <div 
+                        onClick={() => setProfileModal(s)}
+                        style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      >
+                        {s.photoUrl ? (
+                          <img src={s.photoUrl} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <Avatar name={s.name} size={120} />
+                        )}
+                      </div>
+                      <div style={{ padding: '1.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                          <div>
+                            <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700' }}>{fmtStaffId(s.id)}</div>
+                            <h3 onClick={() => setProfileModal(s)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{s.name}</h3>
+                          </div>
+                          <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
+                        </div>
+                        
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
+                            <Stethoscope size={14} /> {s.role}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Award size={14} /> {s.specialization}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Clock size={14} /> {s.shift} Shift
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setProfileModal(s)}>Profile</button>
+                          <button className="btn-primary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setLogsModal(s)}>Duty Logs</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {filteredRoster.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No staff match your search criteria.</div>}
                 </div>
               </>
             )}

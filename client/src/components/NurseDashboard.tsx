@@ -167,7 +167,7 @@ const NurseDashboard: React.FC = () => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '1rem' }}>
+      <div className="stats-grid">
         {[
           { label: 'Inpatients',    value: inpatients.length, color: '#0891b2' },
           { label: 'Wards Active',  value: [...new Set(inpatients.map(p => p.ward).filter(Boolean))].length, color: '#7c3aed' },
@@ -182,10 +182,10 @@ const NurseDashboard: React.FC = () => {
       </div>
 
       {/* Split panel */}
-      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1rem', flex: 1, minHeight: 0 }}>
+      <div className="flow-board-wrapper" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1rem', flex: 1, minHeight: 0 }}>
 
         {/* Ward list */}
-        <div style={{ background: 'white', borderRadius: '0.75rem', padding: '1.25rem', overflowY: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
+        <div className="calendar-section" style={{ background: 'white', borderRadius: '0.75rem', padding: '1.25rem', overflowY: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
           <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#1e293b', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <BedDouble size={18} /> Ward Patients
           </div>
@@ -229,14 +229,14 @@ const NurseDashboard: React.FC = () => {
 
         {/* Patient detail */}
         {!selected ? (
-          <div style={{ background: 'white', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
+          <div className="detail-section" style={{ background: 'white', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.07)', minHeight: '200px' }}>
             <div style={{ textAlign: 'center', color: '#cbd5e1' }}>
               <BedDouble size={52} />
               <p style={{ marginTop: '0.75rem', fontWeight: '500', color: '#94a3b8' }}>Select a patient from the ward</p>
             </div>
           </div>
         ) : (
-          <div style={{ background: 'white', borderRadius: '0.75rem', padding: '1.5rem', overflowY: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
+          <div className="detail-section" style={{ background: 'white', borderRadius: '0.75rem', padding: '1.5rem', overflowY: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
 
             {/* Patient header */}
             <div style={{ paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9' }}>
@@ -282,7 +282,7 @@ const NurseDashboard: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                 <div style={{ background: '#f8fafc', borderRadius: '0.6rem', padding: '1.25rem', border: '1px solid #e2e8f0' }}>
                   <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#1e293b', marginBottom: '1rem' }}>Record New Vitals</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
+                  <div className="vitals-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
                     {[
                       { key: 'temperature',     label: 'Temp (°C)',    ph: '36.5' },
                       { key: 'heartRate',       label: 'Heart Rate',   ph: '72 bpm' },

@@ -14,6 +14,7 @@ interface PortalProps {
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
   const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians } = useEMR();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records' | 'privacy'>('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
 
@@ -89,7 +90,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
   const TabBtn = ({ id, label, icon: Icon }: { id: any, label: string, icon: any }) => (
     <button 
-      onClick={() => setActiveTab(id)} 
+      onClick={() => { setActiveTab(id); setMobileMenuOpen(false); }} 
       style={{
         width: '100%',
         display: 'flex',
@@ -125,20 +126,33 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   );
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
+    <div className="app-container" style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
+      {/* Mobile Menu Toggle */}
+      <button 
+        className="mobile-menu-btn" 
+        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+        style={{ position: 'fixed', top: '1.25rem', left: '1rem', zIndex: 1000, background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.5rem' }}
+      >
+        <Activity size={24} color="#2563eb" />
+      </button>
+
       {/* Sidebar */}
-      <aside style={{ 
-        width: '280px', 
-        background: 'white', 
-        borderRight: '1px solid #e2e8f0', 
-        display: 'flex', 
-        flexDirection: 'column', 
-        position: 'fixed', 
-        height: '100vh', 
-        left: 0, 
-        top: 0, 
-        zIndex: 100 
-      }}>
+      <aside 
+        className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
+        style={{ 
+          width: '280px', 
+          background: 'white', 
+          borderRight: '1px solid #e2e8f0', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          position: 'fixed', 
+          height: '100vh', 
+          left: 0, 
+          top: 0, 
+          zIndex: 900,
+          transition: 'transform 0.3s ease'
+        }}
+      >
         <div style={{ padding: '2rem 1.5rem', borderBottom: '1px solid #f1f5f9' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
             <Avatar name={activeUser.name} size={48} />
@@ -187,8 +201,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       </aside>
 
       {/* Main Content Area */}
-      <main style={{ flex: 1, marginLeft: '280px', padding: '2.5rem' }}>
-        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+      <main className="main-content" style={{ flex: 1, padding: '2.5rem' }}>
+        <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.025em' }}>
               {activeTab === 'dashboard' && 'Welcome Back,'}
@@ -215,7 +229,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
         <div style={{ maxWidth: '1100px' }}>
           {activeTab === 'dashboard' && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem' }}>
+            <div className="stats-grid">
               <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
                   <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '1rem' }}>
@@ -376,7 +390,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                 ) : <PrivacyBar />}
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(400px, 1fr))', gap: '2rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
                 <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                     <div style={{ background: '#fffbeb', padding: '0.75rem', borderRadius: '1rem' }}>

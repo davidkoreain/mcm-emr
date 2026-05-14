@@ -187,7 +187,7 @@ const InpatientManagement: React.FC = () => {
 
     return (
       <div style={{ ...overlayStyle, zIndex: 1001 }}>
-        <div style={{ background: 'white', width: '850px', borderRadius: '1.25rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+        <div className="modal-content" style={{ background: 'white', width: '850px', borderRadius: '1.25rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
           <div style={{ background: bed.status === 'Critical' ? '#ef4444' : 'var(--primary-color)', padding: '1.5rem', color: 'white', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <Bed size={32} />
@@ -209,7 +209,7 @@ const InpatientManagement: React.FC = () => {
             </div>
           </div>
 
-          <div style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+          <div className="flow-board-wrapper" style={{ padding: '2rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
             <div>
               <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.1rem', marginBottom: '1.25rem', paddingBottom: '0.5rem', borderBottom: '2px solid #f1f5f9' }}>
                 <Stethoscope size={20} color="var(--primary-color)" /> Clinical Summary
@@ -441,7 +441,7 @@ const InpatientManagement: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="care-dashboard" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
+          <div className="care-dashboard flow-board-wrapper" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1.5rem' }}>
             <div className="task-list">
               <h3 style={{ marginBottom: '1rem' }}>Today's Care Tasks</h3>
               <ListFilterControl

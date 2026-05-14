@@ -381,9 +381,9 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
+      <div className="flow-board-wrapper" style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
         {/* Main Calendar View */}
-        <div style={{ 
+        <div className="calendar-section" style={{ 
           flex: selectedPatient ? '2.2' : '1',
           background: 'white', 
           borderRadius: '1.25rem', 
@@ -399,7 +399,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
         {/* Right Side: Patient Detail View */}
         {selectedPatient ? (
-          <div style={{ 
+          <div className="detail-section" style={{ 
             flex: '1',
             background: 'white', 
             borderRadius: '1.25rem', 
@@ -533,8 +533,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
       {/* History Detail Modal */}
       {selectedHistoryItem && (
-        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)' }} onClick={() => setSelectedHistoryItem(null)}>
-          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', width: '600px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, backdropFilter: 'blur(4px)', padding: '1rem' }} onClick={() => setSelectedHistoryItem(null)}>
+          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', width: '600px', maxWidth: '100%', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }} onClick={e => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem' }}>
               <div>
                 <span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase' }}>Clinical Record Detail</span>
@@ -615,8 +615,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
       {/* New Appointment Modal */}
       {showNewModal && (
-        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)' }}>
-          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.25rem', width: '450px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '1rem' }}>
+          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.25rem', width: '450px', maxWidth: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1e293b' }}>New Appointment</h3>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

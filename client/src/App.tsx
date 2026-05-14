@@ -112,7 +112,7 @@ const App: React.FC = () => {
             </div>
           )}
         </header>
-        <div style={{ padding: '2rem' }}>
+        <div className="main-content-inner" style={{ padding: '2rem' }}>
           <ErrorBoundary>
             {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : (
               <DoctorDashboard 
