@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { useEMR, type StaffMember, type Patient } from '../context/EMRContext';
 import Avatar from './Avatar';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface PortalProps {
   onLogout: () => void;
@@ -158,36 +159,73 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     } catch (e) { alert('Failed to update profile.'); }
   };
 
-  const MainMenuItem = ({ id, label, icon: Icon, expandable = false }: { id: any, label: string, icon: any, expandable?: boolean }) => (
-    <div style={{ display: 'flex', flexDirection: 'column' }}>
-      <button
-        onClick={() => {
-          if (expandable) { setAppointmentsExpanded(!appointmentsExpanded); if (!appointmentsExpanded) changeMenu('appointments'); }
-          else changeMenu(id);
-        }}
-        style={{
-          width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: 'none',
-          background: activeMenu === id ? '#f1f5f9' : 'transparent', color: activeMenu === id ? '#2563eb' : '#64748b', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
-        }}
-      >
-        <Icon size={20} />
-        <span style={{ flex: 1, fontWeight: '800', fontSize: '0.95rem' }}>{label}</span>
-        {expandable && (appointmentsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
-      </button>
-      {expandable && appointmentsExpanded && (
-        <div style={{ marginLeft: '1.25rem', marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.15rem', borderLeft: '2px solid #f1f5f9' }}>
-          {JOURNEY_STEPS.map((step) => (
-            <button key={step.id} onClick={() => changeStep(step.id)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 1rem', borderRadius: '0.5rem', border: 'none', background: (activeMenu === 'appointments' && currentJourneyStep === step.id) ? `${step.color}10` : 'transparent', color: (activeMenu === 'appointments' && currentJourneyStep === step.id) ? step.color : '#94a3b8', cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' }}>
-              <div style={{ width: '24px', height: '24px', borderRadius: '6px', background: step.id < currentJourneyStep ? '#10b98115' : (activeMenu === 'appointments' && currentJourneyStep === step.id) ? step.color : '#f8fafc', color: step.id < currentJourneyStep ? '#10b981' : (activeMenu === 'appointments' && currentJourneyStep === step.id) ? 'white' : '#cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {step.id < currentJourneyStep ? <CheckCircle2 size={12} /> : <step.icon size={12} />}
-              </div>
-              <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{step.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const MainMenuItem = ({ id, label, icon: Icon, expandable = false }: { id: any, label: string, icon: any, expandable?: boolean }) => {
+    const isActive = activeMenu === id;
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <button
+          onClick={() => {
+            if (expandable) {
+              setAppointmentsExpanded(!appointmentsExpanded);
+            } else {
+              changeMenu(id);
+            }
+          }}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: 'none',
+            background: isActive ? '#f1f5f9' : 'transparent', color: isActive ? '#2563eb' : '#64748b', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
+          }}
+        >
+          <Icon size={20} />
+          <span style={{ flex: 1, fontWeight: '800', fontSize: '0.95rem' }}>{label}</span>
+          {expandable && (appointmentsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+        </button>
+        
+        {expandable && (
+          <AnimatePresence>
+            {appointmentsExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                style={{ overflow: 'hidden' }}
+              >
+                <div style={{ marginLeft: '1.25rem', marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.15rem', borderLeft: '2px solid #f1f5f9' }}>
+                  {JOURNEY_STEPS.map((step) => (
+                    <button 
+                      key={step.id} 
+                      onClick={() => {
+                        setActiveMenu('appointments');
+                        changeStep(step.id);
+                      }} 
+                      style={{ 
+                        width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 1rem', borderRadius: '0.5rem', border: 'none', 
+                        background: (activeMenu === 'appointments' && currentJourneyStep === step.id) ? `${step.color}10` : 'transparent', 
+                        color: (activeMenu === 'appointments' && currentJourneyStep === step.id) ? step.color : '#94a3b8', 
+                        cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' 
+                      }}
+                    >
+                      <div style={{ 
+                        width: '24px', height: '24px', borderRadius: '6px', 
+                        background: step.id < currentJourneyStep ? '#10b98115' : (activeMenu === 'appointments' && currentJourneyStep === step.id) ? step.color : '#f8fafc', 
+                        color: step.id < currentJourneyStep ? '#10b981' : (activeMenu === 'appointments' && currentJourneyStep === step.id) ? 'white' : '#cbd5e1', 
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
+                      }}>
+                        {step.id < currentJourneyStep ? <CheckCircle2 size={12} /> : <step.icon size={12} />}
+                      </div>
+                      <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{step.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="app-container" style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
@@ -211,7 +249,27 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid #f1f5f9' }}><button onClick={onLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.85rem 1.25rem', borderRadius: '0.85rem', fontWeight: '800' }}><LogOut size={18} /> Logout</button></div>
       </aside>
 
-      <main className="patient-portal-main" style={{ marginLeft: '320px', padding: '2.5rem' }}>
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setMobileMenuOpen(false)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.4)', zIndex: 850, backdropFilter: 'blur(4px)'
+            }}
+            className="mobile-only"
+          />
+        )}
+      </AnimatePresence>
+
+      <main 
+        className="patient-portal-main" 
+        style={{ marginLeft: '320px', padding: '2.5rem' }}
+        onClick={() => { if (mobileMenuOpen) setMobileMenuOpen(false); }}
+      >
         <div style={{ display: 'none', position: 'fixed', top: 0, left: 0, right: 0, height: '64px', background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e2e8f0', zIndex: 800, alignItems: 'center', padding: '0 1.25rem', justifyContent: 'space-between' }} className="mobile-only-flex">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Activity color="#2563eb" size={24} /><span style={{ fontWeight: '900' }}>Journey Portal</span></div>
           <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '0.5rem', padding: '0.5rem' }}><Menu size={20} /></button>
