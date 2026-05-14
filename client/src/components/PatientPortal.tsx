@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
-  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star
+  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star, BookOpen, Briefcase, Medal
 } from 'lucide-react';
 import { useEMR, type StaffMember, type Patient } from '../context/EMRContext';
 import Avatar from './Avatar';
@@ -66,14 +66,14 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   
   const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
 
-  // Booking
-  const [bookingStep, setBookingStep] = useState<1 | 2>(1); 
+  // Booking Flow: Step 1 (Date/Time) -> Step 2 (Doctor List) -> Step 3 (Doctor Details/Confirm)
+  const [bookingFlowStep, setBookingFlowStep] = useState<1 | 2 | 3>(1); 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selDate, setSelDate] = useState<Date | null>(null);
-  const [selDoc, setSelDoc] = useState<StaffMember | null>(null);
   const [selTime, setSelTime] = useState<string | null>(null);
+  const [selDoc, setSelDoc] = useState<StaffMember | null>(null);
 
-  // Search/Filter/Sort
+  // Search/Filter/Sort for Doctor List
   const [searchQuery, setSearchQuery] = useState('');
   const [fSpec, setFSpec] = useState('');
   const [fGender, setFGender] = useState('');
@@ -90,16 +90,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   
   const filteredDoctors = useMemo(() => {
     let list = staff.filter(s => s.role.includes('Doctor'));
-    
-    // Availability (Leave) Logic
     if (selDate) {
       const dateStr = selDate.toISOString().split('T')[0];
-      const offStaffIds = staffLeave
-        .filter(l => l.leaveDate === dateStr && l.status === 'Confirmed')
-        .map(l => l.staffId);
+      const offStaffIds = staffLeave.filter(l => l.leaveDate === dateStr && l.status === 'Confirmed').map(l => l.staffId);
       list = list.filter(s => !offStaffIds.includes(Number(s.id)));
     }
-    
     if (searchQuery) list = list.filter(s => s.name.toLowerCase().includes(searchQuery.toLowerCase()));
     if (fSpec) list = list.filter(s => s.specialization === fSpec);
     if (fGender) list = list.filter(s => s.gender === fGender);
@@ -108,7 +103,6 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       else if (fAge === '30-45') list = list.filter(s => s.age >= 30 && s.age <= 45);
       else if (fAge === '45plus') list = list.filter(s => s.age > 45);
     }
-    
     list.sort((a, b) => sortBy === 'name' ? a.name.localeCompare(b.name) : a.age - b.age);
     return list;
   }, [staff, staffLeave, selDate, searchQuery, fSpec, fGender, fAge, sortBy]);
@@ -142,7 +136,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         startTime: start.toISOString(), endTime: end.toISOString(),
         status: 'Scheduled', notes: isGuardianView ? 'Guardian' : 'Patient'
       });
-      alert(`Appointment scheduled: Dr. ${selDoc.name}`);
+      alert(`Appointment confirmed with Dr. ${selDoc.name} on ${selDate.toLocaleDateString()} at ${selTime}`);
       changeStep(3);
     } catch (e) { alert('Failed to book.'); }
   };
@@ -278,11 +272,13 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               {currentJourneyStep <= 2 && (
                 <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2.5rem', border: '1px solid #e2e8f0', boxShadow: '0 10px 40px rgba(0,0,0,0.03)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                    <h3 style={{ fontSize: '1.75rem', fontWeight: '900' }}>{bookingStep === 1 ? 'Discovery & Selection' : 'Confirm Your Time'}</h3>
-                    {bookingStep > 1 && <button onClick={() => setBookingStep(1)} style={{ background: '#f1f5f9', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '1rem', fontWeight: '800' }}>Back</button>}
+                    <h3 style={{ fontSize: '1.75rem', fontWeight: '900' }}>
+                      {bookingFlowStep === 1 ? 'Select Date & Time' : bookingFlowStep === 2 ? 'Select Medical Specialist' : 'Specialist Details'}
+                    </h3>
+                    {bookingFlowStep > 1 && <button onClick={() => setBookingFlowStep((bookingFlowStep - 1) as any)} style={{ background: '#f1f5f9', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '1rem', fontWeight: '800' }}>Back</button>}
                   </div>
 
-                  {bookingStep === 1 && (
+                  {bookingFlowStep === 1 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem' }}>
                       <div style={{ padding: '2rem', background: '#f8fafc', borderRadius: '2.5rem', border: '1px solid #f1f5f9' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
@@ -301,61 +297,81 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         </div>
                       </div>
 
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}><User size={24} color="#2563eb" /><h4 style={{ fontSize: '1.25rem', fontWeight: '900' }}>2. Choose Medical Specialist</h4></div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}>
-                          <div style={{ flex: '1 1 300px', position: 'relative' }}>
-                            <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                            <input type="text" placeholder="Search by doctor name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 3rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', fontWeight: '600' }} />
+                      {selDate && (
+                        <div style={{ animation: 'fadeIn 0.5s ease' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}><Clock size={24} color="#2563eb" /><h4 style={{ fontSize: '1.25rem', fontWeight: '900' }}>2. Select Time</h4></div>
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '1.25rem' }}>
+                            {slots.map(t => <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.25rem', borderRadius: '1.5rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '900', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}>{t}</button>)}
                           </div>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', flex: '1 1 auto' }}>
-                            <select value={fSpec} onChange={e => setFSpec(e.target.value)} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '0.85rem', flex: 1, minWidth: '150px' }}>
-                              <option value="">Specialty: All</option>
-                              {specs.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                            <select value={fAge} onChange={e => setFAge(e.target.value)} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '0.85rem', flex: 1, minWidth: '120px' }}>
-                              <option value="">Age: All</option>
-                              <option value="under30">Under 30</option><option value="30-45">30 - 45</option><option value="45plus">45+</option>
-                            </select>
-                            <select value={fGender} onChange={e => setFGender(e.target.value)} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '0.85rem', flex: 1, minWidth: '120px' }}>
-                              <option value="">Gender: All</option>
-                              <option value="Male">Male</option><option value="Female">Female</option>
-                            </select>
-                            <button onClick={() => setSortBy(sortBy === 'name' ? 'age' : 'name')} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                              <ArrowUpDown size={16} /> Sort by {sortBy === 'name' ? 'Name' : 'Age'}
-                            </button>
-                          </div>
+                          <button onClick={() => setBookingFlowStep(2)} disabled={!selTime} style={{ width: '100%', marginTop: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: selTime ? '#2563eb' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.1rem', border: 'none', cursor: 'pointer' }}>Proceed to Specialist Selection</button>
                         </div>
+                      )}
+                    </div>
+                  )}
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                          {filteredDoctors.length > 0 ? filteredDoctors.map(doc => (
-                            <div key={doc.id} onClick={() => { if(selDate) { setSelDoc(doc); setBookingStep(2); } else { alert('Please select a date first.'); } }} style={{ background: 'white', padding: '1.5rem', borderRadius: '2rem', border: '1px solid', borderColor: selDoc?.id === doc.id ? '#2563eb' : '#e2e8f0', transition: 'all 0.3s', cursor: 'pointer', position: 'relative', boxShadow: selDoc?.id === doc.id ? '0 20px 40px rgba(37, 99, 235, 0.1)' : '0 4px 12px rgba(0,0,0,0.02)' }}>
-                              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                <Avatar name={doc.name} size={70} />
-                                <div style={{ flex: 1 }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}><h5 style={{ fontWeight: '900', fontSize: '1.15rem' }}>Dr. {doc.name}</h5><Star size={14} color="#f59e0b" fill="#f59e0b" /><span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#f59e0b' }}>4.9</span></div>
-                                  <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase' }}>{doc.specialization}</div>
-                                  <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginTop: '0.5rem' }}><span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>{doc.gender}</span><span style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '0.5rem' }}>Age {doc.age}</span></div>
-                                </div>
-                              </div>
-                              {selDoc?.id === doc.id && <div style={{ position: 'absolute', right: '1.5rem', top: '1.5rem' }}><CheckCircle2 size={24} color="#2563eb" /></div>}
-                            </div>
-                          )) : <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', gridColumn: '1/-1' }}>No available doctors found for the selected criteria.</div>}
+                  {bookingFlowStep === 2 && (
+                    <div style={{ animation: 'fadeIn 0.4s ease' }}>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}>
+                        <div style={{ flex: '1 1 300px', position: 'relative' }}>
+                          <Search size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                          <input type="text" placeholder="Search by specialist name..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} style={{ width: '100%', padding: '0.85rem 1rem 0.85rem 3rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontSize: '0.9rem', fontWeight: '600' }} />
                         </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', flex: '1 1 auto' }}>
+                          <select value={fSpec} onChange={e => setFSpec(e.target.value)} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '700', fontSize: '0.85rem', flex: 1, minWidth: '150px' }}>
+                            <option value="">Specialty: All</option>
+                            {specs.map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
+                          <button onClick={() => setSortBy(sortBy === 'name' ? 'age' : 'name')} style={{ padding: '0.85rem 1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: '800', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}><ArrowUpDown size={16} /> Sort</button>
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {filteredDoctors.map(doc => (
+                          <div key={doc.id} onClick={() => { setSelDoc(doc); setBookingFlowStep(3); }} style={{ background: 'white', padding: '1.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0', transition: 'all 0.3s', cursor: 'pointer', position: 'relative', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
+                            <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                              <Avatar name={doc.name} size={70} />
+                              <div style={{ flex: 1 }}>
+                                <h5 style={{ fontWeight: '900', fontSize: '1.15rem' }}>Dr. {doc.name}</h5>
+                                <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#2563eb', textTransform: 'uppercase', marginBottom: '0.5rem' }}>{doc.specialization}</div>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}><span style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b', background: '#f1f5f9', padding: '0.15rem 0.5rem', borderRadius: '0.4rem' }}>{doc.experience || '10+ Years'}</span></div>
+                              </div>
+                              <ChevronRight size={20} color="#cbd5e1" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
 
-                  {bookingStep === 2 && (
-                    <div>
-                      <div style={{ background: '#f8fafc', padding: '2rem', borderRadius: '2.5rem', marginBottom: '3rem', display: 'flex', flexWrap: 'wrap', gap: '2rem', alignItems: 'center', border: '1px solid #f1f5f9' }}>
-                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1rem' }}><div style={{ background: '#2563eb10', padding: '1rem', borderRadius: '1.5rem' }}><CalendarIcon size={24} color="#2563eb" /></div><div><div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8' }}>SELECTED DATE</div><div style={{ fontSize: '1.15rem', fontWeight: '900' }}>{selDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div></div></div>
-                        <div style={{ flex: '1 1 200px', display: 'flex', alignItems: 'center', gap: '1rem' }}><div style={{ background: '#7c3aed10', padding: '1rem', borderRadius: '1.5rem' }}><User size={24} color="#7c3aed" /></div><div><div style={{ fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8' }}>SELECTED DOCTOR</div><div style={{ fontSize: '1.15rem', fontWeight: '900' }}>Dr. {selDoc?.name}</div></div></div>
+                  {bookingFlowStep === 3 && selDoc && (
+                    <div style={{ animation: 'slideUp 0.5s ease' }}>
+                      <div style={{ display: 'flex', gap: '2.5rem', flexWrap: 'wrap', marginBottom: '3rem' }}>
+                        <div style={{ flex: '0 0 140px', textAlign: 'center' }}>
+                          <Avatar name={selDoc.name} size={140} />
+                          <div style={{ marginTop: '1.5rem', background: '#2563eb10', padding: '0.5rem', borderRadius: '1rem' }}><Star size={20} color="#2563eb" fill="#2563eb" style={{ display: 'inline' }} /><span style={{ marginLeft: '0.5rem', fontWeight: '900', color: '#2563eb' }}>4.9 Rating</span></div>
+                        </div>
+                        <div style={{ flex: 1, minWidth: '300px' }}>
+                          <h4 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a' }}>Dr. {selDoc.name}</h4>
+                          <p style={{ fontSize: '1.1rem', fontWeight: '800', color: '#2563eb', marginBottom: '1.5rem' }}>{selDoc.specialization} Specialist</p>
+                          
+                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                            <DetailItem icon={GraduationCap} label="Education" value={selDoc.education || 'Harvard Medical School'} />
+                            <DetailItem icon={ShieldAlert} label="License" value={selDoc.license || 'MD-2026-99182'} />
+                            <DetailItem icon={BookOpen} label="Training" value={Array.isArray(selDoc.training) ? selDoc.training.join(', ') : 'Residency at Mayo Clinic'} />
+                            <DetailItem icon={Briefcase} label="Experience" value={selDoc.experience || 'Over 12 years of clinical practice'} />
+                            <DetailItem icon={Medal} label="Awards" value={Array.isArray(selDoc.awards) ? selDoc.awards.join(', ') : 'Best Clinician 2024'} />
+                          </div>
+                        </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '1.25rem' }}>
-                        {slots.map(t => <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '900', fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s' }}>{t}</button>)}
+
+                      <div style={{ background: '#f8fafc', padding: '2.5rem', borderRadius: '2.5rem', border: '1px solid #f1f5f9' }}>
+                        <h5 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}>Appointment Summary</h5>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem' }}>
+                          <div><div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>DATE</div><div style={{ fontSize: '1.1rem', fontWeight: '900' }}>{selDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div></div>
+                          <div><div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>TIME</div><div style={{ fontSize: '1.1rem', fontWeight: '900' }}>{selTime}</div></div>
+                        </div>
+                        <button onClick={handleBooking} style={{ width: '100%', marginTop: '2.5rem', padding: '1.75rem', borderRadius: '2rem', background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)', color: 'white', fontWeight: '900', fontSize: '1.3rem', border: 'none', cursor: 'pointer', boxShadow: '0 20px 40px rgba(37, 99, 235, 0.25)' }}>Confirm Appointment</button>
                       </div>
-                      <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '4rem', padding: '1.75rem', borderRadius: '2rem', background: selTime ? 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.3rem', border: 'none', cursor: 'pointer' }}>Complete Appointment Application</button>
                     </div>
                   )}
                 </div>
@@ -387,6 +403,13 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     </div>
   );
 };
+
+const DetailItem = ({ icon: Icon, label, value }: { icon: any, label: string, value: string }) => (
+  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+    <div style={{ background: '#f1f5f9', padding: '0.65rem', borderRadius: '0.75rem', color: '#2563eb' }}><Icon size={18} /></div>
+    <div><div style={{ fontSize: '0.7rem', fontWeight: '900', color: '#94a3b8', textTransform: 'uppercase' }}>{label}</div><div style={{ fontSize: '0.95rem', fontWeight: '700', color: '#334155', lineHeight: '1.4' }}>{value}</div></div>
+  </div>
+);
 
 const InfoRow = ({ label, value }: { label: string, value: any }) => (
   <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
