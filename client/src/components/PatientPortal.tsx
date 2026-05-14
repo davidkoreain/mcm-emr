@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
   ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera
@@ -31,6 +31,9 @@ const JOURNEY_STEPS = [
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
   const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians, updatePrivacy, updatePatient } = useEMR();
   
+  // Refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Navigation State
   const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'settings'>('appointments');
   const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
@@ -154,6 +157,21 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       setIsEditing(false);
       alert('Profile updated successfully.');
     } catch (e) { alert('Failed to update profile.'); }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert('File is too large. Please select an image under 2MB.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditData({ ...editData, photoUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const MainMenuItem = ({ id, label, icon: Icon, expandable = false }: { id: any, label: string, icon: any, expandable?: boolean }) => (
@@ -322,19 +340,20 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                             <Camera size={40} color="#cbd5e1" />
                           </div>
                         )}
-                        <label style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#2563eb', color: 'white', padding: '0.5rem', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 4px 8px rgba(0,0,0,0.1)' }}>
-                          <Camera size={18} />
-                          <input 
-                            type="text" 
-                            placeholder="Image URL" 
-                            style={{ position: 'absolute', opacity: 0, width: 0 }} 
-                            onChange={(e) => setEditData({ ...editData, photoUrl: e.target.value })} 
-                            onBlur={(e) => {
-                              const url = prompt('Enter Profile Image URL:');
-                              if (url) setEditData({ ...editData, photoUrl: url });
-                            }}
-                          />
-                        </label>
+                        <button 
+                          onClick={() => fileInputRef.current?.click()}
+                          style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#2563eb', color: 'white', padding: '0.75rem', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', border: 'none' }}
+                        >
+                          <Camera size={20} />
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={fileInputRef}
+                          style={{ display: 'none' }} 
+                          accept="image/*"
+                          capture="user"
+                          onChange={handleFileChange}
+                        />
                       </div>
                     ) : (
                       activeUser.photoUrl ? (
