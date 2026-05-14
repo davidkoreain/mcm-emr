@@ -288,15 +288,13 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                     <InfoRow label="Date of Birth" value={activeUser.dob} />
                     <InfoRow label="Gender" value={activeUser.gender} />
                     <InfoRow label="Phone" value={activeUser.phone} />
-                    <InfoRow label="Email" value={activeUser.email} />
                   </div>
                 </div>
                 <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
                   <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b' }}>Clinical Identifiers</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <InfoRow label="Medical Record Number (MRN)" value={activeUser.mrn} />
-                    <InfoRow label="Blood Type" value={activeUser.bloodType || 'Not recorded'} />
-                    <InfoRow label="Primary Language" value="English" />
+                    <InfoRow label="Primary Language" value={activeUser.language || 'English'} />
                   </div>
                 </div>
               </div>
