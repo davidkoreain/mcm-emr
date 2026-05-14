@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Calendar, Coffee, Award, ShieldAlert, FileText, CheckCircle, Clock,
-  UserPlus, BookOpen, GraduationCap, ChevronRight, ShieldCheck, Stethoscope, X,
+  UserPlus, BookOpen, GraduationCap, ChevronRight, ShieldCheck, Stethoscope, X, Activity, Users
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
@@ -42,7 +42,7 @@ const StaffManagement: React.FC = () => {
   const [profileModal, setProfileModal] = useState<Staff | null>(null);
 
   const [rosterSearch, setRosterSearch] = useState('');
-  const [rosterFilters, setRosterFilters] = useState<Record<string, string>>({ shift: '', status: '' });
+  const [rosterFilters, setRosterFilters] = useState<Record<string, string>>({ category: '', specialization: '', shift: '', status: '' });
   const [rosterSort, setRosterSort] = useState('name_asc');
   const [leaveSearch, setLeaveSearch] = useState('');
   const [leaveFilters, setLeaveFilters] = useState<Record<string, string>>({ type: '', status: '' });
@@ -51,16 +51,41 @@ const StaffManagement: React.FC = () => {
   const [perfFilters, setPerfFilters] = useState<Record<string, string>>({ type: '' });
   const [perfSort, setPerfSort] = useState('date_desc');
 
+  const getCategory = (role: string) => {
+    const r = role.toLowerCase();
+    if (r.includes('doctor') || r.includes('physician') || r.includes('surgeon')) return 'Doctor';
+    if (r.includes('nurse')) return 'Nurse';
+    if (r.includes('pharmacist')) return 'Pharmacist';
+    if (r.includes('admin') || r.includes('hr') || r.includes('management') || r.includes('coordinator')) return 'Administration';
+    return 'Technical';
+  };
+
+  const uniqueSpecializations = useMemo(() => {
+    const specs = staff.map(s => s.specialization).filter(Boolean);
+    return ['All Specializations', ...new Set(specs)].map(s => ({ label: s, value: s === 'All Specializations' ? '' : s }));
+  }, [staff]);
+
   const filteredRoster = useMemo(() => {
     let result = staff.filter((s) => {
       const q = rosterSearch.toLowerCase();
       if (q && !s.name.toLowerCase().includes(q) && !s.role.toLowerCase().includes(q)) return false;
+      if (rosterFilters.category && getCategory(s.role) !== rosterFilters.category) return false;
+      if (rosterFilters.specialization && s.specialization !== rosterFilters.specialization) return false;
       if (rosterFilters.shift && s.shift !== rosterFilters.shift) return false;
       if (rosterFilters.status && s.status !== rosterFilters.status) return false;
       return true;
     });
     return [...result].sort((a, b) => rosterSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
   }, [staff, rosterSearch, rosterFilters, rosterSort]);
+
+  const groupedRoster = useMemo(() => {
+    const categories = ['Doctor', 'Nurse', 'Pharmacist', 'Administration', 'Technical'];
+    const grouped: Record<string, Staff[]> = {};
+    categories.forEach(cat => {
+      grouped[cat] = filteredRoster.filter(s => getCategory(s.role) === cat);
+    });
+    return grouped;
+  }, [filteredRoster]);
 
   const filteredLeave = useMemo(() => {
     let result = leaveRequests.filter((l) => {
@@ -391,56 +416,71 @@ const StaffManagement: React.FC = () => {
                 <ListFilterControl
                   searchValue={rosterSearch} onSearchChange={setRosterSearch} searchPlaceholder="Search staff by name or role..."
                   filters={[
+                    { key: 'category', label: 'Category', options: [{ label: 'All Categories', value: '' }, { label: 'Doctor', value: 'Doctor' }, { label: 'Nurse', value: 'Nurse' }, { label: 'Pharmacist', value: 'Pharmacist' }, { label: 'Administration', value: 'Administration' }, { label: 'Technical', value: 'Technical' }] },
+                    { key: 'specialization', label: 'Specialization', options: uniqueSpecializations },
                     { key: 'shift', label: 'Shift', options: [{ label: 'All Shifts', value: '' }, { label: 'Day', value: 'Day' }, { label: 'Night', value: 'Night' }] },
-                    { key: 'status', label: 'Status', options: [{ label: 'All', value: '' }, { label: 'On Duty', value: 'On Duty' }, { label: 'Off Duty', value: 'Off Duty' }] },
+                    { key: 'status', label: 'Status', options: [{ label: 'All Status', value: '' }, { label: 'On Duty', value: 'On Duty' }, { label: 'Off Duty', value: 'Off Duty' }] },
                   ]}
                   filterValues={rosterFilters} onFilterChange={(k, v) => setRosterFilters((prev) => ({ ...prev, [k]: v }))}
                   sortValue={rosterSort} sortOptions={[{ label: 'Name A→Z', value: 'name_asc' }, { label: 'Name Z→A', value: 'name_desc' }]}
                   onSortChange={setRosterSort} totalCount={staff.length} filteredCount={filteredRoster.length}
                 />
-                <div className="mobile-scroll-hint">← Swipe to see more →</div>
-                <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                  {filteredRoster.map((s) => (
-                    <div key={s.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                      <div 
-                        onClick={() => setProfileModal(s)}
-                        style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                      >
-                        {s.photoUrl ? (
-                          <img src={s.photoUrl} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                          <Avatar name={s.name} size={120} />
-                        )}
-                      </div>
-                      <div style={{ padding: '1.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                          <div>
-                            <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700' }}>{fmtStaffId(s.id)}</div>
-                            <h3 onClick={() => setProfileModal(s)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{s.name}</h3>
+                <div className="staff-groups" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem', marginTop: '1.5rem' }}>
+                  {Object.entries(groupedRoster).map(([category, members]) => (
+                    members.length > 0 && (
+                      <div key={category} className="staff-group-section">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.25rem', paddingBottom: '0.75rem', borderBottom: '2px solid #f1f5f9' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--primary-color)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {category === 'Doctor' ? <Stethoscope size={20} /> : category === 'Nurse' ? <Activity size={20} /> : <Users size={20} />}
                           </div>
-                          <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
+                          <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{category}s <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500', marginLeft: '0.5rem' }}>({members.length})</span></h3>
                         </div>
-                        
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
-                            <Stethoscope size={14} /> {s.role}
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Award size={14} /> {s.specialization}
-                          </div>
-                          <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <Clock size={14} /> {s.shift} Shift
-                          </div>
-                        </div>
+                        <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                          {members.map((s) => (
+                            <div key={s.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                              <div 
+                                onClick={() => setProfileModal(s)}
+                                style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                              >
+                                {s.photoUrl ? (
+                                  <img src={s.photoUrl} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                  <Avatar name={s.name} size={120} />
+                                )}
+                              </div>
+                              <div style={{ padding: '1.25rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                  <div>
+                                    <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700' }}>{fmtStaffId(s.id)}</div>
+                                    <h3 onClick={() => setProfileModal(s)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{s.name}</h3>
+                                  </div>
+                                  <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
+                                </div>
+                                
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
+                                    <Stethoscope size={14} /> {s.role}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Award size={14} /> {s.specialization}
+                                  </div>
+                                  <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Clock size={14} /> {s.shift} Shift
+                                  </div>
+                                </div>
 
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setProfileModal(s)}>Profile</button>
-                          <button className="btn-primary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setLogsModal(s)}>Duty Logs</button>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setProfileModal(s)}>Profile</button>
+                                  <button className="btn-primary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setLogsModal(s)}>Duty Logs</button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
+                    )
                   ))}
-                  {filteredRoster.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No staff match your search criteria.</div>}
+                  {filteredRoster.length === 0 && <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No staff match your search criteria.</div>}
                 </div>
               </>
             )}
