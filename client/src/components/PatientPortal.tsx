@@ -15,6 +15,33 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians } = useEMR();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records' | 'privacy'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Sync tab with browser history (hash-based)
+  React.useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '') as any;
+      const validTabs = ['dashboard', 'calendar', 'records', 'privacy'];
+      if (validTabs.includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    // Initialize from hash if present
+    if (window.location.hash) {
+      handleHashChange();
+    } else {
+      window.location.hash = 'dashboard';
+    }
+
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const changeTab = (tab: typeof activeTab) => {
+    setActiveTab(tab);
+    window.location.hash = tab;
+    setMobileMenuOpen(false);
+  };
   
   const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
 
@@ -90,7 +117,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
   const TabBtn = ({ id, label, icon: Icon }: { id: any, label: string, icon: any }) => (
     <button 
-      onClick={() => { setActiveTab(id); setMobileMenuOpen(false); }} 
+      onClick={() => changeTab(id)} 
       style={{
         width: '100%',
         display: 'flex',
@@ -273,7 +300,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                   ].map((item, idx) => (
                     <button
                       key={idx}
-                      onClick={() => item.tab && setActiveTab(item.tab as any)}
+                      onClick={() => item.tab && changeTab(item.tab as any)}
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
