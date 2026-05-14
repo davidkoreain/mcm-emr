@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
-  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors
+  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search, ShieldAlert, Scissors, Menu
 } from 'lucide-react';
 import { useEMR, type StaffMember } from '../context/EMRContext';
 import Avatar from './Avatar';
@@ -218,7 +218,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             style={{ background: '#f1f5f9', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer' }}
           >
-            <Filter size={20} color="#475569" />
+            <Menu size={20} color="#475569" />
           </button>
         </div>
         <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
