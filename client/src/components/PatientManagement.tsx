@@ -1,3 +1,6 @@
+import React, { useState, useMemo } from 'react';
+import { PlusCircle, Users, X, Info, Activity, Stethoscope, Clock, Calendar } from 'lucide-react';
+import { useEMR, type Patient } from '../context/EMRContext';
 import ListFilterControl from './ListFilterControl';
 import Avatar from './Avatar';
 import { QRCodeSVG } from 'qrcode.react';
