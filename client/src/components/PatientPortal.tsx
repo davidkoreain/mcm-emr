@@ -127,15 +127,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
   return (
     <div className="app-container" style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
-      {/* Mobile Menu Toggle */}
-      <button 
-        className="mobile-menu-btn" 
-        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        style={{ position: 'fixed', top: '1.25rem', left: '1rem', zIndex: 1000, background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.5rem' }}
-      >
-        <Activity size={24} color="#2563eb" />
-      </button>
-
+    
       {/* Sidebar */}
       <aside 
         className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
@@ -201,7 +193,34 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       </aside>
 
       {/* Main Content Area */}
-      <main className="main-content" style={{ flex: 1, padding: '2.5rem' }}>
+      <main className="patient-portal-main">
+        {/* Mobile Header Overlay */}
+        <div style={{
+          display: 'none',
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '64px',
+          background: 'rgba(255, 255, 255, 0.8)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid #e2e8f0',
+          zIndex: 800,
+          alignItems: 'center',
+          padding: '0 1.25rem',
+          justifyContent: 'space-between'
+        }} className="mobile-only-flex">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Activity color="#2563eb" size={24} />
+            <span style={{ fontWeight: '900', color: '#0f172a' }}>MCM Patient Portal</span>
+          </div>
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            style={{ background: '#f1f5f9', border: 'none', borderRadius: '0.5rem', padding: '0.5rem', cursor: 'pointer' }}
+          >
+            <Filter size={20} color="#475569" />
+          </button>
+        </div>
         <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.025em' }}>
@@ -229,46 +248,115 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
         <div style={{ maxWidth: '1100px' }}>
           {activeTab === 'dashboard' && (
-            <div className="stats-grid">
-              <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '1rem' }}>
-                    <Activity color="#ef4444" size={24}/>
-                  </div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Vitals Summary</h3>
+            <>
+              {/* Service Shortcuts Grid (OpenEMR Style) */}
+              <div style={{ marginBottom: '3rem' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Award size={18} color="#2563eb" /> Quick Services
+                </h3>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                  gap: '1rem' 
+                }}>
+                  {[
+                    { label: 'Appointments', icon: CalendarIcon, color: '#3b82f6', bg: '#eff6ff', tab: 'calendar' },
+                    { label: 'Clinical Records', icon: FileText, color: '#10b981', bg: '#ecfdf5', tab: 'records' },
+                    { label: 'Lab Results', icon: Beaker, color: '#f59e0b', bg: '#fffbeb', tab: 'records' },
+                    { label: 'Messages', icon: Clock, color: '#8b5cf6', bg: '#f5f3ff', tab: 'dashboard' },
+                    { label: 'Health Snapshot', icon: Activity, color: '#ef4444', bg: '#fef2f2', tab: 'dashboard' },
+                    { label: 'Billing', icon: Award, color: '#06b6d4', bg: '#ecfeff', tab: 'dashboard' },
+                    { label: 'Documents', icon: GraduationCap, color: '#6366f1', bg: '#eef2ff', tab: 'records' },
+                    { label: 'Profile', icon: User, color: '#ec4899', bg: '#fdf2f8', tab: 'dashboard' },
+                    { label: 'Settings', icon: Filter, color: '#64748b', bg: '#f8fafc', tab: 'dashboard' },
+                    { label: 'Help Center', icon: ShieldAlert, color: '#475569', bg: '#f1f5f9', tab: 'dashboard' },
+                  ].map((item, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => item.tab && setActiveTab(item.tab as any)}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '1.5rem 1rem',
+                        background: 'white',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '1.25rem',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                        gap: '0.75rem',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                      }}
+                      onMouseOver={e => {
+                        e.currentTarget.style.transform = 'translateY(-4px)';
+                        e.currentTarget.style.boxShadow = '0 12px 20px -5px rgba(0,0,0,0.1)';
+                        e.currentTarget.style.borderColor = item.color;
+                      }}
+                      onMouseOut={e => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)';
+                        e.currentTarget.style.borderColor = '#e2e8f0';
+                      }}
+                    >
+                      <div style={{ 
+                        background: item.bg, 
+                        color: item.color, 
+                        padding: '0.75rem', 
+                        borderRadius: '1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <item.icon size={24} />
+                      </div>
+                      <span style={{ fontSize: '0.85rem', fontWeight: '800', color: '#334155' }}>{item.label}</span>
+                    </button>
+                  ))}
                 </div>
-                {activeUser.vitals[0] ? (
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
-                      <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a' }}>{activeUser.vitals[0].bpSystolic}/{activeUser.vitals[0].bpDiastolic}</span>
-                      <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>mmHg</span>
-                    </div>
-                    <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <Clock size={14} color="#94a3b8" />
-                      <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>Checked: {new Date(activeUser.vitals[0].recordedAt).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                ) : <p style={{ color: '#94a3b8' }}>No vitals found.</p>}
               </div>
 
-              <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                  <div style={{ background: '#fdf2f8', padding: '0.75rem', borderRadius: '1rem' }}>
-                    <Heart color="#db2777" size={24}/>
-                  </div>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Next Appointment</h3>
-                </div>
-                {appointments.filter(a => a.patientMrn === activeUser.mrn && new Date(a.startTime) > new Date()).slice(0,1).map(a => (
-                  <div key={a.id}>
-                    <p style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>{new Date(a.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
-                    <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                      <Avatar name={staff.find(s => s.id === a.doctorId)?.name || ''} size={28} />
-                      <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: '600' }}>Dr. {staff.find(s => s.id === a.doctorId)?.name}</span>
+              <div className="stats-grid">
+                <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '1rem' }}>
+                      <Activity color="#ef4444" size={24}/>
                     </div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Vitals Summary</h3>
                   </div>
-                ))[0] || <p style={{ color: '#94a3b8' }}>No upcoming visits.</p>}
+                  {activeUser.vitals[0] ? (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a' }}>{activeUser.vitals[0].bpSystolic}/{activeUser.vitals[0].bpDiastolic}</span>
+                        <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>mmHg</span>
+                      </div>
+                      <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Clock size={14} color="#94a3b8" />
+                        <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: '500' }}>Checked: {new Date(activeUser.vitals[0].recordedAt).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                  ) : <p style={{ color: '#94a3b8' }}>No vitals found.</p>}
+                </div>
+
+                <div style={{ background: 'white', padding: '2rem', borderRadius: '1.5rem', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                    <div style={{ background: '#fdf2f8', padding: '0.75rem', borderRadius: '1rem' }}>
+                      <Heart color="#db2777" size={24}/>
+                    </div>
+                    <h3 style={{ fontSize: '1.1rem', fontWeight: '800', margin: 0 }}>Next Appointment</h3>
+                  </div>
+                  {appointments.filter(a => a.patientMrn === activeUser.mrn && new Date(a.startTime) > new Date()).slice(0,1).map(a => (
+                    <div key={a.id}>
+                      <p style={{ fontSize: '1.25rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>{new Date(a.startTime).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</p>
+                      <div style={{ marginTop: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <Avatar name={staff.find(s => s.id === a.doctorId)?.name || ''} size={28} />
+                        <span style={{ fontSize: '0.95rem', color: '#475569', fontWeight: '600' }}>Dr. {staff.find(s => s.id === a.doctorId)?.name}</span>
+                      </div>
+                    </div>
+                  ))[0] || <p style={{ color: '#94a3b8' }}>No upcoming visits.</p>}
+                </div>
               </div>
-            </div>
+            </>
           )}
 
           {activeTab === 'calendar' && (
