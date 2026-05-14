@@ -23,7 +23,12 @@ const lossRecords: LossRecord[] = [
 
 const emptyAsset = { name: '', serial: '', qty: '1', weight: '', supplier: '', status: 'Functional', location: '', rfidTag: '', barcode: '' };
 
-const AssetManagement: React.FC = () => {
+interface AssetManagementProps {
+  autoOpenId?: string | null;
+  onModalClose?: () => void;
+}
+
+const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalClose }) => {
   const { assets, addAsset, updateAsset } = useEMR();
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
   const [showCSVModal, setShowCSVModal] = useState(false);
@@ -46,6 +51,20 @@ const AssetManagement: React.FC = () => {
   const [lossSort, setLossSort] = useState('date_desc');
 
   const uniqueLocations = [...new Set(assets.map((a) => a.location))];
+
+  useEffect(() => {
+    if (autoOpenId && assets.length > 0) {
+      const a = assets.find(item => item.id === autoOpenId);
+      if (a) {
+        setDetailModal(a);
+      }
+    }
+  }, [autoOpenId, assets]);
+
+  const handleCloseModal = () => {
+    setDetailModal(null);
+    if (onModalClose) onModalClose();
+  };
 
   const filteredAssets = useMemo(() => {
     let result = assets.filter((a) => {
@@ -134,9 +153,9 @@ const AssetManagement: React.FC = () => {
               <h3>Asset Details</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                  <QRCodeSVG value={`EMR://asset/${detailModal.id}`} size={48} level="H" />
+                  <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${detailModal.id}`} size={48} level="H" />
                 </div>
-                <button onClick={() => setDetailModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+                <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
               </div>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -314,7 +333,7 @@ const AssetManagement: React.FC = () => {
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                         <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{asset.status}</span>
                         <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
-                          <QRCodeSVG value={`EMR://asset/${asset.id}`} size={44} level="M" />
+                          <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${asset.id}`} size={44} level="M" />
                         </div>
                       </div>
                     </div>

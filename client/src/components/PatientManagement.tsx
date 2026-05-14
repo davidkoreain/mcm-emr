@@ -9,9 +9,11 @@ interface PatientManagementProps {
   onViewVitals: (patient: { mrn: string; name: string; amharic: string }) => void;
   onViewEncounter: (patient: { mrn: string; name: string; amharic: string }) => void;
   onRegister: () => void;
+  autoOpenId?: string | null;
+  onModalClose?: () => void;
 }
 
-const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onViewEncounter, onRegister }) => {
+const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onViewEncounter, onRegister, autoOpenId, onModalClose }) => {
   const { patients } = useEMR();
   
   const [ptSearch, setPtSearch] = useState('');
@@ -19,6 +21,22 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const [ptSort, setPtSort] = useState('name_asc');
   const [detailModal, setDetailModal] = useState<Patient | null>(null);
   const [modalTab, setModalTab] = useState<'demographic' | 'identity' | 'history' | 'insurance'>('demographic');
+
+  useEffect(() => {
+    if (autoOpenId && patients.length > 0) {
+      const patient = patients.find(p => p.mrn === autoOpenId);
+      if (patient) {
+        setDetailModal(patient);
+        setModalTab('demographic');
+      }
+    }
+  }, [autoOpenId, patients]);
+
+  const handleCloseModal = () => {
+    setDetailModal(null);
+    setModalTab('demographic');
+    if (onModalClose) onModalClose();
+  };
 
   const filteredPatients = useMemo(() => {
     let result = patients.filter((p) => {
@@ -52,9 +70,9 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                 <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                  <QRCodeSVG value={`EMR://patient/${detailModal.mrn}`} size={48} level="H" />
+                  <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${detailModal.mrn}`} size={48} level="H" />
                 </div>
-                <button onClick={() => { setDetailModal(null); setModalTab('demographic'); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+                <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
               </div>
             </div>
 
@@ -253,7 +271,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                     {p.status}
                   </span>
                   <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
-                    <QRCodeSVG value={`EMR://patient/${p.mrn}`} size={44} level="M" />
+                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${p.mrn}`} size={44} level="M" />
                   </div>
                 </div>
               </div>

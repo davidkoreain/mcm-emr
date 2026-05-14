@@ -42,6 +42,24 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isHrmOpen, setIsHrmOpen] = useState(false);
   const [staffTab, setStaffTab] = useState<'portfolio' | 'leave' | 'performance'>('portfolio');
+  const [autoOpenId, setAutoOpenId] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const type = params.get('type');
+    const id = params.get('id');
+
+    if (type && id) {
+      setAutoOpenId(id);
+      if (type === 'patient') setView('patients');
+      else if (type === 'staff') {
+        setView('staff');
+        setStaffTab('portfolio');
+        setIsHrmOpen(true);
+      }
+      else if (type === 'asset') setView('assets');
+    }
+  }, []);
 
   const handleLogout = () => {
     setRole(null);
@@ -180,6 +198,8 @@ const App: React.FC = () => {
                 onViewVitals={(p) => { setSelectedPatient(p); setView('vitals'); }}
                 onViewEncounter={(p) => { setSelectedPatient(p); setSelectedTab('soap'); setView('encounter'); }}
                 onRegister={() => setView('registration')}
+                autoOpenId={autoOpenId}
+                onModalClose={() => setAutoOpenId(null)}
               />
             )}
             {view === 'calendar' && <HospitalCalendar />}
@@ -199,11 +219,11 @@ const App: React.FC = () => {
             )}
             {view === 'registration' && <PatientRegistration onClose={() => setView('dashboard')} />}
             {view === 'inpatient' && <InpatientManagement />}
-            {view === 'staff' && <StaffManagement activeTab={staffTab} />}
+            {view === 'staff' && <StaffManagement activeTab={staffTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'lab' && <LabManagement />}
             {view === 'operation' && <OperationManagement />}
             {view === 'pharmacy' && <PharmacyManagement />}
-            {view === 'assets' && <AssetManagement />}
+            {view === 'assets' && <AssetManagement autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'billing' && <BillingManagement />}
           </ErrorBoundary>
         </div>

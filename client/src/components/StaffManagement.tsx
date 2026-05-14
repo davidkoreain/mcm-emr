@@ -31,9 +31,11 @@ const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' a
 
 interface StaffManagementProps {
   activeTab?: 'leave' | 'performance' | 'portfolio';
+  autoOpenId?: string | null;
+  onModalClose?: () => void;
 }
 
-const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab }) => {
+const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, autoOpenId, onModalClose }) => {
   const { staff, addStaff } = useEMR();
   const [internalTab, setInternalTab] = useState<'leave' | 'performance' | 'portfolio'>('portfolio');
   
@@ -60,6 +62,20 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab })
   const [perfSearch, setPerfSearch] = useState('');
   const [perfFilters, setPerfFilters] = useState<Record<string, string>>({ type: '' });
   const [perfSort, setPerfSort] = useState('date_desc');
+
+  useEffect(() => {
+    if (autoOpenId && staff.length > 0) {
+      const s = staff.find(member => String(member.id) === autoOpenId);
+      if (s) {
+        setProfileModal(s);
+      }
+    }
+  }, [autoOpenId, staff]);
+
+  const handleCloseModal = () => {
+    setProfileModal(null);
+    if (onModalClose) onModalClose();
+  };
 
   const getCategory = (role: string) => {
     const r = role.toLowerCase();
@@ -273,15 +289,15 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab })
 
       {/* Staff Profile Modal (name click) */}
       {profileModal && (
-        <div style={overlayStyle} onClick={() => setProfileModal(null)}>
+        <div style={overlayStyle} onClick={handleCloseModal}>
           <div style={{ ...boxStyle, width: '640px', maxHeight: '88vh' }} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Staff Profile</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
               <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                <QRCodeSVG value={`EMR://staff/${profileModal.id}`} size={48} level="H" />
+                <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${profileModal.id}`} size={48} level="H" />
               </div>
-              <button onClick={() => setProfileModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
+              <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
             </div>
             </div>
 
@@ -467,7 +483,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab })
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                                   <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
                                   <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
-                                    <QRCodeSVG value={`EMR://staff/${s.id}`} size={44} level="M" />
+                                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${s.id}`} size={44} level="M" />
                                   </div>
                                 </div>
                                 </div>
