@@ -52,7 +52,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
 
   const uniqueLocations = [...new Set(assets.map((a) => a.location))];
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (autoOpenId && assets.length > 0) {
       const a = assets.find(item => String(item.id).toLowerCase().trim() === autoOpenId.toLowerCase().trim());
       if (a) {

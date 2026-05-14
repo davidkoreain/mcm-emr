@@ -22,7 +22,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const [detailModal, setDetailModal] = useState<Patient | null>(null);
   const [modalTab, setModalTab] = useState<'demographic' | 'identity' | 'history' | 'insurance'>('demographic');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (autoOpenId && patients.length > 0) {
       const patient = patients.find(p => p.mrn.toLowerCase().trim() === autoOpenId.toLowerCase().trim());
       if (patient) {

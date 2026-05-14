@@ -63,7 +63,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   const [perfFilters, setPerfFilters] = useState<Record<string, string>>({ type: '' });
   const [perfSort, setPerfSort] = useState('date_desc');
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (autoOpenId && staff.length > 0) {
       const s = staff.find(member => String(member.id).toLowerCase().trim() === autoOpenId.toLowerCase().trim());
       if (s) {
