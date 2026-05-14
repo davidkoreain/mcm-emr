@@ -152,16 +152,30 @@ body {
 .patient-portal-main {
   flex: 1;
   padding: 2.5rem;
-  margin-left: 280px;
+  margin-left: 320px;
   transition: margin-left 0.3s ease;
 }
 
-@media (max-width: 768px) {
-  .patient-portal-main {
-    margin-left: 0;
-    padding: 1.5rem;
-    padding-top: 5rem; /* Space for mobile header if needed */
+@media (max-width: 1024px) {
+  .sidebar {
+    transform: translateX(-100%);
+    width: 320px !important;
   }
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+  .patient-portal-main {
+    margin-left: 0 !important;
+    padding: 1.5rem !important;
+    padding-top: 5rem !important;
+  }
+  .mobile-only-flex {
+    display: flex !important;
+  }
+}
+
+.mobile-only-flex {
+  display: none;
 }
 
 .header {
