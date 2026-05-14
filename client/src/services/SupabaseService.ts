@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -138,6 +138,18 @@ function rowToGuardian(r: Record<string, unknown>): GuardianUser {
       showLabs: true,
       showSurgeries: true,
     },
+    createdAt: r.created_at as string,
+  };
+}
+
+function rowToMedicalHistory(r: Record<string, unknown>): MedicalHistoryItem {
+  return {
+    id: r.id as number,
+    patientMrn: r.patient_mrn as string,
+    date: r.date as string,
+    doctor: r.doctor as string,
+    diagnosis: r.diagnosis as string,
+    summary: r.summary as string,
     createdAt: r.created_at as string,
   };
 }
@@ -269,6 +281,19 @@ export class SupabaseService implements IDBService {
       await this.client.from('assets').insert(initialAssets.map(assetToRow));
     }
 
+    // Check if medical_history exists
+    const { count: mhCount } = await this.client.from('medical_history').select('*', { count: 'exact', head: true });
+    if (mhCount === 0) {
+      // We will provide a simple generic seed for demo purposes.
+      const seedHistory = [
+        { patient_mrn: 'MRN-2026-001', date: '2026-04-15', doctor: 'Dr. Solomon', diagnosis: 'Acute Bronchitis', summary: 'Persistent cough, fever (38.2C). Prescribed Amoxicillin.' },
+        { patient_mrn: 'MRN-2026-001', date: '2026-02-10', doctor: 'Dr. Abraham', diagnosis: 'Hypertension', summary: 'Routine follow-up. BP 155/95. Adherent to meds.' },
+        { patient_mrn: 'MRN-2026-002', date: '2026-04-20', doctor: 'Dr. Abraham', diagnosis: 'Gestational Diabetes', summary: 'Elevated fasting glucose 128 mg/dL. Dietary counseling provided.' },
+        { patient_mrn: 'MRN-2026-003', date: '2026-05-01', doctor: 'Dr. Tadesse', diagnosis: 'Annual Physical', summary: 'All labs within normal limits. Cholesterol borderline 210 mg/dL.' }
+      ];
+      await this.client.from('medical_history').insert(seedHistory);
+    }
+
     localStorage.setItem(SEED_KEY, 'true');
   }
 
@@ -314,6 +339,18 @@ export class SupabaseService implements IDBService {
     if (fetchErr) throw new Error(fetchErr.message);
     const updated = [...((data?.vitals as VitalsRecord[]) ?? []), vitals];
     const { error } = await this.client.from('patients').update({ vitals: updated }).eq('mrn', mrn);
+    if (error) throw new Error(error.message);
+  }
+
+  async fetchMedicalHistory(): Promise<MedicalHistoryItem[]> {
+    await this.seedIfEmpty();
+    const { data, error } = await this.client.from('medical_history').select('*').order('date', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToMedicalHistory);
+  }
+
+  async deleteMedicalHistory(id: number): Promise<void> {
+    const { error } = await this.client.from('medical_history').delete().eq('id', id);
     if (error) throw new Error(error.message);
   }
 

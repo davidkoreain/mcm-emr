@@ -1,4 +1,4 @@
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem } from '../context/EMRContext';
 
 /**
  * Database service interface.
@@ -11,6 +11,8 @@ export interface IDBService {
   insertPatient(p: Patient): Promise<void>;
   updatePatient(mrn: string, changes: Partial<Patient>): Promise<void>;
   appendVitals(mrn: string, vitals: VitalsRecord): Promise<void>;
+  fetchMedicalHistory(): Promise<MedicalHistoryItem[]>;
+  deleteMedicalHistory(id: number): Promise<void>;
   // staff
   fetchStaff(): Promise<StaffMember[]>;
   insertStaff(s: Omit<StaffMember, 'id'>): Promise<StaffMember>;

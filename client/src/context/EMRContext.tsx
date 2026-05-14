@@ -37,6 +37,16 @@ export type GuardianUser = {
   createdAt: string;
 };
 
+export type MedicalHistoryItem = {
+  id: number;
+  patientMrn: string;
+  date: string;
+  doctor: string;
+  diagnosis: string;
+  summary: string;
+  createdAt?: string;
+};
+
 export type MedOrder = {
   id: string;
   drug: string;
@@ -187,6 +197,7 @@ type EMRContextType = {
   prescriptions: Prescription[];
   labOrders: LabOrder[];
   labResults: LabResult[];
+  medicalHistory: MedicalHistoryItem[];
   loading: boolean;
   error: string | null;
   role: UserRole | null;
@@ -200,6 +211,7 @@ type EMRContextType = {
   addPatient: (p: Patient) => Promise<void>;
   updatePatient: (mrn: string, changes: Partial<Patient>) => Promise<void>;
   addVitals: (mrn: string, v: VitalsRecord) => Promise<void>;
+  deleteMedicalHistory: (id: number) => Promise<void>;
   addStaff: (s: Omit<StaffMember, 'id'>) => Promise<void>;
   addAsset: (a: Asset) => Promise<void>;
   updateAsset: (id: string, changes: Partial<Asset>) => Promise<void>;
@@ -277,6 +289,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [labResults, setLabResults] = useState<LabResult[]>([]);
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
   const [guardians, setGuardians] = useState<GuardianUser[]>([]);
+  const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
   const [role, setRole] = useState<UserRole | null>(null);
   const [currentUser, setCurrentUser] = useState<Patient | null>(null);
   const [currentGuardian, setCurrentGuardian] = useState<GuardianUser | null>(null);
@@ -290,7 +303,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -300,7 +313,8 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchLabOrders(), []),
         safeFetch(db.fetchLabResults(), []),
         safeFetch(db.fetchSurgeries(), []),
-        safeFetch(db.fetchGuardians(), [])
+        safeFetch(db.fetchGuardians(), []),
+        safeFetch(db.fetchMedicalHistory(), [])
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -321,6 +335,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLabResults(lr);
       setSurgeries(sur);
       setGuardians(gd);
+      setMedicalHistory(mh);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -344,6 +359,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addVitals = async (mrn: string, vitals: VitalsRecord) => {
     await db.appendVitals(mrn, vitals);
+    await refreshData();
+  };
+
+  const deleteMedicalHistory = async (id: number) => {
+    await db.deleteMedicalHistory(id);
     await refreshData();
   };
 
@@ -432,12 +452,12 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <EMRContext.Provider value={{
-      patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults,
+      patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults, medicalHistory,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, addAsset, updateAsset,
       addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
-      dispenseMedication, submitLabResult
+      dispenseMedication, submitLabResult, deleteMedicalHistory
     }}>
       {children}
     </EMRContext.Provider>

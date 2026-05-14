@@ -1,11 +1,12 @@
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 export class LocalService implements IDBService {
   private patients: Patient[] = [...initialPatients];
   private staff: StaffMember[] = [...initialStaff];
   private assets: Asset[] = [...initialAssets];
+  private medicalHistory: MedicalHistoryItem[] = [];
 
   async fetchPatients() { return [...this.patients]; }
   async insertPatient(p: Patient) { this.patients.push(p); }
@@ -14,6 +15,14 @@ export class LocalService implements IDBService {
   }
   async appendVitals(mrn: string, vitals: VitalsRecord) {
     this.patients = this.patients.map(p => p.mrn === mrn ? { ...p, vitals: [...p.vitals, vitals] } : p);
+  }
+
+  async fetchMedicalHistory(): Promise<MedicalHistoryItem[]> {
+    return [...this.medicalHistory];
+  }
+
+  async deleteMedicalHistory(id: number): Promise<void> {
+    this.medicalHistory = this.medicalHistory.filter(x => x.id !== id);
   }
 
   async fetchStaff() { return [...this.staff]; }
