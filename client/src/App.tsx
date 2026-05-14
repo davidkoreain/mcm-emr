@@ -110,6 +110,10 @@ const App: React.FC = () => {
   // 3. Logic for Admin/Staff View (Full Layout)
   return (
     <div className="app-container">
+      {/* Debug Banner to verify deployment version */}
+      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#fef08a', color: '#854d0e', fontSize: '0.6rem', fontWeight: 'bold', textAlign: 'center', zIndex: 10000, padding: '2px', pointerEvents: 'none' }}>
+        V1.1.0 - QR DEBUG ACTIVE (Role: {role})
+      </div>
       {mobileMenuOpen && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} onClick={() => setMobileMenuOpen(false)} />}
       
       <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>

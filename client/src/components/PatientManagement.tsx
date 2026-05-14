@@ -305,15 +305,21 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
             </div>
           </div>
         ))}
-        {filteredPatients.length === 0 && !autoOpenId && (
+        {patients.length === 0 && (
+          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
+            [시스템] 서버에서 환자 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.
+          </div>
+        )}
+        {patients.length > 0 && filteredPatients.length === 0 && !autoOpenId && (
           <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-            일치하는 환자 데이터가 없습니다.
+            일치하는 환자 데이터가 없슴 [Antigravity Ver]
+            <br/><span style={{ fontSize: '0.8rem' }}>(검색어: "{ptSearch}", 전체 환자: {patients.length}명)</span>
           </div>
         )}
         {autoOpenId && !detailModal && (
           <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
-            <p style={{ fontWeight: '700' }}>환자 정보를 불러오는 중입니다...</p>
-            <p style={{ fontSize: '0.8rem' }}>ID: {autoOpenId}</p>
+            <p style={{ fontWeight: '700' }}>환자 정보를 매칭 중입니다... (ID: {autoOpenId})</p>
+            <p style={{ fontSize: '0.8rem' }}>현재 전체 데이터 수: {patients.length}개</p>
           </div>
         )}
       </div>
