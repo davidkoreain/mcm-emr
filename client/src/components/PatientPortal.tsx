@@ -12,20 +12,20 @@ interface PortalProps {
 }
 
 const JOURNEY_STEPS = [
-  { id: 1, label: '탐색', icon: Search, color: '#3b82f6', desc: '의료진 및 예약 가능일 탐색' },
-  { id: 2, label: '신청', icon: CalendarIcon, color: '#6366f1', desc: '원하는 날짜에 진료 신청' },
-  { id: 3, label: '확정', icon: Award, color: '#10b981', desc: '진료 일정 최종 확정' },
-  { id: 4, label: '방문', icon: Clock, color: '#f59e0b', desc: '병원 방문 및 도착 예정' },
-  { id: 5, label: '수속', icon: FileText, color: '#ec4899', desc: '접수 및 병원 등록 절차' },
-  { id: 6, label: '면담', icon: User, color: '#8b5cf6', desc: '의료진 면담 및 초기 조치' },
-  { id: 7, label: '검사', icon: Beaker, color: '#06b6d4', desc: '요구되는 각종 검사 수행' },
-  { id: 8, label: '결과', icon: FileText, color: '#14b8a6', desc: '수행된 검사 결과 수령' },
-  { id: 9, label: '진단', icon: ShieldAlert, color: '#ef4444', desc: '의료진의 공식 확정 진단' },
-  { id: 10, label: '계획', icon: GraduationCap, color: '#64748b', desc: '치료 및 조치 일정 확립' },
-  { id: 11, label: '치료', icon: Activity, color: '#f43f5e', desc: '투약, 주사 및 입원 조치' },
-  { id: 12, label: '처치', icon: Scissors, color: '#d946ef', desc: '수술 및 주요 의료 처치' },
-  { id: 13, label: '모니터링', icon: Heart, color: '#f97316', desc: '조치 후 경과 실시간 관찰' },
-  { id: 14, label: '피드백', icon: Clock, color: '#2dd4bf', desc: '추가 조치 및 최종 피드백' },
+  { id: 1, label: 'Discovery', icon: Search, color: '#3b82f6', desc: 'Find doctors and available appointment dates' },
+  { id: 2, label: 'Application', icon: CalendarIcon, color: '#6366f1', desc: 'Request an appointment on your preferred date' },
+  { id: 3, label: 'Confirmation', icon: Award, color: '#10b981', desc: 'Finalizing your medical appointment schedule' },
+  { id: 4, label: 'Visit', icon: Clock, color: '#f59e0b', desc: 'Hospital visit and arrival notification' },
+  { id: 5, label: 'Admission', icon: FileText, color: '#ec4899', desc: 'Registration and hospital admission procedures' },
+  { id: 6, label: 'Consultation', icon: User, color: '#8b5cf6', desc: 'Medical consultation and initial assessment' },
+  { id: 7, label: 'Examination', icon: Beaker, color: '#06b6d4', desc: 'Performing required clinical tests and exams' },
+  { id: 8, label: 'Results', icon: FileText, color: '#14b8a6', desc: 'Receiving and reviewing your test results' },
+  { id: 9, label: 'Diagnosis', icon: ShieldAlert, color: '#ef4444', desc: 'Official diagnosis from the medical team' },
+  { id: 10, label: 'Treatment Plan', icon: GraduationCap, color: '#64748b', desc: 'Establishing treatment and action schedules' },
+  { id: 11, label: 'Therapy', icon: Activity, color: '#f43f5e', desc: 'Medication, injections, and inpatient care' },
+  { id: 12, label: 'Procedure', icon: Scissors, color: '#d946ef', desc: 'Surgeries and major medical procedures' },
+  { id: 13, label: 'Monitoring', icon: Heart, color: '#f97316', desc: 'Real-time observation after medical actions' },
+  { id: 14, label: 'Feedback', icon: Clock, color: '#2dd4bf', desc: 'Additional follow-ups and final feedback' },
 ];
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
@@ -120,7 +120,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         startTime: start.toISOString(), endTime: end.toISOString(),
         status: 'Scheduled', notes: isGuardianView ? 'Guardian' : 'Patient'
       });
-      alert(`진료가 예약되었습니다: Dr. ${selDoc.name}`);
+      alert(`Appointment scheduled: Dr. ${selDoc.name}`);
       changeStep(3); // Go to step 3: Confirmation
     } catch (e) { alert('Failed to book.'); }
   };
@@ -260,28 +260,28 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
                 <span style={{ background: JOURNEY_STEPS[currentJourneyStep-1].color, color: 'white', padding: '0.35rem 1rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '900' }}>
-                  현재 여정: {currentJourneyStep}단계
+                  Current Journey: Step {currentJourneyStep}
                 </span>
-                <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} 프로세스</span>
+                <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} Process</span>
               </div>
               <h2 style={{ fontSize: '2.25rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.75rem', letterSpacing: '-0.025em' }}>
                 {JOURNEY_STEPS[currentJourneyStep-1].desc}
               </h2>
               <p style={{ color: '#475569', fontSize: '1.1rem', maxWidth: '700px', lineHeight: '1.7', marginBottom: '2rem' }}>
-                {currentJourneyStep === 1 ? '먼저 진료를 받고 싶은 날짜와 의료진을 선택해 주세요. 원하시는 조건으로 최적의 매칭을 도와드립니다.' : 
-                 currentJourneyStep === 2 ? '신청하신 내역을 병원에서 검토 중입니다. 잠시만 기다려 주시면 일정을 확정해 드립니다.' :
-                 currentJourneyStep === 3 ? '진료 일정이 확정되었습니다! 예약된 시간에 맞춰 병원을 방문해 주세요.' :
-                 currentJourneyStep === 4 ? '오늘은 진료 예약일입니다. 병원에 도착하시면 수속을 위해 안내 데스크로 이동해 주세요.' :
-                 currentJourneyStep === 5 ? '병원 등록 및 수속 절차를 진행 중입니다. 잠시 대기해 주시면 의료진 면담 안내를 드립니다.' :
-                 currentJourneyStep === 6 ? '의료진과 면담을 진행하는 단계입니다. 증상을 상세히 말씀해 주시고 필요한 검사를 안내받으세요.' :
-                 currentJourneyStep === 7 ? '처방된 검사를 수행하는 단계입니다. 안내된 검사실로 이동하여 검사를 받아주세요.' :
-                 currentJourneyStep === 8 ? '수행된 검사의 결과를 분석 중입니다. 결과가 나오는 대로 리포트를 확인하실 수 있습니다.' :
-                 currentJourneyStep === 9 ? '검사 결과를 바탕으로 의료진이 최종 진단을 내렸습니다. 상세 리포트를 확인해 보세요.' :
-                 currentJourneyStep === 10 ? '치료를 위한 세부 일정을 계획하고 있습니다. 조치 사항과 일정을 확인해 주세요.' :
-                 currentJourneyStep === 11 ? '처방된 약 복용이나 주사 처치 등을 수행하는 단계입니다. 일정을 준수해 주세요.' :
-                 currentJourneyStep === 12 ? '수술 또는 주요 의료 처치가 필요한 경우 이를 수행하는 단계입니다.' :
-                 currentJourneyStep === 13 ? '모든 조치 후 상태를 관찰하는 단계입니다. 이상 증상이 있으면 즉시 보고해 주세요.' :
-                 '진료 프로세스가 완료되었습니다. 소중한 피드백을 남겨주시면 더 나은 서비스로 보답하겠습니다.'}
+                {currentJourneyStep === 1 ? 'Please select your preferred date and medical specialist. We help you find the best match for your needs.' : 
+                 currentJourneyStep === 2 ? 'Your application is being reviewed by the hospital. Please wait a moment while we confirm your schedule.' :
+                 currentJourneyStep === 3 ? 'Your appointment is confirmed! Please visit the hospital at your scheduled time.' :
+                 currentJourneyStep === 4 ? 'Today is your appointment day. Upon arrival, please proceed to the reception desk for check-in.' :
+                 currentJourneyStep === 5 ? 'Registration and admission procedures are in progress. You will be guided to consultation shortly.' :
+                 currentJourneyStep === 6 ? 'You are now having a consultation with the medical team. Please share your symptoms in detail.' :
+                 currentJourneyStep === 7 ? 'Tests are being performed as prescribed. Please proceed to the indicated clinical lab.' :
+                 currentJourneyStep === 8 ? 'Your test results are being analyzed. You can review the report as soon as it is ready.' :
+                 currentJourneyStep === 9 ? 'The medical team has provided a final diagnosis based on your results. Check the detailed report.' :
+                 currentJourneyStep === 10 ? 'We are establishing a detailed schedule for your treatment. Please check the actions and timeline.' :
+                 currentJourneyStep === 11 ? 'This is the stage for prescribed medications or inpatient care. Please follow the schedule.' :
+                 currentJourneyStep === 12 ? 'This stage is for surgeries or major medical procedures if required.' :
+                 currentJourneyStep === 13 ? 'Observing your condition after all procedures. Please report any unusual symptoms immediately.' :
+                 'Your medical journey is complete. We appreciate your feedback to help us improve our service.'}
               </p>
               
               <div style={{ display: 'flex', gap: '1rem' }}>
@@ -289,7 +289,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                   onClick={() => setCurrentJourneyStep(prev => Math.min(prev + 1, 14))}
                   style={{ background: JOURNEY_STEPS[currentJourneyStep-1].color, color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: `0 10px 20px ${JOURNEY_STEPS[currentJourneyStep-1].color}30` }}
                 >
-                  다음 단계 안내 <ChevronRight size={18} />
+                  Next Step Guide <ChevronRight size={18} />
                 </button>
               </div>
             </div>
@@ -302,11 +302,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>
-                    {bookingStep === 1 ? '희망 진료 날짜 선택' : bookingStep === 2 ? '의료진 및 전문분야 선택' : '최종 시간 확인'}
+                    {bookingStep === 1 ? 'Choose Preferred Date' : bookingStep === 2 ? 'Select Specialist & Specialty' : 'Confirm Final Time'}
                   </h3>
                   {bookingStep > 1 && (
                     <button onClick={() => setBookingStep((bookingStep - 1) as 1 | 2 | 3)} style={{ background: '#f1f5f9', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800', color: '#475569', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <ChevronLeft size={18} /> 이전으로
+                      <ChevronLeft size={18} /> Back
                     </button>
                   )}
                 </div>
@@ -324,16 +324,16 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                   <div>
                     <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '1.5rem', display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>전문 분야</label>
+                        <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>Specialty</label>
                         <select onChange={e => setFSpec(e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '600' }}>
-                          <option value="">전체 전문의</option>
+                          <option value="">All Specialties</option>
                           {specs.map(s => <option key={s} value={s}>{s}</option>)}
                         </select>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>성별</label>
+                        <label style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', display: 'block', marginBottom: '0.5rem' }}>Gender</label>
                         <select onChange={e => setFGender(e.target.value)} style={{ width: '100%', padding: '0.85rem', borderRadius: '1rem', border: '1px solid #e2e8f0', fontWeight: '600' }}>
-                          <option value="">성별 무관</option><option value="Male">남성</option><option value="Female">여성</option>
+                          <option value="">All Genders</option><option value="Male">Male</option><option value="Female">Female</option>
                         </select>
                       </div>
                     </div>
@@ -347,7 +347,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                               <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: '700' }}>{doc.specialization}</div>
                             </div>
                           </div>
-                          <button onClick={() => { setSelDoc(doc); setBookingStep(3); }} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.7rem 1.25rem', borderRadius: '0.85rem', fontWeight: '800', cursor: 'pointer' }}>선택</button>
+                          <button onClick={() => { setSelDoc(doc); setBookingStep(3); }} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.7rem 1.25rem', borderRadius: '0.85rem', fontWeight: '800', cursor: 'pointer' }}>Select</button>
                         </div>
                       ))}
                     </div>
@@ -361,7 +361,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '800', cursor: 'pointer' }}>{t}</button>
                       ))}
                     </div>
-                    <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: selTime ? '#2563eb' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.2rem', border: 'none', cursor: selTime ? 'pointer' : 'not-allowed' }}>진료 신청 완료</button>
+                    <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: selTime ? '#2563eb' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.2rem', border: 'none', cursor: selTime ? 'pointer' : 'not-allowed' }}>Complete Application</button>
                   </div>
                 )}
               </div>
@@ -375,7 +375,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                     <div style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '1rem' }}>
                       <Beaker color="#2563eb" size={24}/>
                     </div>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>최근 검사 결과</h3>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>Recent Test Results</h3>
                   </div>
                   {filteredLabs.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
@@ -386,7 +386,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         </div>
                       ))}
                     </div>
-                  ) : <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>검사 결과가 아직 준비되지 않았습니다.</div>}
+                  ) : <div style={{ padding: '3rem', textAlign: 'center', color: '#94a3b8' }}>Test results are not available yet.</div>}
                 </div>
               </div>
             )}
@@ -397,8 +397,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                 <div style={{ background: `${JOURNEY_STEPS[currentJourneyStep-1].color}10`, width: '80px', height: '80px', borderRadius: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.5rem' }}>
                   {React.createElement(JOURNEY_STEPS[currentJourneyStep-1].icon, { size: 40, color: JOURNEY_STEPS[currentJourneyStep-1].color })}
                 </div>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.5rem' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} 준비 중</h3>
-                <p style={{ color: '#64748b', maxWidth: '400px', margin: '0 auto' }}>해당 단계의 상세 기능 모듈은 현재 개발 중입니다. 곧 업데이트될 예정입니다.</p>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: '900', marginBottom: '0.5rem' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} Pending</h3>
+                <p style={{ color: '#64748b', maxWidth: '400px', margin: '0 auto' }}>Detailed functional modules for this stage are currently under development. They will be updated shortly.</p>
               </div>
             )}
           </section>
