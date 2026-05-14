@@ -150,6 +150,14 @@ export type Surgery = {
   createdAt: string;
 };
 
+export type StaffLeave = {
+  id: number;
+  staffId: number;
+  leaveDate: string;
+  status: 'Pending' | 'Confirmed' | 'Rejected';
+  reason?: string;
+};
+
 export type Asset = {
   id: string;
   name: string;
@@ -480,7 +488,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <EMRContext.Provider value={{
-      patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults, medicalHistory,
+      patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults, medicalHistory, staffLeave,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, addAsset, updateAsset,
