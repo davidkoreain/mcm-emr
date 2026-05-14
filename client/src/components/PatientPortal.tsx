@@ -16,30 +16,38 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records' | 'privacy'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Sync tab with browser history (hash-based)
+  // Sync tab with browser history (Source of Truth: URL Hash)
   React.useEffect(() => {
-    const handleHashChange = () => {
-      const hash = window.location.hash.replace('#', '') as any;
-      const validTabs = ['dashboard', 'calendar', 'records', 'privacy'];
-      if (validTabs.includes(hash)) {
-        setActiveTab(hash);
+    const syncTabWithUrl = () => {
+      const hash = window.location.hash.replace('#', '');
+      const validTabs = ['dashboard', 'calendar', 'records', 'privacy'] as const;
+      if (validTabs.includes(hash as any)) {
+        setActiveTab(hash as any);
+      } else if (!hash) {
+        // Default to dashboard if no hash, but don't force a new history entry if already there
+        setActiveTab('dashboard');
       }
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    // Initialize from hash if present
-    if (window.location.hash) {
-      handleHashChange();
-    } else {
-      window.location.hash = 'dashboard';
-    }
+    window.addEventListener('hashchange', syncTabWithUrl);
+    window.addEventListener('popstate', syncTabWithUrl);
+    
+    // Initial sync
+    syncTabWithUrl();
 
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', syncTabWithUrl);
+      window.removeEventListener('popstate', syncTabWithUrl);
+    };
   }, []);
 
   const changeTab = (tab: typeof activeTab) => {
-    setActiveTab(tab);
-    window.location.hash = tab;
+    if (window.location.hash !== `#${tab}`) {
+      window.location.hash = tab;
+    } else {
+      // If hash is same, just ensure state is correct (e.g. initial load)
+      setActiveTab(tab);
+    }
     setMobileMenuOpen(false);
   };
   
