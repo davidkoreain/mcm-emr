@@ -37,6 +37,8 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
   const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '480px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' };
 
+  return (
+    <div>
       {/* Patient Detail Modal */}
       {detailModal && (
         <div style={overlayStyle}>
