@@ -369,7 +369,17 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                   </div>
                 </div>
               ))}
-              {filteredAssets.length === 0 && <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No assets match your search criteria.</div>}
+              {filteredAssets.length === 0 && !autoOpenId && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                  일치하는 자산 데이터가 없습니다.
+                </div>
+              )}
+              {autoOpenId && !detailModal && (
+                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
+                  <p style={{ fontWeight: '700' }}>자산 정보를 불러오는 중입니다...</p>
+                  <p style={{ fontSize: '0.8rem' }}>ID: {autoOpenId}</p>
+                </div>
+              )}
             </div>
           </>
         )}

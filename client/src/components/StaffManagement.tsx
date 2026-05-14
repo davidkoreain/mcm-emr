@@ -511,7 +511,17 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                       </div>
                     )
                   ))}
-                  {filteredRoster.length === 0 && <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>No staff match your search criteria.</div>}
+                  {filteredRoster.length === 0 && !autoOpenId && (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                      일치하는 스태프 데이터가 없습니다.
+                    </div>
+                  )}
+                  {autoOpenId && !profileModal && (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
+                      <p style={{ fontWeight: '700' }}>스태프 정보를 불러오는 중입니다...</p>
+                      <p style={{ fontSize: '0.8rem' }}>ID: {autoOpenId}</p>
+                    </div>
+                  )}
                 </div>
               </>
             )}
