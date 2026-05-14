@@ -30,7 +30,7 @@ const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' a
 
 const StaffManagement: React.FC = () => {
   const { staff, addStaff } = useEMR();
-  const [activeTab, setActiveTab] = useState<'roster' | 'leave' | 'performance' | 'portfolio'>('roster');
+  const [activeTab, setActiveTab] = useState<'leave' | 'performance' | 'portfolio'>('portfolio');
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeave);
@@ -391,9 +391,6 @@ const StaffManagement: React.FC = () => {
       )}
 
       <div className="pharmacy-tabs">
-        <button className={`tab-btn ${activeTab === 'roster' ? 'active' : ''}`} onClick={() => { setActiveTab('roster'); setSelectedStaff(null); }}>
-          <Calendar size={20} /> Duty Roster
-        </button>
         <button className={`tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`} onClick={() => setActiveTab('portfolio')}>
           <BookOpen size={20} /> Credentials & Portfolio
         </button>
@@ -421,7 +418,7 @@ const StaffManagement: React.FC = () => {
               </button>
             </div>
 
-            {(activeTab === 'roster' || activeTab === 'portfolio') && (
+            {activeTab === 'portfolio' && (
               <>
                 <ListFilterControl
                   searchValue={rosterSearch} onSearchChange={setRosterSearch} searchPlaceholder="Search staff by name or role..."
