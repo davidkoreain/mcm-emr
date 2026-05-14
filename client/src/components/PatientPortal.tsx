@@ -11,10 +11,28 @@ interface PortalProps {
   isGuardianView?: boolean;
 }
 
+const JOURNEY_STEPS = [
+  { id: 1, label: '탐색', icon: Search, color: '#3b82f6', desc: '의료진 및 예약 가능일 탐색' },
+  { id: 2, label: '신청', icon: CalendarIcon, color: '#6366f1', desc: '원하는 날짜에 진료 신청' },
+  { id: 3, label: '확정', icon: Award, color: '#10b981', desc: '진료 일정 최종 확정' },
+  { id: 4, label: '방문', icon: Clock, color: '#f59e0b', desc: '병원 방문 및 도착 예정' },
+  { id: 5, label: '수속', icon: FileText, color: '#ec4899', desc: '접수 및 병원 등록 절차' },
+  { id: 6, label: '면담', icon: User, color: '#8b5cf6', desc: '의료진 면담 및 초기 조치' },
+  { id: 7, label: '검사', icon: Beaker, color: '#06b6d4', desc: '요구되는 각종 검사 수행' },
+  { id: 8, label: '결과', icon: FileText, color: '#14b8a6', desc: '수행된 검사 결과 수령' },
+  { id: 9, label: '진단', icon: ShieldAlert, color: '#ef4444', desc: '의료진의 공식 확정 진단' },
+  { id: 10, label: '계획', icon: GraduationCap, color: '#64748b', desc: '치료 및 조치 일정 확립' },
+  { id: 11, label: '치료', icon: Activity, color: '#f43f5e', desc: '투약, 주사 및 입원 조치' },
+  { id: 12, label: '처치', icon: Scissors, color: '#d946ef', desc: '수술 및 주요 의료 처치' },
+  { id: 13, label: '모니터링', icon: Heart, color: '#f97316', desc: '조치 후 경과 실시간 관찰' },
+  { id: 14, label: '피드백', icon: Clock, color: '#2dd4bf', desc: '추가 조치 및 최종 피드백' },
+];
+
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
   const { currentUser, currentGuardian, patients, appointments, staff, addAppointment, labResults, surgeries, guardians } = useEMR();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'calendar' | 'records' | 'privacy'>('dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentJourneyStep, setCurrentJourneyStep] = useState(1);
 
   // Sync tab with browser history (Source of Truth: URL Hash)
   React.useEffect(() => {
@@ -256,6 +274,70 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             <Menu size={20} color="#475569" />
           </button>
         </div>
+
+        {/* Journey Timeline */}
+        <div style={{ 
+          marginBottom: '2.5rem', 
+          background: 'white', 
+          padding: '1.5rem', 
+          borderRadius: '1.5rem', 
+          border: '1px solid #e2e8f0',
+          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)',
+          overflowX: 'auto'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', minWidth: 'max-content', padding: '0.5rem 1rem' }}>
+            {JOURNEY_STEPS.map((step, idx) => (
+              <React.Fragment key={step.id}>
+                <div 
+                  onClick={() => setCurrentJourneyStep(step.id)}
+                  style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    alignItems: 'center', 
+                    gap: '0.75rem',
+                    position: 'relative',
+                    zIndex: 1,
+                    cursor: 'pointer'
+                  }}
+                >
+                  <div 
+                    style={{ 
+                      width: '40px', 
+                      height: '40px', 
+                      borderRadius: '12px', 
+                      background: step.id <= currentJourneyStep ? step.color : '#f1f5f9',
+                      color: step.id <= currentJourneyStep ? 'white' : '#94a3b8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: step.id === currentJourneyStep ? `0 0 0 4px ${step.color}20` : 'none',
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    <step.icon size={20} />
+                  </div>
+                  <span style={{ 
+                    fontSize: '0.75rem', 
+                    fontWeight: '800', 
+                    color: step.id === currentJourneyStep ? '#0f172a' : '#94a3b8',
+                    whiteSpace: 'nowrap'
+                  }}>
+                    {step.label}
+                  </span>
+                </div>
+                {idx < JOURNEY_STEPS.length - 1 && (
+                  <div style={{ 
+                    width: '60px', 
+                    height: '2px', 
+                    background: step.id < currentJourneyStep ? JOURNEY_STEPS[idx+1].id <= currentJourneyStep ? JOURNEY_STEPS[idx+1].color : '#e2e8f0' : '#e2e8f0',
+                    margin: '0 -4px 1.5rem -4px',
+                    zIndex: 0
+                  }} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
         <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', letterSpacing: '-0.025em' }}>
@@ -284,6 +366,97 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         <div style={{ maxWidth: '1100px' }}>
           {activeTab === 'dashboard' && (
             <>
+              {/* Current Status Card (Active Journey Step) */}
+              <div style={{ 
+                marginBottom: '2.5rem', 
+                background: `linear-gradient(135deg, ${JOURNEY_STEPS[currentJourneyStep-1].color}15 0%, #ffffff 100%)`, 
+                padding: '2rem', 
+                borderRadius: '1.5rem', 
+                border: `1px solid ${JOURNEY_STEPS[currentJourneyStep-1].color}30`,
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.05 }}>
+                  {React.createElement(JOURNEY_STEPS[currentJourneyStep-1].icon, { size: 150, color: JOURNEY_STEPS[currentJourneyStep-1].color })}
+                </div>
+                <div style={{ position: 'relative', zIndex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                    <span style={{ 
+                      background: JOURNEY_STEPS[currentJourneyStep-1].color, 
+                      color: 'white', 
+                      padding: '0.25rem 0.75rem', 
+                      borderRadius: '99px', 
+                      fontSize: '0.7rem', 
+                      fontWeight: '900',
+                      textTransform: 'uppercase'
+                    }}>
+                      Step {currentJourneyStep} of 14
+                    </span>
+                    <span style={{ color: '#64748b', fontSize: '0.85rem', fontWeight: '600' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} 단계 진행 중</span>
+                  </div>
+                  <h2 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.5rem' }}>
+                    {JOURNEY_STEPS[currentJourneyStep-1].desc}
+                  </h2>
+                  <p style={{ color: '#475569', fontSize: '1rem', maxWidth: '600px', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+                    {currentJourneyStep === 1 ? '먼저 진료를 받고 싶은 날짜와 의료진을 선택해 주세요. 원하시는 조건으로 최적의 매칭을 도와드립니다.' : 
+                     currentJourneyStep === 2 ? '신청하신 내역을 병원에서 검토 중입니다. 잠시만 기다려 주시면 일정을 확정해 드립니다.' :
+                     currentJourneyStep === 3 ? '진료 일정이 확정되었습니다! 예약된 시간에 맞춰 병원을 방문해 주세요.' :
+                     currentJourneyStep === 4 ? '오늘은 진료 예약일입니다. 병원에 도착하시면 수속을 위해 안내 데스크로 이동해 주세요.' :
+                     currentJourneyStep === 5 ? '병원 등록 및 수속 절차를 진행 중입니다. 잠시 대기해 주시면 의료진 면담 안내를 드립니다.' :
+                     currentJourneyStep === 6 ? '의료진과 면담을 진행하는 단계입니다. 증상을 상세히 말씀해 주시고 필요한 검사를 안내받으세요.' :
+                     currentJourneyStep === 7 ? '처방된 검사를 수행하는 단계입니다. 안내된 검사실로 이동하여 검사를 받아주세요.' :
+                     currentJourneyStep === 8 ? '수행된 검사의 결과를 분석 중입니다. 결과가 나오는 대로 리포트를 확인하실 수 있습니다.' :
+                     currentJourneyStep === 9 ? '검사 결과를 바탕으로 의료진이 최종 진단을 내렸습니다. 상세 리포트를 확인해 보세요.' :
+                     currentJourneyStep === 10 ? '치료를 위한 세부 일정을 계획하고 있습니다. 조치 사항과 일정을 확인해 주세요.' :
+                     currentJourneyStep === 11 ? '처방된 약 복용이나 주사 처치 등을 수행하는 단계입니다. 일정을 준수해 주세요.' :
+                     currentJourneyStep === 12 ? '수술 또는 주요 의료 처치가 필요한 경우 이를 수행하는 단계입니다.' :
+                     currentJourneyStep === 13 ? '모든 조치 후 상태를 관찰하는 단계입니다. 이상 증상이 있으면 즉시 보고해 주세요.' :
+                     '진료 프로세스가 완료되었습니다. 소중한 피드백을 남겨주시면 더 나은 서비스로 보답하겠습니다.'}
+                  </p>
+                  <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button 
+                      onClick={() => {
+                        if (currentJourneyStep === 1) changeTab('calendar');
+                        else if (currentJourneyStep === 7) changeTab('records');
+                        else setCurrentJourneyStep(prev => Math.min(prev + 1, 14));
+                      }}
+                      style={{ 
+                        background: JOURNEY_STEPS[currentJourneyStep-1].color, 
+                        color: 'white', 
+                        border: 'none', 
+                        padding: '0.75rem 1.5rem', 
+                        borderRadius: '0.75rem', 
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        boxShadow: `0 4px 12px ${JOURNEY_STEPS[currentJourneyStep-1].color}40`
+                      }}
+                    >
+                      {currentJourneyStep === 1 ? '예약 탐색하기' : 
+                       currentJourneyStep === 7 ? '검사 결과 확인' : '다음 단계 확인'} <ChevronRight size={18} />
+                    </button>
+                    {currentJourneyStep > 1 && (
+                      <button 
+                        onClick={() => setCurrentJourneyStep(prev => Math.max(prev - 1, 1))}
+                        style={{ 
+                          background: 'white', 
+                          color: '#64748b', 
+                          border: '1px solid #e2e8f0', 
+                          padding: '0.75rem 1.5rem', 
+                          borderRadius: '0.75rem', 
+                          fontWeight: '800',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        이전 단계
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Service Shortcuts Grid (OpenEMR Style) */}
               <div style={{ marginBottom: '3rem' }}>
                 <h3 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#1e293b', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
