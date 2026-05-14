@@ -23,6 +23,11 @@ export const initialPatients: Patient[] = [
     medications: [],
     ward: '',
     photoUrl: 'https://i.pravatar.cc/150?u=MRN-2026-001',
+    preferredName: 'Bikila',
+    insuranceProvider: 'Ethiopian Health Insurance Service',
+    insurancePolicyNo: 'EHIS-10293-A',
+    genderIdentity: 'Cisgender Male',
+    ethnicity: 'Oromo',
     diagnosisSummary: 'Routine checkup. Normal vitals.',
     treatmentPlan: ['Maintain healthy diet', 'Exercise regularly']
   },
@@ -48,6 +53,10 @@ export const initialPatients: Patient[] = [
     medications: [],
     ward: 'ER',
     photoUrl: 'https://i.pravatar.cc/150?u=MRN-2026-002',
+    insuranceProvider: 'United Healthcare',
+    insurancePolicyNo: 'UHC-99221-X',
+    interpreterNeeded: true,
+    language: 'Amharic',
   },
   {
     mrn: 'MRN-2026-003',
@@ -78,7 +87,8 @@ export const initialStaff: StaffMember[] = [
   {
     id: 1, name: 'Tewodros Alemu', role: 'Doctor', specialization: 'Cardiology',
     gender: 'Male', age: 45, shift: 'Morning', status: 'Active',
-    education: 'MD, Addis Ababa University', license: 'ETH-MD-1001',
+    education: 'MD, Addis Ababa University', license: 'General Practice',
+    licenseNo: 'ETH-MD-1001', npi: '1029384756', taxId: 'TAX-991122',
     experience: '15 Years', surgeries: ['CABG', 'Valve Replacement'],
     training: ['Advanced Cardiac Life Support'], awards: ['Best Doctor 2025'],
     photoUrl: 'https://i.pravatar.cc/150?u=doctor-1'

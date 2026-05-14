@@ -149,7 +149,10 @@ function rowToMedicalHistory(r: Record<string, unknown>): MedicalHistoryItem {
     date: r.date as string,
     doctor: r.doctor as string,
     diagnosis: r.diagnosis as string,
+    icd10Code: r.icd10_code as string || undefined,
     summary: r.summary as string,
+    riskFactors: r.risk_factors as string[] || [],
+    lifestyle: r.lifestyle as Record<string, string> || {},
     createdAt: r.created_at as string,
   };
 }
@@ -158,17 +161,33 @@ function rowToPatient(r: Record<string, unknown>): Patient {
   return {
     mrn: r.mrn as string,
     name: r.name as string,
+    title: r.title as string || undefined,
+    preferredName: r.preferred_name as string || undefined,
     amharic: (r.amharic as string) ?? '',
     visitType: (r.visit_type as string) ?? 'OPD',
     status: (r.status as string) ?? 'Waiting',
     time: (r.time as string) ?? '',
     registeredAt: (r.registered_at as string) ?? '',
     gender: (r.gender as string) ?? 'Male',
+    genderIdentity: r.gender_identity as string || undefined,
+    sexualOrientation: r.sexual_orientation as string || undefined,
+    pronouns: r.pronouns as string || undefined,
+    birthSex: r.birth_sex as string || undefined,
     dob: (r.dob as string) ?? '',
     phone: (r.phone as string) ?? '',
     city: (r.city as string) ?? '',
     woreda: (r.woreda as string) ?? '',
     kebele: (r.kebele as string) ?? '',
+    ethnicity: r.ethnicity as string || undefined,
+    race: r.race as string || undefined,
+    nationality: r.nationality as string || undefined,
+    language: r.language as string || undefined,
+    religion: r.religion as string || undefined,
+    monthlyIncome: r.monthly_income as number || undefined,
+    homelessStatus: r.homeless_status as boolean || false,
+    interpreterNeeded: r.interpreter_needed as boolean || false,
+    insuranceProvider: r.insurance_provider as string || undefined,
+    insurancePolicyNo: r.insurance_policy_no as string || undefined,
     vitals: (r.vitals as VitalsRecord[]) ?? [],
     medications: (r.medications as MedOrder[]) ?? [],
     ward: (r.ward as string) ?? '',
@@ -187,6 +206,22 @@ function patientToRow(p: Patient) {
     registered_at: p.registeredAt, gender: p.gender, dob: p.dob,
     phone: p.phone, city: p.city, woreda: p.woreda, kebele: p.kebele,
     vitals: p.vitals, medications: p.medications, ward: p.ward,
+    ...(p.title !== undefined && { title: p.title }),
+    ...(p.preferredName !== undefined && { preferred_name: p.preferredName }),
+    ...(p.genderIdentity !== undefined && { gender_identity: p.genderIdentity }),
+    ...(p.sexualOrientation !== undefined && { sexual_orientation: p.sexualOrientation }),
+    ...(p.pronouns !== undefined && { pronouns: p.pronouns }),
+    ...(p.birthSex !== undefined && { birth_sex: p.birth_sex }),
+    ...(p.ethnicity !== undefined && { ethnicity: p.ethnicity }),
+    ...(p.race !== undefined && { race: p.race }),
+    ...(p.nationality !== undefined && { nationality: p.nationality }),
+    ...(p.language !== undefined && { language: p.language }),
+    ...(p.religion !== undefined && { religion: p.religion }),
+    ...(p.monthlyIncome !== undefined && { monthly_income: p.monthlyIncome }),
+    ...(p.homelessStatus !== undefined && { homeless_status: p.homelessStatus }),
+    ...(p.interpreterNeeded !== undefined && { interpreter_needed: p.interpreterNeeded }),
+    ...(p.insuranceProvider !== undefined && { insurance_provider: p.insuranceProvider }),
+    ...(p.insurancePolicyNo !== undefined && { insurance_policy_no: p.insurancePolicyNo }),
     ...(p.photoUrl !== undefined && { photo_url: p.photoUrl }),
     ...(p.admissionDate !== undefined && { admission_date: p.admissionDate }),
     ...(p.dischargeDate !== undefined && { discharge_date: p.dischargeDate }),
@@ -207,11 +242,16 @@ function rowToStaff(r: Record<string, unknown>): StaffMember {
     status: (r.status as string) ?? 'On Duty',
     education: (r.education as string) ?? '',
     license: (r.license as string) ?? '',
+    licenseNo: r.license_no as string || undefined,
+    npi: r.npi as string || undefined,
+    upin: r.upin as string || undefined,
+    taxId: r.tax_id as string || undefined,
     experience: (r.experience as string) ?? '',
     surgeries: (r.surgeries as string[]) ?? [],
     training: (r.training as string[]) ?? [],
     awards: (r.awards as string[]) ?? [],
     photoUrl: (r.photo_url as string) || undefined,
+    signatureUrl: r.signature_url as string || undefined,
   };
 }
 
@@ -329,6 +369,22 @@ export class SupabaseService implements IDBService {
     if (changes.dischargeDate !== undefined) row.discharge_date = changes.dischargeDate;
     if (changes.diagnosisSummary !== undefined) row.diagnosis_summary = changes.diagnosisSummary;
     if (changes.treatmentPlan !== undefined) row.treatment_plan = changes.treatmentPlan;
+    if (changes.title !== undefined) row.title = changes.title;
+    if (changes.preferredName !== undefined) row.preferred_name = changes.preferredName;
+    if (changes.genderIdentity !== undefined) row.gender_identity = changes.genderIdentity;
+    if (changes.sexualOrientation !== undefined) row.sexual_orientation = changes.sexualOrientation;
+    if (changes.pronouns !== undefined) row.pronouns = changes.pronouns;
+    if (changes.birthSex !== undefined) row.birth_sex = changes.birthSex;
+    if (changes.ethnicity !== undefined) row.ethnicity = changes.ethnicity;
+    if (changes.race !== undefined) row.race = changes.race;
+    if (changes.nationality !== undefined) row.nationality = changes.nationality;
+    if (changes.language !== undefined) row.language = changes.language;
+    if (changes.religion !== undefined) row.religion = changes.religion;
+    if (changes.monthlyIncome !== undefined) row.monthly_income = changes.monthlyIncome;
+    if (changes.homelessStatus !== undefined) row.homeless_status = changes.homelessStatus;
+    if (changes.interpreterNeeded !== undefined) row.interpreter_needed = changes.interpreterNeeded;
+    if (changes.insuranceProvider !== undefined) row.insurance_provider = changes.insuranceProvider;
+    if (changes.insurancePolicyNo !== undefined) row.insurance_policy_no = changes.insurancePolicyNo;
     const { error } = await this.client.from('patients').update(row).eq('mrn', mrn);
     if (error) throw new Error(error.message);
   }
@@ -369,8 +425,9 @@ export class SupabaseService implements IDBService {
         gender: s.gender, age: s.age,
         shift: s.shift, status: s.status,
         education: s.education, license: s.license, experience: s.experience,
+        license_no: s.licenseNo, npi: s.npi, upin: s.upin, tax_id: s.taxId,
         surgeries: s.surgeries, training: s.training, awards: s.awards,
-        photo_url: s.photoUrl,
+        photo_url: s.photoUrl, signature_url: s.signatureUrl,
       })
       .select().single();
     if (error) throw new Error(error.message);

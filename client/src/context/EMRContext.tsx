@@ -43,7 +43,10 @@ export type MedicalHistoryItem = {
   date: string;
   doctor: string;
   diagnosis: string;
+  icd10Code?: string;
   summary: string;
+  riskFactors?: string[];
+  lifestyle?: Record<string, string>;
   createdAt?: string;
 };
 
@@ -73,17 +76,33 @@ export type VitalsRecord = {
 export type Patient = {
   mrn: string;
   name: string;
+  title?: string;
+  preferredName?: string;
   amharic: string;
   visitType: string;
   status: string;
   time: string;
   registeredAt: string;
   gender: string;
+  genderIdentity?: string;
+  sexualOrientation?: string;
+  pronouns?: string;
+  birthSex?: string;
   dob: string;
   phone: string;
   city: string;
   woreda: string;
   kebele: string;
+  ethnicity?: string;
+  race?: string;
+  nationality?: string;
+  language?: string;
+  religion?: string;
+  monthlyIncome?: number;
+  homelessStatus?: boolean;
+  interpreterNeeded?: boolean;
+  insuranceProvider?: string;
+  insurancePolicyNo?: string;
   vitals: VitalsRecord[];
   medications: MedOrder[];
   ward: string;
@@ -105,11 +124,16 @@ export type StaffMember = {
   status: string;
   education: string;
   license: string;
+  licenseNo?: string;
+  npi?: string;
+  upin?: string;
+  taxId?: string;
   experience: string;
   surgeries: string[];
   training: string[];
   awards: string[];
   photoUrl?: string;
+  signatureUrl?: string;
 };
 
 export type Surgery = {

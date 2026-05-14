@@ -17,6 +17,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const [ptFilters, setPtFilters] = useState<Record<string, string>>({ visitType: '', status: '' });
   const [ptSort, setPtSort] = useState('name_asc');
   const [detailModal, setDetailModal] = useState<Patient | null>(null);
+  const [modalTab, setModalTab] = useState<'demographic' | 'identity' | 'history' | 'insurance'>('demographic');
 
   const filteredPatients = useMemo(() => {
     let result = patients.filter((p) => {
@@ -42,32 +43,130 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
       {/* Patient Detail Modal */}
       {detailModal && (
         <div style={overlayStyle}>
-          <div style={boxStyle}>
+          <div style={{ ...boxStyle, width: '600px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Patient Details</h3>
-              <button onClick={() => setDetailModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <div>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Patient Profile</h3>
+                <p style={{ fontSize: '0.85rem', color: '#64748b' }}>{detailModal.mrn} • {detailModal.name}</p>
+              </div>
+              <button onClick={() => { setDetailModal(null); setModalTab('demographic'); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+
+            {/* Modal Tabs */}
+            <div style={{ display: 'flex', gap: '1rem', borderBottom: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
               {[
-                { label: 'MRN', value: detailModal.mrn },
-                { label: 'Name (EN)', value: detailModal.name },
-                { label: 'Name (AM)', value: detailModal.amharic },
-                { label: 'DOB', value: detailModal.dob },
-                { label: 'Gender', value: detailModal.gender },
-                { label: 'Visit Type', value: detailModal.visitType },
-                { label: 'Status', value: detailModal.status },
-                { label: 'Ward', value: detailModal.ward || 'N/A' },
-                { label: 'Registered', value: detailModal.registeredAt || 'N/A' },
-              ].map(({ label, value }) => (
-                <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.65rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
-                  <span style={{ fontSize: '0.875rem', color: '#64748b', fontWeight: '600' }}>{label}</span>
-                  <span style={{ fontWeight: '700' }}>{value}</span>
-                </div>
+                { id: 'demographic', label: 'Demographics' },
+                { id: 'identity', label: 'Identity' },
+                { id: 'history', label: 'History' },
+                { id: 'insurance', label: 'Insurance' },
+              ].map(t => (
+                <button
+                  key={t.id}
+                  onClick={() => setModalTab(t.id as any)}
+                  style={{
+                    padding: '0.5rem 0',
+                    fontSize: '0.875rem',
+                    fontWeight: '700',
+                    border: 'none',
+                    background: 'none',
+                    borderBottom: modalTab === t.id ? '2px solid var(--primary-color)' : '2px solid transparent',
+                    color: modalTab === t.id ? 'var(--primary-color)' : '#64748b',
+                    cursor: 'pointer'
+                  }}
+                >
+                  {t.label}
+                </button>
               ))}
             </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button className="btn-secondary" onClick={() => setDetailModal(null)}>Close</button>
-              <button className="btn-primary" onClick={() => { onViewEncounter(detailModal); setDetailModal(null); }}>Start Consult</button>
+
+            <div style={{ minHeight: '300px' }}>
+              {modalTab === 'demographic' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { label: 'Title', value: detailModal.title || '—' },
+                    { label: 'Preferred Name', value: detailModal.preferredName || '—' },
+                    { label: 'Name (AM)', value: detailModal.amharic || '—' },
+                    { label: 'DOB', value: detailModal.dob || '—' },
+                    { label: 'Gender', value: detailModal.gender || '—' },
+                    { label: 'Language', value: detailModal.language || 'English' },
+                    { label: 'Phone', value: detailModal.phone || '—' },
+                    { label: 'City', value: detailModal.city || '—' },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600', marginBottom: '0.2rem' }}>{label}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {modalTab === 'identity' && (
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  {[
+                    { label: 'Gender Identity', value: detailModal.genderIdentity || '—' },
+                    { label: 'Sexual Orientation', value: detailModal.sexualOrientation || '—' },
+                    { label: 'Pronouns', value: detailModal.pronouns || '—' },
+                    { label: 'Birth Sex', value: detailModal.birthSex || '—' },
+                    { label: 'Ethnicity', value: detailModal.ethnicity || '—' },
+                    { label: 'Race', value: detailModal.race || '—' },
+                    { label: 'Nationality', value: detailModal.nationality || '—' },
+                    { label: 'Religion', value: detailModal.religion || '—' },
+                  ].map(({ label, value }) => (
+                    <div key={label} style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600', marginBottom: '0.2rem' }}>{label}</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>{value}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {modalTab === 'history' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                   <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #fee2e2' }}>
+                     <h4 style={{ fontSize: '0.85rem', color: '#991b1b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Activity size={16} /> Clinical Summary</h4>
+                     <p style={{ fontSize: '0.9rem', fontWeight: '600' }}>{detailModal.diagnosisSummary || 'No recent diagnosis recorded.'}</p>
+                   </div>
+                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                      <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>Visit Type</div>
+                        <div style={{ fontWeight: '700' }}>{detailModal.visitType}</div>
+                      </div>
+                      <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>Current Status</div>
+                        <div style={{ fontWeight: '700' }}>{detailModal.status}</div>
+                      </div>
+                   </div>
+                   <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>Social History</div>
+                      <div style={{ fontSize: '0.85rem', marginTop: '0.3rem' }}>
+                        Interpreter Needed: {detailModal.interpreterNeeded ? 'Yes' : 'No'} • 
+                        Homeless: {detailModal.homelessStatus ? 'Yes' : 'No'} •
+                        Income: {detailModal.monthlyIncome ? `$${detailModal.monthlyIncome}/mo` : 'Not Disclosed'}
+                      </div>
+                   </div>
+                </div>
+              )}
+
+              {modalTab === 'insurance' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ background: '#eff6ff', padding: '1.25rem', borderRadius: '0.5rem', border: '1px solid #dbeafe' }}>
+                    <h4 style={{ fontSize: '0.85rem', color: '#1e40af', marginBottom: '0.75rem' }}>Primary Insurance</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Provider</span>
+                      <span style={{ fontWeight: '700' }}>{detailModal.insuranceProvider || 'Private Pay / Cash'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Policy Number</span>
+                      <span style={{ fontWeight: '700', fontFamily: 'monospace' }}>{detailModal.insurancePolicyNo || 'N/A'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => { setDetailModal(null); setModalTab('demographic'); }}>Close</button>
+              <button className="btn-primary" onClick={() => { onViewEncounter(detailModal); setDetailModal(null); }}>Start Consultation</button>
             </div>
           </div>
         </div>

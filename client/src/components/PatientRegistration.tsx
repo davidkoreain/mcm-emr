@@ -18,7 +18,12 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
     phone_number: '',
     address_city: 'Addis Ababa',
     address_woreda: '',
-    address_kebele: ''
+    address_kebele: '',
+    preferred_name: '',
+    insurance_provider: '',
+    insurance_policy_no: '',
+    gender_identity: '',
+    interpreter_needed: false,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -40,6 +45,11 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
       city: formData.address_city,
       woreda: formData.address_woreda,
       kebele: formData.address_kebele,
+      preferredName: formData.preferred_name,
+      insuranceProvider: formData.insurance_provider,
+      insurancePolicyNo: formData.insurance_policy_no,
+      genderIdentity: formData.gender_identity,
+      interpreterNeeded: formData.interpreter_needed,
       vitals: [],
       medications: [],
       ward: '',
@@ -154,6 +164,46 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
               value={formData.address_kebele}
               onChange={(e) => setFormData({...formData, address_kebele: e.target.value})}
             />
+          </div>
+          
+          <div className="form-group">
+            <label>Preferred Name / Alias</label>
+            <input 
+              type="text" 
+              value={formData.preferred_name}
+              onChange={(e) => setFormData({...formData, preferred_name: e.target.value})}
+              placeholder="e.g. Nickname"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Insurance Provider</label>
+            <input 
+              type="text" 
+              value={formData.insurance_provider}
+              onChange={(e) => setFormData({...formData, insurance_provider: e.target.value})}
+              placeholder="e.g. Blue Cross"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Insurance Policy No.</label>
+            <input 
+              type="text" 
+              value={formData.insurance_policy_no}
+              onChange={(e) => setFormData({...formData, insurance_policy_no: e.target.value})}
+              placeholder="e.g. POL-12345"
+            />
+          </div>
+
+          <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+            <input 
+              type="checkbox" 
+              id="interpreter"
+              checked={formData.interpreter_needed}
+              onChange={(e) => setFormData({...formData, interpreter_needed: e.target.checked})}
+            />
+            <label htmlFor="interpreter">Interpreter Needed</label>
           </div>
         </div>
 

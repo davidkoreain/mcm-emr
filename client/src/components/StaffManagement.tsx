@@ -26,7 +26,7 @@ const initialPerf: PerformanceRecord[] = [
   { id: 4, name: 'Dr. Fitsum Ayele', type: 'Award', title: 'Patient Satisfaction Award', date: '2026-02-20' },
 ];
 
-const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' as const, age: 30, shift: 'Day', status: 'On Duty', education: '', license: '', experience: '' };
+const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' as const, age: 30, shift: 'Day', status: 'On Duty', education: '', license: '', licenseNo: '', npi: '', upin: '', taxId: '', experience: '' };
 
 const StaffManagement: React.FC = () => {
   const { staff, addStaff } = useEMR();
@@ -278,7 +278,11 @@ const StaffManagement: React.FC = () => {
                 { label: 'Specialization', value: profileModal.specialization },
                 { label: 'Shift', value: profileModal.shift },
                 { label: 'Status', value: profileModal.status },
-                { label: 'License No.', value: profileModal.license },
+                { label: 'Medical License', value: profileModal.license },
+                { label: 'NPI Number', value: profileModal.npi || '—' },
+                { label: 'License No.', value: profileModal.licenseNo || '—' },
+                { label: 'UPIN', value: profileModal.upin || '—' },
+                { label: 'Tax ID', value: profileModal.taxId || '—' },
                 { label: 'Education', value: profileModal.education },
                 { label: 'Experience', value: profileModal.experience },
                 { label: 'Surgery Log', value: profileModal.surgeries.join(', ') || 'None' },
@@ -311,7 +315,10 @@ const StaffManagement: React.FC = () => {
                 { label: 'Full Name *', key: 'name', placeholder: 'Dr. / Nurse ...' },
                 { label: 'Role / Position *', key: 'role', placeholder: 'e.g. Staff Nurse' },
                 { label: 'Specialization', key: 'specialization', placeholder: 'e.g. Cardiology' },
-                { label: 'Medical License No.', key: 'license', placeholder: 'e.g. ETH-MD-0000' },
+                { label: 'Medical License (Label)', key: 'license', placeholder: 'e.g. General Physician' },
+                { label: 'License No.', key: 'licenseNo', placeholder: 'e.g. ETH-MD-0000' },
+                { label: 'NPI Number', key: 'npi', placeholder: '10-digit NPI' },
+                { label: 'UPIN / Tax ID', key: 'taxId', placeholder: 'Tax Identification Number' },
                 { label: 'Education', key: 'education', placeholder: 'e.g. BSc Nursing, AAU' },
                 { label: 'Experience', key: 'experience', placeholder: 'e.g. 3 years (MCM Hospital)' },
               ].map(({ label, key, placeholder }) => (
@@ -367,6 +374,9 @@ const StaffManagement: React.FC = () => {
                     status: newStaff.status,
                     education: newStaff.education.trim() || 'Not specified',
                     license: newStaff.license.trim() || 'Pending',
+                    licenseNo: newStaff.licenseNo.trim(),
+                    npi: newStaff.npi.trim(),
+                    taxId: newStaff.taxId.trim(),
                     experience: newStaff.experience.trim() || 'Not specified',
                     surgeries: [], training: [], awards: [],
                   });
