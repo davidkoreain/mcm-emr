@@ -55,7 +55,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           setActiveMenu('appointments');
           setAppointmentsExpanded(true);
         }
-      } else if (['info', 'records', 'settings'].includes(hash)) {
+      } else if (hash === 'info' || hash === 'records' || hash === 'settings') {
         setActiveMenu(hash as any);
       }
     };
@@ -83,7 +83,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
 
   // Booking State
-  const [bookingStep, setBookingStep] = useState<1 | 2 | 3>(1);
+  const [bookingStep, setBookingStep] = useState<1 | 2>(1); // 1: Selection (Date+Doc), 2: Time
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selDate, setSelDate] = useState<Date | null>(null);
   const [selDoc, setSelDoc] = useState<StaffMember | null>(null);
@@ -98,6 +98,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
   const myGuardian = guardians.find(g => g.patientMrn === activeUser.mrn);
   const privacy = myGuardian?.privacySettings || { showNotes: true, showLabs: true, showSurgeries: true };
+  const canSeeNotes = isGuardianView || privacy.showNotes;
   const filteredLabs = labResults.filter(r => r.patientMrn === activeUser.mrn).filter(() => isGuardianView || privacy.showLabs);
 
   const specs = useMemo(() => Array.from(new Set(staff.filter(s => s.role.includes('Doctor')).map(s => s.specialization))), [staff]);
@@ -151,27 +152,21 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     } catch (e) { alert('Failed to book.'); }
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => setEditData({ ...editData, photoUrl: reader.result as string });
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveProfile = async () => {
     try {
       await updatePatient(activeUser.mrn, editData);
       setIsEditing(false);
       alert('Profile updated successfully.');
     } catch (e) { alert('Failed to update profile.'); }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert('File is too large. Please select an image under 2MB.');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEditData({ ...editData, photoUrl: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
   };
 
   const MainMenuItem = ({ id, label, icon: Icon, expandable = false }: { id: any, label: string, icon: any, expandable?: boolean }) => (
@@ -250,7 +245,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   return (
     <div className="app-container" style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
     
-      {/* Sidebar - 2-Level Navigation */}
+      {/* Sidebar */}
       <aside 
         className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}
         style={{ 
@@ -297,7 +292,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
       {/* Main Content Area */}
       <main className="patient-portal-main" style={{ marginLeft: '320px', padding: '2.5rem' }}>
-        {/* Mobile Header Overlay */}
+        {/* Mobile Header */}
         <div style={{ display: 'none', position: 'fixed', top: 0, left: 0, right: 0, height: '64px', background: 'rgba(255, 255, 255, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid #e2e8f0', zIndex: 800, alignItems: 'center', padding: '0 1.25rem', justifyContent: 'space-between' }} className="mobile-only-flex">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <Activity color="#2563eb" size={24} />
@@ -309,115 +304,34 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         </div>
 
         <div style={{ maxWidth: '1000px' }}>
-          {/* Patient Information View */}
+          {/* Patient Info View */}
           {activeMenu === 'info' && (
             <section>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '2.5rem' }}>
-                <div>
-                  <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '0.5rem' }}>Patient Information</h2>
-                  <p style={{ color: '#64748b', fontWeight: '600' }}>Manage your personal profile and clinical identifiers</p>
-                </div>
-                {!isEditing && (
-                  <button 
-                    onClick={() => { setEditData(activeUser); setIsEditing(true); }}
-                    style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.85rem 1.5rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' }}
-                  >
-                    <Edit size={18} /> Edit Profile
-                  </button>
-                )}
+                <div><h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '0.5rem' }}>Patient Information</h2><p style={{ color: '#64748b', fontWeight: '600' }}>Manage your personal profile and clinical identifiers</p></div>
+                {!isEditing && <button onClick={() => { setEditData(activeUser); setIsEditing(true); }} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.85rem 1.5rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)' }}><Edit size={18} /> Edit Profile</button>}
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
-                {/* Photo & Basic Info */}
                 <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
                   <div style={{ position: 'relative', marginBottom: '1.5rem' }}>
                     {isEditing ? (
                       <div style={{ position: 'relative' }}>
-                        {editData.photoUrl ? (
-                          <img src={editData.photoUrl} alt="Preview" style={{ width: '120px', height: '120px', borderRadius: '2.5rem', objectFit: 'cover', border: '4px solid #f1f5f9' }} />
-                        ) : (
-                          <div style={{ width: '120px', height: '120px', borderRadius: '2.5rem', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px dashed #e2e8f0' }}>
-                            <Camera size={40} color="#cbd5e1" />
-                          </div>
-                        )}
-                        <button 
-                          onClick={() => fileInputRef.current?.click()}
-                          style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#2563eb', color: 'white', padding: '0.75rem', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', border: 'none' }}
-                        >
-                          <Camera size={20} />
-                        </button>
-                        <input 
-                          type="file" 
-                          ref={fileInputRef}
-                          style={{ display: 'none' }} 
-                          accept="image/*"
-                          capture="user"
-                          onChange={handleFileChange}
-                        />
+                        {editData.photoUrl ? <img src={editData.photoUrl} alt="Preview" style={{ width: '120px', height: '120px', borderRadius: '2.5rem', objectFit: 'cover', border: '4px solid #f1f5f9' }} /> : <div style={{ width: '120px', height: '120px', borderRadius: '2.5rem', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '4px dashed #e2e8f0' }}><Camera size={40} color="#cbd5e1" /></div>}
+                        <button onClick={() => fileInputRef.current?.click()} style={{ position: 'absolute', bottom: '-10px', right: '-10px', background: '#2563eb', color: 'white', padding: '0.75rem', borderRadius: '50%', cursor: 'pointer', boxShadow: '0 4px 8px rgba(0,0,0,0.1)', border: 'none' }}><Camera size={20} /></button>
+                        <input type="file" ref={fileInputRef} style={{ display: 'none' }} accept="image/*" capture="user" onChange={handleFileChange} />
                       </div>
-                    ) : (
-                      activeUser.photoUrl ? (
-                        <img src={activeUser.photoUrl} alt="Profile" style={{ width: '120px', height: '120px', borderRadius: '2.5rem', objectFit: 'cover', border: '4px solid #f1f5f9' }} />
-                      ) : (
-                        <Avatar name={activeUser.name} size={120} />
-                      )
-                    )}
+                    ) : (activeUser.photoUrl ? <img src={activeUser.photoUrl} alt="Profile" style={{ width: '120px', height: '120px', borderRadius: '2.5rem', objectFit: 'cover', border: '4px solid #f1f5f9' }} /> : <Avatar name={activeUser.name} size={120} />)}
                   </div>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: '900', color: '#0f172a' }}>{activeUser.name}</h3>
-                  <p style={{ color: '#64748b', fontWeight: '700', fontSize: '0.9rem' }}>MRN: {activeUser.mrn}</p>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{activeUser.name}</h3><p style={{ color: '#64748b', fontWeight: '700' }}>MRN: {activeUser.mrn}</p>
                 </div>
-
-                {/* Demographics */}
                 <div style={{ background: 'white', padding: '2rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Demographics</h3>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b', textTransform: 'uppercase' }}>Demographics</h3>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                    {isEditing ? (
-                      <>
-                        <EditRow label="Full Name" value={editData.name || ''} onChange={(v) => setEditData({ ...editData, name: v })} />
-                        <EditRow label="Date of Birth" value={editData.dob || ''} onChange={(v) => setEditData({ ...editData, dob: v })} />
-                        <EditRow label="Gender" value={editData.gender || ''} onChange={(v) => setEditData({ ...editData, gender: v })} />
-                        <EditRow label="Phone" value={editData.phone || ''} onChange={(v) => setEditData({ ...editData, phone: v })} />
-                      </>
-                    ) : (
-                      <>
-                        <InfoRow label="Full Name" value={activeUser.name} />
-                        <InfoRow label="Date of Birth" value={activeUser.dob} />
-                        <InfoRow label="Gender" value={activeUser.gender} />
-                        <InfoRow label="Phone" value={activeUser.phone} />
-                      </>
-                    )}
+                    {isEditing ? (<><EditRow label="Full Name" value={editData.name || ''} onChange={(v) => setEditData({ ...editData, name: v })} /><EditRow label="Date of Birth" value={editData.dob || ''} onChange={(v) => setEditData({ ...editData, dob: v })} /><EditRow label="Gender" value={editData.gender || ''} onChange={(v) => setEditData({ ...editData, gender: v })} /><EditRow label="Phone" value={editData.phone || ''} onChange={(v) => setEditData({ ...editData, phone: v })} /></>) : (<><InfoRow label="Full Name" value={activeUser.name} /><InfoRow label="Date of Birth" value={activeUser.dob} /><InfoRow label="Gender" value={activeUser.gender} /><InfoRow label="Phone" value={activeUser.phone} /></>)}
                   </div>
                 </div>
-
-                {/* Identifiers */}
-                {!isEditing && (
-                  <div style={{ background: 'white', padding: '2rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: '800', marginBottom: '1.5rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Clinical Status</h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                      <InfoRow label="Visit Type" value={activeUser.visitType} />
-                      <InfoRow label="Registration Status" value={activeUser.status} />
-                      <InfoRow label="Primary Language" value={activeUser.language || 'English'} />
-                    </div>
-                  </div>
-                )}
               </div>
-
-              {isEditing && (
-                <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                  <button 
-                    onClick={() => setIsEditing(false)}
-                    style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                  >
-                    <X size={18} /> Cancel
-                  </button>
-                  <button 
-                    onClick={handleSaveProfile}
-                    style={{ background: '#2563eb', color: 'white', border: 'none', padding: '1rem 3rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 10px 20px rgba(37, 99, 235, 0.2)' }}
-                  >
-                    <Save size={18} /> Save Changes
-                  </button>
-                </div>
-              )}
+              {isEditing && <div style={{ marginTop: '2.5rem', display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}><button onClick={() => setIsEditing(false)} style={{ background: '#f1f5f9', color: '#475569', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer' }}><X size={18} /> Cancel</button><button onClick={handleSaveProfile} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '1rem 3rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', boxShadow: '0 10px 20px rgba(37, 99, 235, 0.2)' }}><Save size={18} /> Save Changes</button></div>}
             </section>
           )}
 
@@ -427,35 +341,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '2rem' }}>Medical Records</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Beaker size={20} color="#2563eb" /> Laboratory Results
-                  </h3>
-                  {filteredLabs.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-                      {filteredLabs.map((l, i) => (
-                        <div key={i} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}>
-                          <div style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{l.test}</div>
-                          <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2563eb' }}>{l.value} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{l.unit}</span></div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p style={{ color: '#94a3b8' }}>No lab results available.</p>}
-                </div>
-                
-                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <Scissors size={20} color="#7c3aed" /> Surgical History
-                  </h3>
-                  {surgeries.filter(s => s.patientMrn === activeUser.mrn).length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                      {surgeries.filter(s => s.patientMrn === activeUser.mrn).map((s, i) => (
-                        <div key={i} style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '1.25rem', border: '1px solid #f1f5f9' }}>
-                          <div style={{ fontWeight: '900', fontSize: '1.05rem' }}>{s.operationName}</div>
-                          <div style={{ marginTop: '0.5rem', color: '#64748b', fontSize: '0.85rem' }}>{new Date(s.startTime).toLocaleDateString()}</div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : <p style={{ color: '#94a3b8' }}>No surgical history recorded.</p>}
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Beaker size={20} color="#2563eb" /> Laboratory Results</h3>
+                  {filteredLabs.length > 0 ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>{filteredLabs.map((l, i) => <div key={i} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #f1f5f9' }}><div style={{ fontWeight: '800', fontSize: '1.1rem', marginBottom: '0.5rem' }}>{l.test}</div><div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2563eb' }}>{l.value} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{l.unit}</span></div></div>)}</div> : <p style={{ color: '#94a3b8' }}>No lab results available.</p>}
                 </div>
               </div>
             </section>
@@ -464,70 +351,114 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           {/* Appointments / Journey View */}
           {activeMenu === 'appointments' && (
             <section>
+              {/* Journey Guide Card */}
               <div style={{ marginBottom: '2.5rem', background: `linear-gradient(135deg, ${JOURNEY_STEPS[currentJourneyStep-1].color}15 0%, #ffffff 100%)`, padding: '2.5rem', borderRadius: '2rem', border: `1px solid ${JOURNEY_STEPS[currentJourneyStep-1].color}30`, position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.05 }}>
-                  {React.createElement(JOURNEY_STEPS[currentJourneyStep-1].icon, { size: 180, color: JOURNEY_STEPS[currentJourneyStep-1].color })}
-                </div>
+                <div style={{ position: 'absolute', right: '-20px', top: '-20px', opacity: 0.05 }}>{React.createElement(JOURNEY_STEPS[currentJourneyStep-1].icon, { size: 180, color: JOURNEY_STEPS[currentJourneyStep-1].color })}</div>
                 <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                    <span style={{ background: JOURNEY_STEPS[currentJourneyStep-1].color, color: 'white', padding: '0.35rem 1rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '900' }}>Step {currentJourneyStep}</span>
-                    <span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>{JOURNEY_STEPS[currentJourneyStep-1].label}</span>
-                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}><span style={{ background: JOURNEY_STEPS[currentJourneyStep-1].color, color: 'white', padding: '0.35rem 1rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '900' }}>Step {currentJourneyStep}</span><span style={{ color: '#64748b', fontSize: '0.9rem', fontWeight: '600' }}>{JOURNEY_STEPS[currentJourneyStep-1].label}</span></div>
                   <h2 style={{ fontSize: '2.25rem', fontWeight: '900', color: '#0f172a', marginBottom: '0.75rem' }}>{JOURNEY_STEPS[currentJourneyStep-1].desc}</h2>
                   <p style={{ color: '#475569', fontSize: '1.1rem', maxWidth: '700px', lineHeight: '1.7', marginBottom: '2rem' }}>
-                    {currentJourneyStep === 1 ? 'Please select your preferred date and medical specialist.' : 
-                     currentJourneyStep === 2 ? 'Your application is being reviewed by the hospital.' :
-                     currentJourneyStep === 3 ? 'Your appointment is confirmed!' :
-                     currentJourneyStep === 4 ? 'Today is your appointment day.' :
-                     currentJourneyStep === 5 ? 'Registration and admission procedures are in progress.' :
-                     currentJourneyStep === 6 ? 'You are now having a consultation with the medical team.' :
-                     currentJourneyStep === 7 ? 'Tests are being performed as prescribed.' :
-                     currentJourneyStep === 8 ? 'Your test results are being analyzed.' :
-                     currentJourneyStep === 9 ? 'The medical team has provided a final diagnosis.' :
-                     currentJourneyStep === 10 ? 'We are establishing a detailed schedule for your treatment.' :
-                     currentJourneyStep === 11 ? 'This is the stage for prescribed medications or inpatient care.' :
-                     currentJourneyStep === 12 ? 'This stage is for surgeries or major medical procedures.' :
-                     currentJourneyStep === 13 ? 'Observing your condition after all procedures.' :
-                     'Your medical journey is complete.'}
+                    {currentJourneyStep === 1 ? 'Select a date and doctor to discover available consultation options.' : 'Follow the guide below to complete this step of your journey.'}
                   </p>
-                  <button onClick={() => setCurrentJourneyStep(prev => Math.min(prev + 1, 14))} style={{ background: JOURNEY_STEPS[currentJourneyStep-1].color, color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    Next Step <ChevronRight size={18} />
-                  </button>
+                  <button onClick={() => setCurrentJourneyStep(prev => Math.min(prev + 1, 14))} style={{ background: JOURNEY_STEPS[currentJourneyStep-1].color, color: 'white', border: 'none', padding: '1rem 2rem', borderRadius: '1rem', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>Next Step <ChevronRight size={18} /></button>
                 </div>
               </div>
 
-              {/* Step Specific Modules */}
-              {currentJourneyStep <= 3 && (
+              {/* Step 1 & 2 Integrated Discovery Module */}
+              {currentJourneyStep <= 2 && (
                 <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{bookingStep === 1 ? 'Select Date' : bookingStep === 2 ? 'Select Specialist' : 'Confirm Time'}</h3>
-                    {bookingStep > 1 && <button onClick={() => setBookingStep((bookingStep - 1) as 1 | 2 | 3)} style={{ background: '#f1f5f9', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800', color: '#475569', cursor: 'pointer' }}>Back</button>}
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{bookingStep === 1 ? 'Discovery: Date & Doctor Selection' : 'Confirm Consultation Time'}</h3>
+                    {bookingStep > 1 && <button onClick={() => setBookingStep(1)} style={{ background: '#f1f5f9', border: 'none', padding: '0.6rem 1.25rem', borderRadius: '0.75rem', fontWeight: '800', color: '#475569', cursor: 'pointer' }}>Back to Selection</button>}
                   </div>
+
                   {bookingStep === 1 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.75rem' }}>
-                      {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.85rem', fontWeight: '800', color: '#94a3b8' }}>{d}</div>)}
-                      {days.map((d, i) => d ? (
-                        <button key={i} onClick={() => { setSelDate(d); setBookingStep(2); }} style={{ aspectRatio: '1', borderRadius: '1.25rem', border: '1px solid #f1f5f9', cursor: 'pointer', background: '#f8fafc', fontWeight: '800' }}>{d.getDate()}</button>
-                      ) : <div key={i} />)}
-                    </div>
-                  )}
-                  {bookingStep === 2 && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                      {doctors.map(doc => (
-                        <div key={doc.id} style={{ background: 'white', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            <Avatar name={doc.name} size={48} />
-                            <div><div style={{ fontWeight: '900' }}>Dr. {doc.name}</div><div style={{ fontSize: '0.75rem', color: '#2563eb' }}>{doc.specialization}</div></div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                      {/* Integrated Calendar (Phase 1) */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#1e293b' }}>1. Choose Preferred Date</h4>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} style={{ background: '#f1f5f9', border: 'none', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer' }}><ChevronLeft size={16}/></button>
+                            <span style={{ fontWeight: '800', fontSize: '0.9rem', minWidth: '100px', textAlign: 'center' }}>{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                            <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={{ background: '#f1f5f9', border: 'none', padding: '0.5rem', borderRadius: '0.5rem', cursor: 'pointer' }}><ChevronRight size={16}/></button>
                           </div>
-                          <button onClick={() => { setSelDoc(doc); setBookingStep(3); }} style={{ background: '#2563eb', color: 'white', border: 'none', padding: '0.7rem 1.25rem', borderRadius: '0.85rem', fontWeight: '800', cursor: 'pointer' }}>Select</button>
                         </div>
-                      ))}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', background: '#f8fafc', padding: '1rem', borderRadius: '1.5rem' }}>
+                          {['S','M','T','W','T','F','S'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: '900', color: '#94a3b8', padding: '0.5rem' }}>{d}</div>)}
+                          {days.map((d, i) => d ? (
+                            <button 
+                              key={i} 
+                              onClick={() => setSelDate(d)} 
+                              style={{ 
+                                aspectRatio: '1', borderRadius: '0.75rem', border: 'none', cursor: 'pointer', 
+                                background: selDate?.toDateString() === d.toDateString() ? '#2563eb' : 'white', 
+                                color: selDate?.toDateString() === d.toDateString() ? 'white' : '#1e293b', 
+                                fontWeight: '800', fontSize: '0.9rem', transition: 'all 0.2s',
+                                boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                              }}
+                            >
+                              {d.getDate()}
+                            </button>
+                          ) : <div key={i} />)}
+                        </div>
+                      </div>
+
+                      {/* Integrated Doctor Selection (Phase 2) */}
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                          <h4 style={{ fontSize: '1.1rem', fontWeight: '800', color: '#1e293b' }}>2. Select Medical Specialist</h4>
+                          <div style={{ display: 'flex', gap: '0.75rem' }}>
+                            <select onChange={e => setFSpec(e.target.value)} style={{ padding: '0.5rem 1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '0.8rem', fontWeight: '700' }}>
+                              <option value="">All Specialties</option>
+                              {specs.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </div>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.25rem' }}>
+                          {doctors.map(doc => (
+                            <div 
+                              key={doc.id} 
+                              onClick={() => { if(selDate) { setSelDoc(doc); setBookingStep(2); } else { alert('Please select a date first.'); } }}
+                              style={{ 
+                                background: 'white', padding: '1.25rem', borderRadius: '1.5rem', border: '1px solid', 
+                                borderColor: selDoc?.id === doc.id ? '#2563eb' : '#e2e8f0', 
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+                                cursor: 'pointer', transition: 'all 0.2s',
+                                boxShadow: selDoc?.id === doc.id ? '0 8px 16px rgba(37, 99, 235, 0.1)' : 'none'
+                              }}
+                            >
+                              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                <Avatar name={doc.name} size={44} />
+                                <div>
+                                  <div style={{ fontWeight: '900', fontSize: '1rem' }}>Dr. {doc.name}</div>
+                                  <div style={{ fontSize: '0.7rem', color: '#2563eb', fontWeight: '700' }}>{doc.specialization}</div>
+                                </div>
+                              </div>
+                              <div style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                {selDoc?.id === doc.id && <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#2563eb' }} />}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
-                  {bookingStep === 3 && (
+
+                  {bookingStep === 2 && (
                     <div>
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '1.5rem', marginBottom: '2rem', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                        <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', flex: 1 }}>
+                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8' }}>SELECTED DATE</div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: '900' }}>{selDate?.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+                        </div>
+                        <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', border: '1px solid #e2e8f0', flex: 1 }}>
+                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8' }}>SELECTED DOCTOR</div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: '900' }}>Dr. {selDoc?.name}</div>
+                        </div>
+                      </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem' }}>
-                        {slots.map(t => <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '800' }}>{t}</button>)}
+                        {slots.map(t => <button key={t} onClick={() => setSelTime(t)} style={{ padding: '1.25rem', borderRadius: '1.25rem', border: '1px solid', borderColor: selTime === t ? '#2563eb' : '#e2e8f0', background: selTime === t ? '#2563eb' : 'white', color: selTime === t ? 'white' : '#1e293b', fontWeight: '800', cursor: 'pointer' }}>{t}</button>)}
                       </div>
                       <button onClick={handleBooking} disabled={!selTime} style={{ width: '100%', marginTop: '3rem', padding: '1.5rem', borderRadius: '1.5rem', background: selTime ? '#2563eb' : '#cbd5e1', color: 'white', fontWeight: '900', fontSize: '1.2rem', border: 'none', cursor: 'pointer' }}>Confirm Appointment</button>
                     </div>
@@ -536,7 +467,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               )}
 
               {/* Placeholder for others */}
-              {currentJourneyStep >= 4 && (
+              {currentJourneyStep >= 3 && (
                 <div style={{ background: 'white', padding: '4rem 2rem', borderRadius: '2rem', border: '2px dashed #e2e8f0', textAlign: 'center' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: '900' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} Details</h3>
                   <p style={{ color: '#64748b' }}>Functional modules for this step are being synchronized with clinical systems.</p>
