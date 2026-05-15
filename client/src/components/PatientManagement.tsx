@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { PlusCircle, Users, X, Info, Activity, Stethoscope, Clock, Calendar } from 'lucide-react';
+import React, { useState, useMemo, useRef } from 'react';
+import { PlusCircle, Upload, Users, X, Info, Activity, Stethoscope, Clock, Calendar } from 'lucide-react';
 import { useEMR, type Patient } from '../context/EMRContext';
 import ListFilterControl from './ListFilterControl';
 import Avatar from './Avatar';
@@ -15,13 +15,62 @@ interface PatientManagementProps {
 }
 
 const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onViewEncounter, onRegister, onEditPatient, autoOpenId, onModalClose }) => {
-  const { patients, role } = useEMR();
-  
+  const { patients, role, addPatient } = useEMR();
+
   const [ptSearch, setPtSearch] = useState('');
   const [ptFilters, setPtFilters] = useState<Record<string, string>>({ visitType: '', status: '' });
   const [ptSort, setPtSort] = useState('name_asc');
   const [detailModal, setDetailModal] = useState<Patient | null>(null);
   const [modalTab, setModalTab] = useState<'demographic' | 'identity' | 'history' | 'insurance'>('demographic');
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResult, setCsvResult] = useState<{ added: number; errors: number } | null>(null);
+  const csvInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCsvImporting(true);
+    setCsvResult(null);
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length < 2) return;
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/\s+/g, '_'));
+      let added = 0, errors = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+        const row: Record<string, string> = {};
+        headers.forEach((h, idx) => { row[h] = cols[idx] ?? ''; });
+        if (!row.name) { errors++; continue; }
+        const now = new Date();
+        const mrn = 'MRN-' + Date.now() + '-' + i;
+        const patient: Patient = {
+          mrn,
+          name: row.name || '',
+          amharic: row.amharic || '',
+          visitType: row.visit_type || row.visittype || 'OPD',
+          status: row.status || 'Waiting',
+          time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+          registeredAt: now.toISOString(),
+          gender: row.gender || '',
+          dob: row.dob || row.date_of_birth || '',
+          phone: row.phone || '',
+          city: row.city || '',
+          woreda: row.woreda || '',
+          kebele: row.kebele || '',
+          vitals: [],
+          medications: [],
+          ward: row.ward || '',
+        };
+        try { await addPatient(patient); added++; }
+        catch { errors++; }
+      }
+      setCsvResult({ added, errors });
+    } finally {
+      setCsvImporting(false);
+      if (csvInputRef.current) csvInputRef.current.value = '';
+    }
+  };
 
   React.useEffect(() => {
     if (autoOpenId && patients.length > 0) {
@@ -210,10 +259,22 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
           <Users size={24} color="var(--primary-color)" />
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Patient List</h2>
         </div>
-        <button className="btn-primary" onClick={onRegister} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <PlusCircle size={18} /> New Patient
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <input ref={csvInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleCsvImport} />
+          <button className="btn-secondary" onClick={() => csvInputRef.current?.click()} disabled={csvImporting} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Upload size={16} /> {csvImporting ? 'Importing…' : 'CSV Import'}
+          </button>
+          <button className="btn-primary" onClick={onRegister} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <PlusCircle size={18} /> New Patient
+          </button>
+        </div>
       </div>
+      {csvResult && (
+        <div style={{ marginBottom: '1rem', padding: '0.75rem 1rem', background: csvResult.errors > 0 ? '#fef3c7' : '#d1fae5', borderRadius: '0.5rem', fontSize: '0.875rem', color: '#1e293b' }}>
+          CSV import complete: <strong>{csvResult.added}</strong> patients added{csvResult.errors > 0 ? `, ${csvResult.errors} rows skipped (missing name)` : ''}.{' '}
+          <button onClick={() => setCsvResult(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, color: '#64748b' }}>✕</button>
+        </div>
+      )}
 
       <ListFilterControl
         searchValue={ptSearch}
