@@ -87,6 +87,16 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const privacy = myGuardian?.privacySettings || { showNotes: true, showLabs: true, showSurgeries: true };
   const filteredLabs = labResults.filter(r => r.patientMrn === activeUser.mrn).filter(() => isGuardianView || privacy.showLabs);
 
+  const parsedEncounter = (() => {
+    if (!activeUser.diagnosisSummary) return null;
+    try {
+      return JSON.parse(activeUser.diagnosisSummary) as {
+        date: string; doctor: string; icd?: string; diagnosis?: string;
+        subjective?: string; objective?: string; notes?: string;
+      };
+    } catch { return null; }
+  })();
+
   const specs = useMemo(() => Array.from(new Set(staff.filter(s => s.role.includes('Doctor')).map(s => s.specialization))), [staff]);
   
   const filteredDoctors = useMemo(() => {
@@ -309,6 +319,91 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           {activeMenu === 'records' && (
             <section>
               <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '2rem' }}>Medical Records</h2>
+
+              {/* Latest Consultation Card */}
+              {(parsedEncounter || activeUser.diagnosisSummary || (activeUser.treatmentPlan && activeUser.treatmentPlan.length > 0)) && (
+                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ShieldAlert size={20} color="#ef4444" /> Latest Consultation
+                  </h3>
+
+                  {parsedEncounter ? (
+                    <div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.5rem', padding: '1rem 1.25rem', background: '#f8fafc', borderRadius: '1rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <User size={15} color="#64748b" />
+                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>DOCTOR</span>
+                          <span style={{ fontWeight: '800', color: '#1e293b' }}>{parsedEncounter.doctor}</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <CalendarIcon size={15} color="#64748b" />
+                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>DATE</span>
+                          <span style={{ fontWeight: '800', color: '#1e293b' }}>{parsedEncounter.date}</span>
+                        </div>
+                        {parsedEncounter.icd && (
+                          <span style={{ background: '#fef2f2', color: '#dc2626', padding: '0.25rem 0.75rem', borderRadius: '99px', fontWeight: '700', fontSize: '0.78rem' }}>
+                            ICD: {parsedEncounter.icd}
+                          </span>
+                        )}
+                      </div>
+
+                      {parsedEncounter.diagnosis && (
+                        <div style={{ marginBottom: '1.25rem' }}>
+                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.35rem' }}>DIAGNOSIS</div>
+                          <div style={{ fontWeight: '800', fontSize: '1.15rem', color: '#1e293b' }}>{parsedEncounter.diagnosis}</div>
+                        </div>
+                      )}
+
+                      {(parsedEncounter.subjective || parsedEncounter.objective) && (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                          {parsedEncounter.subjective && (
+                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
+                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>SUBJECTIVE</div>
+                              <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', margin: 0 }}>{parsedEncounter.subjective}</p>
+                            </div>
+                          )}
+                          {parsedEncounter.objective && (
+                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
+                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>OBJECTIVE</div>
+                              <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', margin: 0 }}>{parsedEncounter.objective}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {parsedEncounter.notes && (
+                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1rem' }}>
+                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>CLINICAL NOTES</div>
+                          <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', margin: 0 }}>{parsedEncounter.notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : activeUser.diagnosisSummary ? (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', marginBottom: '0.4rem' }}>DIAGNOSIS</div>
+                      <p style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b' }}>{activeUser.diagnosisSummary}</p>
+                    </div>
+                  ) : null}
+
+                  {activeUser.treatmentPlan && activeUser.treatmentPlan.length > 0 && (
+                    <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
+                      <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#475569', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <Activity size={15} /> TREATMENT PLAN
+                      </div>
+                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        {activeUser.treatmentPlan.map((item, i) => (
+                          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.92rem', color: '#334155' }}>
+                            <CheckCircle2 size={16} color="#10b981" style={{ marginTop: '2px', flexShrink: 0 }} />
+                            {item}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Laboratory Results */}
               <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}><Beaker size={20} color="#2563eb" /> Laboratory Results</h3>
                 {filteredLabs.length > 0 ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>{filteredLabs.map((l, i) => <div key={i} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem' }}><div style={{ fontWeight: '800' }}>{l.test}</div><div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2563eb' }}>{l.value} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{l.unit}</span></div></div>)}</div> : <p>No results.</p>}

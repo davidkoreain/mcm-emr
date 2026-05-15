@@ -64,7 +64,7 @@ const initialImaging: ImagingItem[] = [
 ];
 
 const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientName, defaultTab = 'soap' }) => {
-  const { patients, updatePatient, role } = useEMR();
+  const { patients, updatePatient, role, currentStaff } = useEMR();
   const currentPatient = patients.find(p => p.name === patientName);
 
   const [activeTab, setActiveTab] = useState<'soap' | 'imaging' | 'history'>(defaultTab);
@@ -90,9 +90,20 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
     e.preventDefault();
     if (currentPatient) {
       const planArray = soap.plan.split('\n').filter(line => line.trim() !== '');
+      const today = new Date().toISOString().slice(0, 10);
+      const docName = currentStaff?.name || role || 'Doctor';
+      const encounterJson = JSON.stringify({
+        date: today,
+        doctor: docName,
+        icd: soap.icd10_code,
+        diagnosis: soap.diagnosis_description,
+        subjective: soap.subjective,
+        objective: soap.objective,
+        notes: soap.assessment,
+      });
       await updatePatient(currentPatient.mrn, {
-        diagnosisSummary: soap.diagnosis_description || soap.assessment,
-        treatmentPlan: soap.publishToPortal ? planArray : [],
+        diagnosisSummary: encounterJson,
+        treatmentPlan: soap.publishToPortal ? planArray : (currentPatient.treatmentPlan ?? []),
       });
     }
     onClose();
