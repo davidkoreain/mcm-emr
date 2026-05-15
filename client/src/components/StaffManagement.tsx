@@ -27,7 +27,7 @@ const initialPerf: PerformanceRecord[] = [
   { id: 4, name: 'Dr. Fitsum Ayele', type: 'Award', title: 'Patient Satisfaction Award', date: '2026-02-20' },
 ];
 
-const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' as const, age: 30, shift: 'Day', status: 'On Duty', education: '', license: '', licenseNo: '', npi: '', upin: '', taxId: '', experience: '' };
+const emptyNewStaff = { name: '', role: '', specialization: '', gender: 'Male' as 'Male' | 'Female', age: 30, shift: 'Day', status: 'On Duty', education: '', license: '', licenseNo: '', npi: '', upin: '', taxId: '', experience: '' };
 
 interface StaffManagementProps {
   activeTab?: 'leave' | 'performance' | 'portfolio';

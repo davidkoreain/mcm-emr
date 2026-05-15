@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Save, X } from 'lucide-react';
-import { useEMR } from '../context/EMRContext';
+import { useEMR, type Patient } from '../context/EMRContext';
 
 interface PatientRegistrationProps {
   onClose: () => void;

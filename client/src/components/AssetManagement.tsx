@@ -315,12 +315,11 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                     location: newAsset.location.trim(),
                     rfidTag: newAsset.rfidTag.trim(),
                     barcode: newAsset.barcode.trim(),
-                    maintenanceHistory: editingAssetId ? (assets.find(a => a.id === editingAssetId)?.maintenanceHistory || []) : [],
                   };
                   if (editingAssetId) {
                     await updateAsset(editingAssetId, payload);
                   } else {
-                    await addAsset({ ...payload, id: `ASSET-${Date.now()}` });
+                    await addAsset({ ...payload, id: `ASSET-${Date.now()}`, addedAt: new Date().toISOString() });
                   }
                   setAddAssetModal(false);
                   setEditingAssetId(null);
