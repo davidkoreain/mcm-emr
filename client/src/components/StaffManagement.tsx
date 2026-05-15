@@ -294,8 +294,8 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>Staff Profile</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-              <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${profileModal.id}`} size={48} level="H" />
+              <div style={{ background: 'white', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${profileModal.id}`} size={120} level="H" includeMargin={true} />
               </div>
               <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={22} /></button>
             </div>
@@ -482,8 +482,8 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                                   </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                                   <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
-                                  <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
-                                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${s.id}`} size={44} level="M" />
+                                  <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
+                                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${s.id}`} size={80} level="M" includeMargin={true} />
                                   </div>
                                 </div>
                                 </div>

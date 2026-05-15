@@ -60,8 +60,6 @@ const App: React.FC = () => {
 
     // 1. If we have URL params, always save them to sessionStorage first
     if (urlType && urlId) {
-      // DEBUG ALERT for mobile
-      alert(`Detected QR Scan: ${urlType} / ${urlId}`);
       sessionStorage.setItem('pending_type', urlType);
       sessionStorage.setItem('pending_id', urlId);
       // Clean URL immediately to keep it tidy

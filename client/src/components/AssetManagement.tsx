@@ -152,8 +152,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
               <h3>Asset Details</h3>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                  <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${detailModal.id}`} size={48} level="H" />
+                <div style={{ background: 'white', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                  <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${detailModal.id}`} size={120} level="H" includeMargin={true} />
                 </div>
                 <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
               </div>
@@ -332,8 +332,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
                         <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{asset.status}</span>
-                        <div style={{ background: 'white', padding: '0.25rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
-                          <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${asset.id}`} size={44} level="M" />
+                        <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
+                          <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${asset.id}`} size={80} level="M" includeMargin={true} />
                         </div>
                       </div>
                     </div>
