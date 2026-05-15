@@ -118,33 +118,6 @@ const App: React.FC = () => {
   // 3. Logic for Admin/Staff View (Full Layout)
   return (
     <div className="app-container">
-      {/* Debug Banner to verify deployment version */}
-      <div style={{ position: 'fixed', top: 0, left: 0, right: 0, background: '#fef08a', color: '#854d0e', fontSize: '0.6rem', fontWeight: 'bold', textAlign: 'center', zIndex: 10000, padding: '4px', borderBottom: '1px solid #eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-        <span>V1.1.2 - QR: {autoOpenId || 'None'} | View: {view}</span>
-        <div style={{ display: 'flex', gap: '5px', pointerEvents: 'auto' }}>
-          <input 
-            type="text" 
-            placeholder="Manual ID..." 
-            style={{ fontSize: '0.6rem', padding: '1px 4px', border: '1px solid #854d0e', borderRadius: '2px' }}
-            id="manual-qr-input"
-          />
-          <button 
-            style={{ fontSize: '0.6rem', background: '#854d0e', color: 'white', border: 'none', padding: '1px 4px', borderRadius: '2px', cursor: 'pointer' }}
-            onClick={() => {
-              const val = (document.getElementById('manual-qr-input') as HTMLInputElement)?.value;
-              if (val) { setAutoOpenId(val); setView('patients'); }
-            }}
-          >
-            Open
-          </button>
-          <button 
-            style={{ fontSize: '0.6rem', background: '#3b82f6', color: 'white', border: 'none', padding: '1px 4px', borderRadius: '2px', cursor: 'pointer' }}
-            onClick={() => { setAutoOpenId('MRN-2026-024'); setView('patients'); }}
-          >
-            Test (MRN-024)
-          </button>
-        </div>
-      </div>
       {mobileMenuOpen && <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} onClick={() => setMobileMenuOpen(false)} />}
       
       <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`}>
