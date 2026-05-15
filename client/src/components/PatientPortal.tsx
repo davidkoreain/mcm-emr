@@ -65,7 +65,9 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     setMobileMenuOpen(false);
   };
   
-  const activeUser = isGuardianView ? patients.find(p => p.mrn === currentGuardian?.patientMrn) : currentUser;
+  const activeUser = isGuardianView
+    ? patients.find(p => p.mrn === currentGuardian?.patientMrn)
+    : (patients.find(p => p.mrn === currentUser?.mrn) ?? currentUser);
 
   // Booking Flow: Step 1 (Date/Time) -> Step 2 (Doctor List) -> Step 3 (Doctor Details/Confirm)
   const [bookingFlowStep, setBookingFlowStep] = useState<1 | 2 | 3>(1); 
