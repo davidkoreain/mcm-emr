@@ -246,8 +246,9 @@ const App: React.FC = () => {
               />
             )}
             {view === 'encounter' && selectedPatient && (
-              <ClinicalEncounter 
+              <ClinicalEncounter
                 patientName={selectedPatient.name}
+                patientMrn={selectedPatient.mrn}
                 onClose={() => setView('dashboard')}
                 defaultTab={selectedTab}
               />

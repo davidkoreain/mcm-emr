@@ -9,6 +9,7 @@ import { useEMR } from '../context/EMRContext';
 interface ClinicalEncounterProps {
   onClose: () => void;
   patientName: string;
+  patientMrn?: string;
   defaultTab?: 'soap' | 'imaging' | 'history';
 }
 
@@ -63,9 +64,11 @@ const initialImaging: ImagingItem[] = [
   { id: 3, type: 'Video', title: 'Endoscopy Procedure', date: '2026-05-05', thumb: 'https://images.unsplash.com/photo-1579154235602-44373db99a23?auto=format&fit=crop&q=80&w=200', full: 'https://images.unsplash.com/photo-1579154235602-44373db99a23?auto=format&fit=crop&q=80&w=1200', isVideo: true },
 ];
 
-const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientName, defaultTab = 'soap' }) => {
+const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientName, patientMrn, defaultTab = 'soap' }) => {
   const { patients, updatePatient, role, currentStaff } = useEMR();
-  const currentPatient = patients.find(p => p.name === patientName);
+  const currentPatient = patientMrn
+    ? patients.find(p => p.mrn === patientMrn)
+    : patients.find(p => p.name === patientName);
 
   const [activeTab, setActiveTab] = useState<'soap' | 'imaging' | 'history'>(defaultTab);
   const [soap, setSoap] = useState({ 
