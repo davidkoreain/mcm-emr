@@ -324,10 +324,46 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [guardians, setGuardians] = useState<GuardianUser[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
   const [staffLeave, setStaffLeave] = useState<StaffLeave[]>([]);
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [currentUser, setCurrentUser] = useState<Patient | null>(null);
-  const [currentGuardian, setCurrentGuardian] = useState<GuardianUser | null>(null);
-  const [currentStaff, setCurrentStaff] = useState<StaffMember | null>(null);
+  const [role, setRoleState] = useState<UserRole | null>(() => {
+    const saved = localStorage.getItem('emr_role');
+    return saved ? (saved as UserRole) : null;
+  });
+  const [currentUser, setCurrentUserState] = useState<Patient | null>(() => {
+    const saved = localStorage.getItem('emr_user');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [currentGuardian, setCurrentGuardianState] = useState<GuardianUser | null>(() => {
+    const saved = localStorage.getItem('emr_guardian');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [currentStaff, setCurrentStaffState] = useState<StaffMember | null>(() => {
+    const saved = localStorage.getItem('emr_staff');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const setRole = (r: UserRole | null) => {
+    setRoleState(r);
+    if (r) localStorage.setItem('emr_role', r);
+    else localStorage.removeItem('emr_role');
+  };
+
+  const setCurrentUser = (u: Patient | null) => {
+    setCurrentUserState(u);
+    if (u) localStorage.setItem('emr_user', JSON.stringify(u));
+    else localStorage.removeItem('emr_user');
+  };
+
+  const setCurrentGuardian = (g: GuardianUser | null) => {
+    setCurrentGuardianState(g);
+    if (g) localStorage.setItem('emr_guardian', JSON.stringify(g));
+    else localStorage.removeItem('emr_guardian');
+  };
+
+  const setCurrentStaff = (s: StaffMember | null) => {
+    setCurrentStaffState(s);
+    if (s) localStorage.setItem('emr_staff', JSON.stringify(s));
+    else localStorage.removeItem('emr_staff');
+  };
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
