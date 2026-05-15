@@ -26,11 +26,12 @@ const emptyAsset = { name: '', serial: '', qty: '1', weight: '', supplier: '', s
 interface AssetManagementProps {
   autoOpenId?: string | null;
   onModalClose?: () => void;
+  activeTab?: 'inventory' | 'maintenance' | 'loss';
 }
 
-const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalClose }) => {
+const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalClose, activeTab: initialTab = 'inventory' }) => {
   const { assets, addAsset, updateAsset, role } = useEMR();
-  const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>(initialTab);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [maintLogs, setMaintLogs] = useState<MaintenanceLog[]>(initialMaint);
   const [detailModal, setDetailModal] = useState<Asset | null>(null);

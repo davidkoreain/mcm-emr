@@ -28,10 +28,10 @@ const initialOTEquipment: OTEquipment[] = [
 const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
 const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '480px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' };
 
-const OperationManagement: React.FC = () => {
+const OperationManagement: React.FC<{ activeTab?: 'schedule' | 'resources' | 'supplies' }> = ({ activeTab: initialTab = 'schedule' }) => {
   const { staff, assets, updateAsset, surgeries, addSurgery, updateSurgery, loading } = useEMR();
 
-  const [activeTab, setActiveTab] = useState<'schedule' | 'resources' | 'supplies'>('schedule');
+  const [activeTab, setActiveTab] = useState<'schedule' | 'resources' | 'supplies'>(initialTab);
   const [supplyUsage, setSupplyUsage] = useState<SupplyItem[]>(initialSupply);
   const [otTeam, setOtTeam] = useState<OTStaff[]>(initialOTStaff);
   const [otEquipment, setOtEquipment] = useState<OTEquipment[]>(initialOTEquipment);

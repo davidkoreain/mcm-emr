@@ -46,6 +46,14 @@ const App: React.FC = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isHrmOpen, setIsHrmOpen] = useState(false);
   const [staffTab, setStaffTab] = useState<'portfolio' | 'leave' | 'performance'>('portfolio');
+  const [isLabOpen, setIsLabOpen] = useState(false);
+  const [labTab, setLabTab] = useState<'orders' | 'results'>('orders');
+  const [isOperationOpen, setIsOperationOpen] = useState(false);
+  const [operationTab, setOperationTab] = useState<'schedule' | 'resources' | 'supplies'>('schedule');
+  const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
+  const [pharmacyTab, setPharmacyTab] = useState<'prescriptions' | 'inventory'>('prescriptions');
+  const [isAssetsOpen, setIsAssetsOpen] = useState(false);
+  const [assetsTab, setAssetsTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
   const [autoOpenId, setAutoOpenId] = useState<string | null>(null);
 
   React.useEffect(() => {
@@ -136,7 +144,6 @@ const App: React.FC = () => {
             <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}><LayoutDashboard size={20}/> <span>Flow Board</span></li>
             <li className={`nav-item ${view === 'patients' ? 'active' : ''}`} onClick={() => { setView('patients'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Patient Details</span></li>
             <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => { setView('calendar'); setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Appointments</span></li>
-            <li className={`nav-item ${view === 'registration' ? 'active' : ''}`} onClick={() => { setView('registration'); setMobileMenuOpen(false); }}><UserPlus size={20}/> <span>Registration</span></li>
             <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => { setView('inpatient'); setMobileMenuOpen(false); }}><Bed size={20}/> <span>Inpatient Ward</span></li>
             
             {/* HRM 2nd Level Menu */}
@@ -184,10 +191,64 @@ const App: React.FC = () => {
               )}
             </AnimatePresence>
 
-            <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => { setView('lab'); setMobileMenuOpen(false); }}><Beaker size={20}/> <span>Laboratory</span></li>
-            <li className={`nav-item ${view === 'operation' ? 'active' : ''}`} onClick={() => { setView('operation'); setMobileMenuOpen(false); }}><Scissors size={20}/> <span>Operations</span></li>
-            <li className={`nav-item ${view === 'pharmacy' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setMobileMenuOpen(false); }}><Pill size={20}/> <span>Pharmacy</span></li>
-            <li className={`nav-item ${view === 'assets' ? 'active' : ''}`} onClick={() => { setView('assets'); setMobileMenuOpen(false); }}><Package size={20}/> <span>Assets</span></li>
+            {/* Laboratory 2nd Level Menu */}
+            <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => setIsLabOpen(!isLabOpen)} style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Beaker size={20}/> <span>Laboratory</span></div>
+              <div className="menu-arrow">{isLabOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+            </li>
+            <AnimatePresence>
+              {isLabOpen && (
+                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                  <li className={`sub-nav-item ${view === 'lab' && labTab === 'orders' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('orders'); setMobileMenuOpen(false); }}><span>Pending Orders</span></li>
+                  <li className={`sub-nav-item ${view === 'lab' && labTab === 'results' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('results'); setMobileMenuOpen(false); }}><span>Results</span></li>
+                </motion.ul>
+              )}
+            </AnimatePresence>
+
+            {/* Operations 2nd Level Menu */}
+            <li className={`nav-item ${view === 'operation' ? 'active' : ''}`} onClick={() => setIsOperationOpen(!isOperationOpen)} style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Scissors size={20}/> <span>Operations</span></div>
+              <div className="menu-arrow">{isOperationOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+            </li>
+            <AnimatePresence>
+              {isOperationOpen && (
+                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                  <li className={`sub-nav-item ${view === 'operation' && operationTab === 'schedule' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('schedule'); setMobileMenuOpen(false); }}><span>OT Schedule</span></li>
+                  <li className={`sub-nav-item ${view === 'operation' && operationTab === 'resources' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('resources'); setMobileMenuOpen(false); }}><span>Resources</span></li>
+                  <li className={`sub-nav-item ${view === 'operation' && operationTab === 'supplies' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('supplies'); setMobileMenuOpen(false); }}><span>Supply Tracking</span></li>
+                </motion.ul>
+              )}
+            </AnimatePresence>
+
+            {/* Pharmacy 2nd Level Menu */}
+            <li className={`nav-item ${view === 'pharmacy' ? 'active' : ''}`} onClick={() => setIsPharmacyOpen(!isPharmacyOpen)} style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Pill size={20}/> <span>Pharmacy</span></div>
+              <div className="menu-arrow">{isPharmacyOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+            </li>
+            <AnimatePresence>
+              {isPharmacyOpen && (
+                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                  <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'prescriptions' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('prescriptions'); setMobileMenuOpen(false); }}><span>Prescriptions</span></li>
+                  <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'inventory' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('inventory'); setMobileMenuOpen(false); }}><span>Drug Inventory</span></li>
+                </motion.ul>
+              )}
+            </AnimatePresence>
+
+            {/* Assets 2nd Level Menu */}
+            <li className={`nav-item ${view === 'assets' ? 'active' : ''}`} onClick={() => setIsAssetsOpen(!isAssetsOpen)} style={{ justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Package size={20}/> <span>Assets</span></div>
+              <div className="menu-arrow">{isAssetsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+            </li>
+            <AnimatePresence>
+              {isAssetsOpen && (
+                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                  <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'inventory' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('inventory'); setMobileMenuOpen(false); }}><span>Inventory</span></li>
+                  <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'maintenance' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('maintenance'); setMobileMenuOpen(false); }}><span>Maintenance</span></li>
+                  <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'loss' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('loss'); setMobileMenuOpen(false); }}><span>Loss & Damage</span></li>
+                </motion.ul>
+              )}
+            </AnimatePresence>
+
             <li className={`nav-item ${view === 'billing' ? 'active' : ''}`} onClick={() => { setView('billing'); setMobileMenuOpen(false); }}><CreditCard size={20}/> <span>Billing</span></li>
           </ul>
         </nav>
@@ -261,10 +322,10 @@ const App: React.FC = () => {
             )}
             {view === 'inpatient' && <InpatientManagement />}
             {view === 'staff' && <StaffManagement activeTab={staffTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
-            {view === 'lab' && <LabManagement />}
-            {view === 'operation' && <OperationManagement />}
-            {view === 'pharmacy' && <PharmacyManagement />}
-            {view === 'assets' && <AssetManagement autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
+            {view === 'lab' && <LabManagement activeTab={labTab} />}
+            {view === 'operation' && <OperationManagement activeTab={operationTab} />}
+            {view === 'pharmacy' && <PharmacyManagement activeTab={pharmacyTab} />}
+            {view === 'assets' && <AssetManagement activeTab={assetsTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'billing' && <BillingManagement />}
           </ErrorBoundary>
         </div>

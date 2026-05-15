@@ -8,9 +8,9 @@ const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m)
 
 const emptyDrug = { name: '', form: 'Tablet', strength: '', stock: '', price: '' };
 
-const PharmacyManagement: React.FC = () => {
+const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'prescriptions' }) => {
   const { drugs, prescriptions, dispenseMedication, addDrug, updateDrug, role, loading } = useEMR();
-  const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>('prescriptions');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>(initialTab);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [modal, setModal] = useState<{ type: 'addDrug' | 'editDrug' | 'updateStock'; data?: Drug } | null>(null);
   const [newDrug, setNewDrug] = useState(emptyDrug);
