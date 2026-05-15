@@ -262,6 +262,9 @@ type EMRContextType = {
   isPortalUserRegistered: (mrn: string) => Promise<boolean>;
   loginStaff: (name: string, passwordHash: string) => Promise<StaffMember | null>;
   loginGuardian: (name: string, passwordHash: string) => Promise<GuardianUser | null>;
+  updateStaff: (id: number, changes: Partial<StaffMember>) => Promise<void>;
+  addDrug: (d: Omit<Drug, 'id' | 'addedAt'>) => Promise<void>;
+  updateDrug: (id: number, changes: Partial<Drug>) => Promise<void>;
   dispenseMedication: (prescriptionId: number, drugId: number, qty: number) => Promise<void>;
   // Lab
   submitLabResult: (orderId: number, result: Omit<LabResult, 'id' | 'createdAt'>) => Promise<void>;
@@ -478,6 +481,10 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await db.insertStaff(s);
     await refreshData();
   };
+  const updateStaff = async (id: number, changes: Partial<StaffMember>) => {
+    await db.updateStaff(id, changes);
+    await refreshData();
+  };
 
   const addAsset = async (a: Asset) => {
     await db.insertAsset(a);
@@ -556,13 +563,21 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await db.insertLabResult(result);
     await refreshData();
   };
+  const addDrug = async (d: Omit<Drug, 'id' | 'addedAt'>) => {
+    await db.insertDrug(d);
+    await refreshData();
+  };
+  const updateDrug = async (id: number, changes: Partial<Drug>) => {
+    await db.updateDrug(id, changes);
+    await refreshData();
+  };
 
   return (
     <EMRContext.Provider value={{
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults, medicalHistory, staffLeave,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
-      addPatient, updatePatient, addVitals, addStaff, addAsset, updateAsset,
+      addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
       addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
       dispenseMedication, submitLabResult, deleteMedicalHistory
     }}>

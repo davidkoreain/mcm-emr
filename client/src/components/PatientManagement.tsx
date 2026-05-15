@@ -9,12 +9,13 @@ interface PatientManagementProps {
   onViewVitals: (patient: { mrn: string; name: string; amharic: string }) => void;
   onViewEncounter: (patient: { mrn: string; name: string; amharic: string }) => void;
   onRegister: () => void;
+  onEditPatient: (patient: Patient) => void;
   autoOpenId?: string | null;
   onModalClose?: () => void;
 }
 
-const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onViewEncounter, onRegister, autoOpenId, onModalClose }) => {
-  const { patients } = useEMR();
+const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onViewEncounter, onRegister, onEditPatient, autoOpenId, onModalClose }) => {
+  const { patients, role } = useEMR();
   
   const [ptSearch, setPtSearch] = useState('');
   const [ptFilters, setPtFilters] = useState<Record<string, string>>({ visitType: '', status: '' });
@@ -190,6 +191,14 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
 
             <div style={{ marginTop: '2rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button className="btn-secondary" onClick={() => { setDetailModal(null); setModalTab('demographic'); }}>Close</button>
+              {role === 'Admin' && (
+                <button 
+                  style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}
+                  onClick={() => { onEditPatient(detailModal); setDetailModal(null); }}
+                >
+                  Edit Profile
+                </button>
+              )}
               <button className="btn-primary" onClick={() => { onViewEncounter(detailModal); setDetailModal(null); }}>Start Consultation</button>
             </div>
           </div>

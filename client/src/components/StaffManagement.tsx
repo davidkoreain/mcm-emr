@@ -36,7 +36,7 @@ interface StaffManagementProps {
 }
 
 const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, autoOpenId, onModalClose }) => {
-  const { staff, addStaff } = useEMR();
+  const { staff, addStaff, updateStaff, role } = useEMR();
   const [internalTab, setInternalTab] = useState<'leave' | 'performance' | 'portfolio'>('portfolio');
   
   // Use prop if provided, otherwise fallback to internal state
@@ -50,6 +50,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   const [logsModal, setLogsModal] = useState<Staff | null>(null);
   const [addStaffModal, setAddStaffModal] = useState(false);
   const [newStaff, setNewStaff] = useState(emptyNewStaff);
+  const [editingStaffId, setEditingStaffId] = useState<number | null>(null);
   const [perfDetailModal, setPerfDetailModal] = useState<PerformanceRecord | null>(null);
   const [profileModal, setProfileModal] = useState<Staff | null>(null);
 
@@ -326,20 +327,48 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
               ))}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem', gap: '0.75rem' }}>
               <button className="btn-secondary" onClick={() => setProfileModal(null)}>Close</button>
+              {role === 'Admin' && (
+                <button 
+                  style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}
+                  onClick={() => {
+                    setNewStaff({
+                      name: profileModal.name,
+                      role: profileModal.role,
+                      specialization: profileModal.specialization,
+                      gender: profileModal.gender,
+                      age: profileModal.age,
+                      shift: profileModal.shift,
+                      status: profileModal.status,
+                      education: profileModal.education,
+                      license: profileModal.license,
+                      licenseNo: profileModal.licenseNo || '',
+                      npi: profileModal.npi || '',
+                      upin: profileModal.upin || '',
+                      taxId: profileModal.taxId || '',
+                      experience: profileModal.experience
+                    });
+                    setEditingStaffId(profileModal.id);
+                    setAddStaffModal(true);
+                    setProfileModal(null);
+                  }}
+                >
+                  Edit Profile
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Add Staff Modal */}
+      {/* Add/Edit Staff Modal */}
       {addStaffModal && (
         <div style={overlayStyle}>
           <div style={boxStyle}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3>Add New Staff</h3>
-              <button onClick={() => setAddStaffModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <h3>{editingStaffId ? 'Edit Staff Member' : 'Add New Staff'}</h3>
+              <button onClick={() => { setAddStaffModal(false); setEditingStaffId(null); setNewStaff(emptyNewStaff); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {[
@@ -392,10 +421,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-              <button className="btn-secondary" onClick={() => { setAddStaffModal(false); setNewStaff(emptyNewStaff); }}>Cancel</button>
+              <button className="btn-secondary" onClick={() => { setAddStaffModal(false); setEditingStaffId(null); setNewStaff(emptyNewStaff); }}>Cancel</button>
               <button className="btn-primary" disabled={!newStaff.name.trim() || !newStaff.role.trim()}
-                onClick={() => {
-                  addStaff({
+                onClick={async () => {
+                  const payload = {
                     name: newStaff.name.trim(),
                     role: newStaff.role.trim(),
                     specialization: newStaff.specialization.trim() || 'General Medicine',
@@ -409,12 +438,20 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                     npi: newStaff.npi.trim(),
                     taxId: newStaff.taxId.trim(),
                     experience: newStaff.experience.trim() || 'Not specified',
-                    surgeries: [], training: [], awards: [],
-                  });
+                    surgeries: editingStaffId ? (staff.find(s => s.id === editingStaffId)?.surgeries || []) : [],
+                    training: editingStaffId ? (staff.find(s => s.id === editingStaffId)?.training || []) : [],
+                    awards: editingStaffId ? (staff.find(s => s.id === editingStaffId)?.awards || []) : [],
+                  };
+                  if (editingStaffId) {
+                    await updateStaff(editingStaffId, payload);
+                  } else {
+                    await addStaff(payload);
+                  }
                   setAddStaffModal(false);
+                  setEditingStaffId(null);
                   setNewStaff(emptyNewStaff);
                 }}>
-                Register Staff
+                {editingStaffId ? 'Save Changes' : 'Register Staff'}
               </button>
             </div>
           </div>

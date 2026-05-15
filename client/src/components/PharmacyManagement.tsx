@@ -78,18 +78,64 @@ const PharmacyManagement: React.FC = () => {
     <div className="pharmacy-container">
       {showCSVModal && <CSVImportModal title="Drugs Inventory" onClose={() => setShowCSVModal(false)} onImport={() => {}} />}
       
-      {/* Modals for Add/Update (UI only for now) */}
       {modal && (
         <div style={overlayStyle}>
-          <div style={boxStyle}>
-            <h3>{modal.type === 'addDrug' ? 'Add New Drug' : 'Update Stock'}</h3>
-            <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1.5rem' }}>{modal.data?.name}</p>
-            {modal.type === 'updateStock' && (
-              <input type="number" value={stockValue} onChange={e => setStockValue(e.target.value)} placeholder="New stock quantity" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', marginBottom: '1rem' }} />
+          <div style={{ ...boxStyle, width: modal.type === 'updateStock' ? '420px' : '500px' }}>
+            <h3 style={{ marginBottom: '1rem' }}>
+              {modal.type === 'addDrug' ? 'Add New Drug' : modal.type === 'editDrug' ? 'Edit Drug Details' : 'Update Stock'}
+            </h3>
+            
+            {(modal.type === 'addDrug' || modal.type === 'editDrug') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Drug Name</label>
+                  <input type="text" value={newDrug.name} onChange={e => setNewDrug({...newDrug, name: e.target.value})} placeholder="e.g. Paracetamol" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Form</label>
+                    <select value={newDrug.form} onChange={e => setNewDrug({...newDrug, form: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }}>
+                      <option>Tablet</option><option>Capsule</option><option>Syrup</option><option>Injection</option><option>Ointment</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Strength</label>
+                    <input type="text" value={newDrug.strength} onChange={e => setNewDrug({...newDrug, strength: e.target.value})} placeholder="e.g. 500mg" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Initial Stock</label>
+                    <input type="number" value={newDrug.stock} onChange={e => setNewDrug({...newDrug, stock: e.target.value})} placeholder="0" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Price</label>
+                    <input type="text" value={newDrug.price} onChange={e => setNewDrug({...newDrug, price: e.target.value})} placeholder="e.g. 15.00 ETB" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
+                  </div>
+                </div>
+              </div>
             )}
+
+            {modal.type === 'updateStock' && (
+              <>
+                <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>Updating stock for: <strong>{modal.data?.name}</strong></p>
+                <input type="number" value={stockValue} onChange={e => setStockValue(e.target.value)} placeholder="New stock quantity" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', marginBottom: '1.5rem' }} />
+              </>
+            )}
+
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button className="btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn-primary" onClick={() => setModal(null)}>Confirm</button>
+              <button className="btn-secondary" onClick={() => { setModal(null); setNewDrug(emptyDrug); }}>Cancel</button>
+              <button className="btn-primary" onClick={async () => {
+                if (modal.type === 'addDrug') {
+                  await addDrug({ ...newDrug, stock: parseInt(newDrug.stock) || 0 });
+                } else if (modal.type === 'editDrug' && modal.data) {
+                  await updateDrug(modal.data.id, { ...newDrug, stock: parseInt(newDrug.stock) || 0 });
+                } else if (modal.type === 'updateStock' && modal.data) {
+                  await updateDrug(modal.data.id, { stock: parseInt(stockValue) || 0 });
+                }
+                setModal(null);
+                setNewDrug(emptyDrug);
+              }}>Confirm</button>
             </div>
           </div>
         </div>
@@ -174,7 +220,26 @@ const PharmacyManagement: React.FC = () => {
                       </td>
                       <td>{d.price}</td>
                       <td>
-                        <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => { setModal({ type: 'updateStock', data: d }); setStockValue(d.stock.toString()); }}>Update</button>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => { setModal({ type: 'updateStock', data: d }); setStockValue(d.stock.toString()); }}>Update</button>
+                          {role === 'Admin' && (
+                            <button 
+                              style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
+                              onClick={() => {
+                                setModal({ type: 'editDrug', data: d });
+                                setNewDrug({
+                                  name: d.name,
+                                  form: d.form,
+                                  strength: d.strength,
+                                  stock: d.stock.toString(),
+                                  price: d.price
+                                });
+                              }}
+                            >
+                              Edit
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

@@ -4,42 +4,44 @@ import { useEMR } from '../context/EMRContext';
 
 interface PatientRegistrationProps {
   onClose: () => void;
+  initialData?: Patient;
 }
 
-const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) => {
-  const { addPatient } = useEMR();
+const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose, initialData }) => {
+  const { addPatient, updatePatient } = useEMR();
   const [formData, setFormData] = useState({
-    mrn: '',
-    first_name: '',
-    last_name: '',
-    amharic_name: '',
-    date_of_birth: '',
-    gender: 'Male',
-    phone_number: '',
-    address_city: 'Addis Ababa',
-    address_woreda: '',
-    address_kebele: '',
-    preferred_name: '',
-    insurance_provider: '',
-    insurance_policy_no: '',
-    gender_identity: '',
-    interpreter_needed: false,
+    mrn: initialData?.mrn || '',
+    first_name: initialData?.name?.split(' ')[0] || '',
+    last_name: initialData?.name?.split(' ').slice(1).join(' ') || '',
+    amharic_name: initialData?.amharic || '',
+    date_of_birth: initialData?.dob || '',
+    gender: initialData?.gender || 'Male',
+    phone_number: initialData?.phone || '',
+    address_city: initialData?.city || 'Addis Ababa',
+    address_woreda: initialData?.woreda || '',
+    address_kebele: initialData?.kebele || '',
+    preferred_name: initialData?.preferredName || '',
+    insurance_provider: initialData?.insuranceProvider || '',
+    insurance_policy_no: initialData?.insurancePolicyNo || '',
+    gender_identity: initialData?.genderIdentity || '',
+    interpreter_needed: initialData?.interpreterNeeded || false,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const dateStr = now.toISOString().slice(0, 10);
-    addPatient({
+    
+    const payload = {
       mrn: formData.mrn,
       name: `${formData.first_name} ${formData.last_name}`.trim(),
       amharic: formData.amharic_name,
-      visitType: 'OPD',
-      status: 'Waiting',
-      time: timeStr,
-      registeredAt: dateStr,
-      gender: formData.gender,
+      visitType: initialData?.visitType || 'OPD',
+      status: initialData?.status || 'Waiting',
+      time: initialData?.time || timeStr,
+      registeredAt: initialData?.registeredAt || dateStr,
+      gender: formData.gender as any,
       dob: formData.date_of_birth,
       phone: formData.phone_number,
       city: formData.address_city,
@@ -50,17 +52,23 @@ const PatientRegistration: React.FC<PatientRegistrationProps> = ({ onClose }) =>
       insurancePolicyNo: formData.insurance_policy_no,
       genderIdentity: formData.gender_identity,
       interpreterNeeded: formData.interpreter_needed,
-      vitals: [],
-      medications: [],
-      ward: '',
-    });
+      vitals: initialData?.vitals || [],
+      medications: initialData?.medications || [],
+      ward: initialData?.ward || '',
+    };
+
+    if (initialData) {
+      await updatePatient(initialData.mrn, payload);
+    } else {
+      await addPatient(payload);
+    }
     onClose();
   };
 
   return (
     <div className="registration-container">
       <div className="registration-header">
-        <h2>Register New Patient</h2>
+        <h2>{initialData ? 'Edit Patient Information' : 'Register New Patient'}</h2>
         <button onClick={onClose} className="btn-close"><X size={24} /></button>
       </div>
       

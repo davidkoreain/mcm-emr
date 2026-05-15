@@ -7,6 +7,7 @@ export class LocalService implements IDBService {
   private staff: StaffMember[] = [...initialStaff];
   private assets: Asset[] = [...initialAssets];
   private medicalHistory: MedicalHistoryItem[] = [];
+  private drugs: Drug[] = [];
 
   async fetchPatients() { return [...this.patients]; }
   async insertPatient(p: Patient) { this.patients.push(p); }
@@ -31,6 +32,9 @@ export class LocalService implements IDBService {
     this.staff.push(n);
     return n;
   }
+  async updateStaff(id: number, changes: Partial<StaffMember>) {
+    this.staff = this.staff.map(s => s.id === id ? { ...s, ...changes } : s);
+  }
 
   async fetchAssets() { return [...this.assets]; }
   async insertAsset(a: Asset) { this.assets.push(a); }
@@ -45,8 +49,16 @@ export class LocalService implements IDBService {
   async matchPatientRecord(name: string, dob: string, phone: string) { return null; }
   async registerPortalUser(mrn: string, passwordHash: string) {}
   async isPortalUserRegistered(mrn: string) { return false; }
-  async fetchDrugs() { return []; }
-  async updateDrugStock(id: number, newStock: number) {}
+  async fetchDrugs() { return [...this.drugs]; }
+  async insertDrug(d: Omit<Drug, 'id' | 'addedAt'>) {
+    this.drugs.push({ ...d, id: Date.now(), addedAt: new Date().toISOString() } as Drug);
+  }
+  async updateDrugStock(id: number, newStock: number) {
+    this.drugs = this.drugs.map(d => d.id === id ? { ...d, stock: newStock } : d);
+  }
+  async updateDrug(id: number, changes: Partial<Drug>) {
+    this.drugs = this.drugs.map(d => d.id === id ? { ...d, ...changes } : d);
+  }
   async fetchPrescriptions() { return []; }
   async insertPrescription(p: Omit<Prescription, 'id' | 'createdAt'>) {}
   async updatePrescriptionStatus(id: number, status: string) {}

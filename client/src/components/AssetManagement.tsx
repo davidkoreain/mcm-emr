@@ -29,7 +29,7 @@ interface AssetManagementProps {
 }
 
 const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalClose }) => {
-  const { assets, addAsset, updateAsset } = useEMR();
+  const { assets, addAsset, updateAsset, role } = useEMR();
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [maintLogs, setMaintLogs] = useState<MaintenanceLog[]>(initialMaint);
@@ -38,6 +38,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
   const [maintainForm, setMaintainForm] = useState({ task: '', technician: '' });
   const [updateModal, setUpdateModal] = useState<MaintenanceLog | null>(null);
   const [addAssetModal, setAddAssetModal] = useState(false);
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
   const [newAsset, setNewAsset] = useState(emptyAsset);
 
   const [invSearch, setInvSearch] = useState('');
@@ -178,8 +179,31 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button className="btn-secondary" onClick={() => setDetailModal(null)}>Close</button>
+              {role === 'Admin' && (
+                <button 
+                  style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.6rem 1.2rem', borderRadius: '0.5rem', fontWeight: '700', cursor: 'pointer' }}
+                  onClick={() => {
+                    setNewAsset({
+                      name: detailModal.name,
+                      serial: detailModal.serial,
+                      qty: detailModal.qty.toString(),
+                      weight: detailModal.weight || '',
+                      supplier: detailModal.supplier,
+                      status: detailModal.status,
+                      location: detailModal.location,
+                      rfidTag: detailModal.rfidTag || '',
+                      barcode: detailModal.barcode || ''
+                    });
+                    setEditingAssetId(detailModal.id);
+                    setAddAssetModal(true);
+                    setDetailModal(null);
+                  }}
+                >
+                  Edit Asset
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -243,18 +267,18 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
         </div>
       )}
 
-      {/* Add Asset Modal */}
+      {/* Add/Edit Asset Modal */}
       {addAssetModal && (
         <div style={overlayStyle}>
-          <div style={boxStyle}>
+          <div style={{ ...boxStyle, width: '480px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3>Add New Asset</h3>
-              <button onClick={() => setAddAssetModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+              <h3>{editingAssetId ? 'Edit Asset' : 'Register New Asset'}</h3>
+              <button onClick={() => { setAddAssetModal(false); setEditingAssetId(null); setNewAsset(emptyAsset); }} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {[
                 { label: 'Asset Name *', key: 'name', placeholder: 'e.g. Patient Monitor B40' },
-                { label: 'Serial Number', key: 'serial', placeholder: 'e.g. M-1122-B' },
+                { label: 'Serial Number *', key: 'serial', placeholder: 'e.g. M-1122-B' },
                 { label: 'Quantity', key: 'qty', placeholder: '1', type: 'number' },
                 { label: 'Weight', key: 'weight', placeholder: 'e.g. 4.5kg' },
                 { label: 'Supplier', key: 'supplier', placeholder: 'e.g. Philips Medical' },
@@ -278,8 +302,32 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
               </div>
             </div>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-              <button className="btn-secondary" onClick={() => { setAddAssetModal(false); setNewAsset(emptyAsset); }}>Cancel</button>
-              <button className="btn-primary" onClick={handleAddAsset} disabled={!newAsset.name.trim()}>Add Asset</button>
+              <button className="btn-secondary" onClick={() => { setAddAssetModal(false); setEditingAssetId(null); setNewAsset(emptyAsset); }}>Cancel</button>
+              <button className="btn-primary" disabled={!newAsset.name.trim() || !newAsset.serial.trim()}
+                onClick={async () => {
+                  const payload = {
+                    name: newAsset.name.trim(),
+                    serial: newAsset.serial.trim(),
+                    qty: parseInt(newAsset.qty) || 1,
+                    weight: newAsset.weight.trim(),
+                    supplier: newAsset.supplier.trim(),
+                    status: newAsset.status,
+                    location: newAsset.location.trim(),
+                    rfidTag: newAsset.rfidTag.trim(),
+                    barcode: newAsset.barcode.trim(),
+                    maintenanceHistory: editingAssetId ? (assets.find(a => a.id === editingAssetId)?.maintenanceHistory || []) : [],
+                  };
+                  if (editingAssetId) {
+                    await updateAsset(editingAssetId, payload);
+                  } else {
+                    await addAsset({ ...payload, id: `ASSET-${Date.now()}` });
+                  }
+                  setAddAssetModal(false);
+                  setEditingAssetId(null);
+                  setNewAsset(emptyAsset);
+                }}>
+                {editingAssetId ? 'Save Changes' : 'Register Asset'}
+              </button>
             </div>
           </div>
         </div>

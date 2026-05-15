@@ -16,6 +16,7 @@ export interface IDBService {
   // staff
   fetchStaff(): Promise<StaffMember[]>;
   insertStaff(s: Omit<StaffMember, 'id'>): Promise<StaffMember>;
+  updateStaff(id: number, changes: Partial<StaffMember>): Promise<void>;
   // assets
   fetchAssets(): Promise<Asset[]>;
   insertAsset(a: Asset): Promise<void>;
@@ -31,7 +32,9 @@ export interface IDBService {
   isPortalUserRegistered(mrn: string): Promise<boolean>;
   // pharmacy
   fetchDrugs(): Promise<Drug[]>;
+  insertDrug(d: Omit<Drug, 'id' | 'addedAt'>): Promise<void>;
   updateDrugStock(id: number, newStock: number): Promise<void>;
+  updateDrug(id: number, changes: Partial<Drug>): Promise<void>;
   fetchPrescriptions(): Promise<Prescription[]>;
   insertPrescription(p: Omit<Prescription, 'id' | 'createdAt'>): Promise<void>;
   updatePrescriptionStatus(id: number, status: string): Promise<void>;

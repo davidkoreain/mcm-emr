@@ -38,6 +38,10 @@ const App: React.FC = () => {
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
   const [selectedMrn, setSelectedMrn] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<'soap' | 'imaging' | 'history'>('soap');
+  const [editingPatient, setEditingPatient] = useState<any | null>(null);
+  const [editingStaff, setEditingStaff] = useState<any | null>(null);
+  const [editingAsset, setEditingAsset] = useState<any | null>(null);
+  const [editingDrug, setEditingDrug] = useState<any | null>(null);
   const [signupFlow, setSignupFlow] = useState<'none' | 'patient' | 'guardian'>('none');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isHrmOpen, setIsHrmOpen] = useState(false);
@@ -227,7 +231,8 @@ const App: React.FC = () => {
               <PatientManagement 
                 onViewVitals={(p) => { setSelectedPatient(p); setView('vitals'); }}
                 onViewEncounter={(p) => { setSelectedPatient(p); setSelectedTab('soap'); setView('encounter'); }}
-                onRegister={() => setView('registration')}
+                onRegister={() => { setEditingPatient(null); setView('registration'); }}
+                onEditPatient={(p) => { setEditingPatient(p); setView('registration'); }}
                 autoOpenId={autoOpenId}
                 onModalClose={() => setAutoOpenId(null)}
               />
@@ -247,7 +252,12 @@ const App: React.FC = () => {
                 defaultTab={selectedTab}
               />
             )}
-            {view === 'registration' && <PatientRegistration onClose={() => setView('dashboard')} />}
+            {view === 'registration' && (
+              <PatientRegistration 
+                initialData={editingPatient || undefined} 
+                onClose={() => { setEditingPatient(null); setView('patients'); }} 
+              />
+            )}
             {view === 'inpatient' && <InpatientManagement />}
             {view === 'staff' && <StaffManagement activeTab={staffTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'lab' && <LabManagement />}

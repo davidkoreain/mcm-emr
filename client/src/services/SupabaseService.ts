@@ -442,6 +442,13 @@ export class SupabaseService implements IDBService {
     return rowToStaff(data as Record<string, unknown>);
   }
 
+  async updateStaff(id: number, changes: Partial<StaffMember>): Promise<void> {
+    const row = staffToRow(changes as StaffMember);
+    delete (row as any).id; // ID shouldn't be updated
+    const { error } = await this.client.from('staff').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
   async fetchAssets(): Promise<Asset[]> {
     await this.seedIfEmpty();
     const { data, error } = await this.client.from('assets').select('*').order('added_at', { ascending: false });
@@ -596,9 +603,30 @@ export class SupabaseService implements IDBService {
     if (error) throw new Error(error.message);
     return (data ?? []).map(rowToDrug);
   }
+  async insertDrug(d: Omit<Drug, 'id' | 'addedAt'>): Promise<void> {
+    const { error } = await this.client.from('drugs').insert({
+      name: d.name,
+      form: d.form,
+      strength: d.strength,
+      stock: d.stock,
+      price: d.price,
+      added_at: new Date().toISOString()
+    });
+    if (error) throw new Error(error.message);
+  }
 
   async updateDrugStock(id: number, newStock: number): Promise<void> {
     const { error } = await this.client.from('drugs').update({ stock: newStock }).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+  async updateDrug(id: number, changes: Partial<Drug>): Promise<void> {
+    const row: any = {};
+    if (changes.name !== undefined) row.name = changes.name;
+    if (changes.form !== undefined) row.form = changes.form;
+    if (changes.strength !== undefined) row.strength = changes.strength;
+    if (changes.stock !== undefined) row.stock = changes.stock;
+    if (changes.price !== undefined) row.price = changes.price;
+    const { error } = await this.client.from('drugs').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }
 
