@@ -236,12 +236,6 @@ const OperationManagement: React.FC<{ activeTab?: 'schedule' | 'resources' | 'su
         </div>
       )}
 
-      <div className="pharmacy-tabs">
-        <button className={`tab-btn ${activeTab === 'schedule' ? 'active' : ''}`} onClick={() => setActiveTab('schedule')}><Calendar size={20} /> OT Schedule</button>
-        <button className={`tab-btn ${activeTab === 'resources' ? 'active' : ''}`} onClick={() => setActiveTab('resources')}><Users size={20} /> Staff & Equipment</button>
-        <button className={`tab-btn ${activeTab === 'supplies' ? 'active' : ''}`} onClick={() => setActiveTab('supplies')}><Pill size={20} /> Supply Tracking</button>
-      </div>
-
       <div className="surgery-content" style={{ marginTop: '1.5rem' }}>
         {activeTab === 'schedule' && (
           <div className="schedule-view">

@@ -138,15 +138,6 @@ const LabManagement: React.FC<{ activeTab?: 'orders' | 'results' }> = ({ activeT
         </div>
       )}
 
-      <div className="pharmacy-tabs">
-        <button className={`tab-btn ${activeTab === 'orders' ? 'active' : ''}`} onClick={() => setActiveTab('orders')}>
-          <Clipboard size={20} /> Pending Lab Orders {labOrders.length > 0 && <span className="tab-badge">{labOrders.length}</span>}
-        </button>
-        <button className={`tab-btn ${activeTab === 'results' ? 'active' : ''}`} onClick={() => setActiveTab('results')}>
-          <Beaker size={20} /> Lab Results
-        </button>
-      </div>
-
       <div className="pharmacy-content">
         {activeTab === 'orders' ? (
           <>

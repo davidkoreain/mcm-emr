@@ -141,15 +141,6 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
         </div>
       )}
 
-      <div className="pharmacy-tabs">
-        <button className={`tab-btn ${activeTab === 'prescriptions' ? 'active' : ''}`} onClick={() => setActiveTab('prescriptions')}>
-          <FileText size={20} /> Pending Prescriptions {prescriptions.filter(p => p.status === 'Pending').length > 0 && <span className="tab-badge">{prescriptions.filter(p => p.status === 'Pending').length}</span>}
-        </button>
-        <button className={`tab-btn ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}>
-          <Package size={20} /> Drug Inventory
-        </button>
-      </div>
-
       <div className="pharmacy-content">
         {activeTab === 'prescriptions' ? (
           <>

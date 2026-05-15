@@ -335,12 +335,6 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
 
       {showCSVModal && <CSVImportModal title="Asset Management" onClose={() => setShowCSVModal(false)} onImport={(data) => console.log('Imported Assets:', data)} />}
 
-      <div className="pharmacy-tabs">
-        <button className={`tab-btn ${activeTab === 'inventory' ? 'active' : ''}`} onClick={() => setActiveTab('inventory')}><Monitor size={20} /> Asset Inventory</button>
-        <button className={`tab-btn ${activeTab === 'maintenance' ? 'active' : ''}`} onClick={() => setActiveTab('maintenance')}><Wrench size={20} /> Maintenance Log</button>
-        <button className={`tab-btn ${activeTab === 'loss' ? 'active' : ''}`} onClick={() => setActiveTab('loss')}><Trash2 size={20} /> Loss & Damage</button>
-      </div>
-
       <div className="asset-content" style={{ marginTop: '1.5rem' }}>
         {activeTab === 'inventory' && (
           <>
