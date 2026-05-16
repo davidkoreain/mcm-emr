@@ -43,8 +43,10 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const [currentTime, setCurrentTime] = useState(new Date());
 
   const scrollRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
 
   const canDeleteHistory = role === 'Admin' || role === 'Doctor';
+  const [mobileMode, setMobileMode] = useState<'calendar' | 'half' | 'full'>('calendar');
   // Update current time every minute for the red line
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -169,6 +171,24 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
     return () => clearTimeout(timeoutId);
   }, [viewType, selectedDate]);
+
+  useEffect(() => {
+    if (selectedPatient) setMobileMode('half');
+    else setMobileMode('calendar');
+  }, [selectedPatient]);
+
+  const handlePanelTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handlePanelTouchEnd = (e: React.TouchEvent) => {
+    const dy = touchStartY.current - e.changedTouches[0].clientY;
+    if (dy > 60) setMobileMode('full');
+    else if (dy < -60) {
+      if (mobileMode === 'full') setMobileMode('half');
+      else onSelectMrn?.(null);
+    }
+  };
 
   // ── Render Helpers ────────────────────────────────────────────
 
@@ -373,37 +393,34 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         </p>
       </div>
 
-      <div className="flow-board-wrapper" style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0 }}>
-        {/* Main Calendar View */}
-        <div className="calendar-section" style={{ 
-          flex: selectedPatient ? '2.2' : '1',
-          background: 'white', 
-          borderRadius: '1.25rem', 
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)', 
+      <div
+        className={`flow-board-wrapper${selectedPatient ? ' detail-open' : ''}${mobileMode === 'half' ? ' mobile-half' : mobileMode === 'full' ? ' mobile-full' : ''}`}
+        style={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative', overflow: 'hidden' }}
+      >
+        {/* Calendar Section */}
+        <div className="calendar-section" style={{
+          background: 'white',
+          borderRadius: '1.25rem',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
           overflow: 'hidden',
           border: '1px solid #e2e8f0',
           display: 'flex',
           flexDirection: 'column',
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
         }}>
           {viewType === 'day' ? renderDayView() : viewType === 'week' ? renderWeekView() : renderMonthView()}
         </div>
 
-        {/* Right Side: Patient Detail View */}
-        {selectedPatient ? (
-          <div className="detail-section" style={{ 
-            flex: '1',
-            background: 'white', 
-            borderRadius: '1.25rem', 
-            boxShadow: '0 4px 24px rgba(0,0,0,0.06)', 
-            border: '1px solid #e2e8f0',
-            padding: '1.5rem',
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '1.5rem',
-            animation: 'slideIn 0.3s ease-out'
-          }}>
+        {/* Patient Detail Panel */}
+        <div className={`detail-panel${selectedPatient ? ' open' : ''}`}>
+          {/* Drag handle — mobile only */}
+          <div
+            className="detail-drag-handle"
+            onTouchStart={handlePanelTouchStart}
+            onTouchEnd={handlePanelTouchEnd}
+          />
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
+            {selectedPatient ? (
+              <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
                 <Avatar name={selectedPatient.name} photoUrl={selectedPatient.photoUrl} size={72} />
@@ -493,34 +510,18 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             </div>
 
             <div style={{ marginTop: 'auto', display: 'flex', gap: '1rem' }}>
-              <button 
-                className="btn-primary" 
+              <button
+                className="btn-primary"
                 style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '1rem' }}
                 onClick={() => onStartConsult && onStartConsult({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
               >
                 <Stethoscope size={22} /> Start Consult
               </button>
             </div>
+              </div>
+            ) : null}
           </div>
-        ) : (
-          <div style={{ 
-            flex: '1', 
-            display: 'flex', 
-            flexDirection: 'column', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            background: '#f8fafc', 
-            borderRadius: '1.25rem', 
-            border: '2px dashed #e2e8f0',
-            color: '#94a3b8'
-          }}>
-            <div style={{ padding: '2rem', background: 'white', borderRadius: '50%', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', marginBottom: '1.5rem' }}>
-              <User size={64} strokeWidth={1} color="#cbd5e1" />
-            </div>
-            <p style={{ fontSize: '1rem', fontWeight: '600', color: '#64748b' }}>Select a patient to view details</p>
-            <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginTop: '0.5rem' }}>Click any appointment card in the calendar</p>
-          </div>
-        )}
+        </div>
       </div>
 
       {/* History Detail Modal */}

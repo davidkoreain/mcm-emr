@@ -720,3 +720,108 @@ body {
     width: 100%;
   }
 }
+
+/* ── Flow Board: calendar + detail panel layout ─────────────── */
+.flow-board-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.flow-board-wrapper .calendar-section {
+  flex: 1;
+  transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.flow-board-wrapper.detail-open .calendar-section {
+  flex: 0 0 50%;
+}
+
+/* Desktop detail panel — slides in from right */
+.detail-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  transform: translateX(110%);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: white;
+  border-left: 1px solid #e2e8f0;
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.detail-panel.open {
+  transform: translateX(0);
+}
+
+.detail-drag-handle {
+  display: none;
+}
+
+/* ── Mobile: detail panel slides up from bottom ─────────────── */
+@media (max-width: 768px) {
+  .flow-board-wrapper {
+    flex-direction: column;
+  }
+
+  .flow-board-wrapper .calendar-section {
+    flex: 1 !important;
+    transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .flow-board-wrapper.mobile-half .calendar-section {
+    flex: 0 0 50% !important;
+  }
+
+  .flow-board-wrapper.mobile-full .calendar-section {
+    flex: 0 0 0% !important;
+    overflow: hidden;
+  }
+
+  .detail-panel {
+    top: auto;
+    right: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    transform: translateY(110%);
+    border-left: none;
+    border-top: 2px solid #e2e8f0;
+    border-radius: 1.25rem 1.25rem 0 0;
+    box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.1);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .detail-panel.open {
+    transform: translateY(0);
+  }
+
+  .flow-board-wrapper.mobile-full .detail-panel {
+    height: 100%;
+    border-radius: 0;
+    border-top: none;
+  }
+
+  .detail-drag-handle {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 0.625rem 0 0.25rem;
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: grab;
+  }
+
+  .detail-drag-handle::after {
+    content: '';
+    width: 40px;
+    height: 4px;
+    background: #cbd5e1;
+    border-radius: 2px;
+  }
+}
