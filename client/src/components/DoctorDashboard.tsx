@@ -220,14 +220,14 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         }
         {/* Red Current Time Line */}
         {selectedDate.toDateString() === currentTime.toDateString() && (
-          <div style={{ 
-            position: 'absolute', 
-            top: `${getPosition(currentTime)}px`, 
-            left: 0, 
-            right: 0, 
-            height: 0, 
-            borderTop: '2px dashed #ef4444', 
-            zIndex: 20,
+          <div style={{
+            position: 'absolute',
+            top: `${getPosition(currentTime)}px`,
+            left: 0,
+            right: 0,
+            height: 0,
+            borderTop: '2px dashed #ef4444',
+            zIndex: 9,
             pointerEvents: 'none'
           }}>
             <div style={{ position: 'absolute', left: '-5px', top: '-6px', width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }} />
@@ -279,14 +279,14 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
           ))}
 
           {/* Global Red Current Time Line across all days */}
-          <div style={{ 
-            position: 'absolute', 
-            top: `${getPosition(currentTime)}px`, 
-            left: '80px', 
-            right: 0, 
-            height: 0, 
-            borderTop: '2px dashed #ef4444', 
-            zIndex: 20,
+          <div style={{
+            position: 'absolute',
+            top: `${getPosition(currentTime)}px`,
+            left: '80px',
+            right: 0,
+            height: 0,
+            borderTop: '2px dashed #ef4444',
+            zIndex: 9,
             pointerEvents: 'none'
           }}>
             <div style={{ position: 'absolute', left: '-5px', top: '-6px', width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }} />
