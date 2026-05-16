@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  LayoutDashboard, Users, UserPlus, Package, 
+import {
+  LayoutDashboard, Users, UserPlus, Package,
   Menu, X, Pill, Scissors, Beaker, LogOut,
-  Bed, CreditCard, CalendarDays, ChevronDown, ChevronUp
+  Bed, CreditCard, CalendarDays, ChevronDown, ChevronUp, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEMR } from './context/EMRContext';
+import { DEFAULT_PERMISSIONS, STORAGE_KEY, type AllPerms } from './config/permissions';
 
 // Portals
 import RoleLogin from './components/RoleLogin';
@@ -31,10 +32,38 @@ import ClinicalEncounter from './components/ClinicalEncounter';
 import ErrorBoundary from './components/ErrorBoundary';
 import Avatar from './components/Avatar';
 import FlowBoard from './components/FlowBoard';
+import RolePermissions from './components/RolePermissions';
 
 const App: React.FC = () => {
   const { role, setRole, loading, currentStaff, patients } = useEMR();
   const [view, setView] = useState('dashboard');
+
+  const [permissions, setPermissions] = useState<AllPerms>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Merge with defaults so new menu keys are always present
+        const merged: AllPerms = {};
+        for (const r of Object.keys(DEFAULT_PERMISSIONS)) {
+          merged[r] = { ...DEFAULT_PERMISSIONS[r], ...(parsed[r] ?? {}) };
+        }
+        return merged;
+      }
+    } catch { /* ignore */ }
+    return DEFAULT_PERMISSIONS;
+  });
+
+  const savePermissions = (perms: AllPerms) => {
+    setPermissions(perms);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(perms));
+  };
+
+  const canSee = (menuKey: string): boolean => {
+    if (!role || role === 'Patient' || role === 'Guardian') return false;
+    if (role === 'Admin') return true;
+    return permissions[role]?.[menuKey] ?? false;
+  };
   const [selectedPatient, setSelectedPatient] = useState<{ mrn: string; name: string; amharic: string } | null>(null);
   const [selectedMrn, setSelectedMrn] = useState<string | null>(null);
   const [selectedTab, setSelectedTab] = useState<'soap' | 'imaging' | 'history'>('soap');
@@ -141,115 +170,112 @@ const App: React.FC = () => {
         </div>
         <nav>
           <ul className="nav-list">
-            <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}><LayoutDashboard size={20}/> <span>Flow Board</span></li>
-            <li className={`nav-item ${view === 'patients' ? 'active' : ''}`} onClick={() => { setView('patients'); setMobileMenuOpen(false); }}><Users size={20}/> <span>Patient Details</span></li>
-            <li className={`nav-item ${view === 'calendar' ? 'active' : ''}`} onClick={() => { setView('calendar'); setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Appointments</span></li>
-            <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => { setView('inpatient'); setMobileMenuOpen(false); }}><Bed size={20}/> <span>Inpatient Ward</span></li>
-            
+            {canSee('dashboard') && <li className={`nav-item ${view === 'dashboard' ? 'active' : ''}`} onClick={() => { setView('dashboard'); setMobileMenuOpen(false); }}><LayoutDashboard size={20}/> <span>Flow Board</span></li>}
+            {canSee('patients')  && <li className={`nav-item ${view === 'patients'  ? 'active' : ''}`} onClick={() => { setView('patients');  setMobileMenuOpen(false); }}><Users size={20}/> <span>Patient Details</span></li>}
+            {canSee('calendar')  && <li className={`nav-item ${view === 'calendar'  ? 'active' : ''}`} onClick={() => { setView('calendar');  setMobileMenuOpen(false); }}><CalendarDays size={20}/> <span>Appointments</span></li>}
+            {canSee('inpatient') && <li className={`nav-item ${view === 'inpatient' ? 'active' : ''}`} onClick={() => { setView('inpatient'); setMobileMenuOpen(false); }}><Bed size={20}/> <span>Inpatient Ward</span></li>}
+
             {/* HRM 2nd Level Menu */}
-            <li 
-              className={`nav-item ${view === 'staff' ? 'active' : ''}`} 
-              onClick={() => setIsHrmOpen(!isHrmOpen)}
-              style={{ justifyContent: 'space-between' }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <Users size={20}/> <span>HRM</span>
-              </div>
-              <div className="menu-arrow">
-                {isHrmOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-              </div>
-            </li>
-            
-            <AnimatePresence>
-              {isHrmOpen && (
-                <motion.ul
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-                  style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}
-                >
-                  <li 
-                    className={`sub-nav-item ${view === 'staff' && staffTab === 'portfolio' ? 'active' : ''}`} 
-                    onClick={() => { setView('staff'); setStaffTab('portfolio'); setMobileMenuOpen(false); }}
-                  >
-                    <span>Members</span>
-                  </li>
-                  <li 
-                    className={`sub-nav-item ${view === 'staff' && staffTab === 'leave' ? 'active' : ''}`} 
-                    onClick={() => { setView('staff'); setStaffTab('leave'); setMobileMenuOpen(false); }}
-                  >
-                    <span>Leave Mgmt</span>
-                  </li>
-                  <li 
-                    className={`sub-nav-item ${view === 'staff' && staffTab === 'performance' ? 'active' : ''}`} 
-                    onClick={() => { setView('staff'); setStaffTab('performance'); setMobileMenuOpen(false); }}
-                  >
-                    <span>Performance</span>
-                  </li>
-                </motion.ul>
-              )}
-            </AnimatePresence>
+            {canSee('staff') && (
+              <>
+                <li className={`nav-item ${view === 'staff' ? 'active' : ''}`} onClick={() => setIsHrmOpen(!isHrmOpen)} style={{ justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Users size={20}/> <span>HRM</span></div>
+                  <div className="menu-arrow">{isHrmOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+                </li>
+                <AnimatePresence>
+                  {isHrmOpen && (
+                    <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                      <li className={`sub-nav-item ${view === 'staff' && staffTab === 'portfolio'   ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('portfolio');   setMobileMenuOpen(false); }}><span>Members</span></li>
+                      <li className={`sub-nav-item ${view === 'staff' && staffTab === 'leave'       ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('leave');       setMobileMenuOpen(false); }}><span>Leave Mgmt</span></li>
+                      <li className={`sub-nav-item ${view === 'staff' && staffTab === 'performance' ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('performance'); setMobileMenuOpen(false); }}><span>Performance</span></li>
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             {/* Laboratory 2nd Level Menu */}
-            <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => setIsLabOpen(!isLabOpen)} style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Beaker size={20}/> <span>Laboratory</span></div>
-              <div className="menu-arrow">{isLabOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
-            </li>
-            <AnimatePresence>
-              {isLabOpen && (
-                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                  <li className={`sub-nav-item ${view === 'lab' && labTab === 'orders' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('orders'); setMobileMenuOpen(false); }}><span>Pending Orders</span></li>
-                  <li className={`sub-nav-item ${view === 'lab' && labTab === 'results' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('results'); setMobileMenuOpen(false); }}><span>Results</span></li>
-                </motion.ul>
-              )}
-            </AnimatePresence>
+            {canSee('lab') && (
+              <>
+                <li className={`nav-item ${view === 'lab' ? 'active' : ''}`} onClick={() => setIsLabOpen(!isLabOpen)} style={{ justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Beaker size={20}/> <span>Laboratory</span></div>
+                  <div className="menu-arrow">{isLabOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+                </li>
+                <AnimatePresence>
+                  {isLabOpen && (
+                    <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                      <li className={`sub-nav-item ${view === 'lab' && labTab === 'orders'  ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('orders');  setMobileMenuOpen(false); }}><span>Pending Orders</span></li>
+                      <li className={`sub-nav-item ${view === 'lab' && labTab === 'results' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('results'); setMobileMenuOpen(false); }}><span>Results</span></li>
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             {/* Operations 2nd Level Menu */}
-            <li className={`nav-item ${view === 'operation' ? 'active' : ''}`} onClick={() => setIsOperationOpen(!isOperationOpen)} style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Scissors size={20}/> <span>Operations</span></div>
-              <div className="menu-arrow">{isOperationOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
-            </li>
-            <AnimatePresence>
-              {isOperationOpen && (
-                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                  <li className={`sub-nav-item ${view === 'operation' && operationTab === 'schedule' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('schedule'); setMobileMenuOpen(false); }}><span>OT Schedule</span></li>
-                  <li className={`sub-nav-item ${view === 'operation' && operationTab === 'resources' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('resources'); setMobileMenuOpen(false); }}><span>Resources</span></li>
-                  <li className={`sub-nav-item ${view === 'operation' && operationTab === 'supplies' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('supplies'); setMobileMenuOpen(false); }}><span>Supply Tracking</span></li>
-                </motion.ul>
-              )}
-            </AnimatePresence>
+            {canSee('operation') && (
+              <>
+                <li className={`nav-item ${view === 'operation' ? 'active' : ''}`} onClick={() => setIsOperationOpen(!isOperationOpen)} style={{ justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Scissors size={20}/> <span>Operations</span></div>
+                  <div className="menu-arrow">{isOperationOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+                </li>
+                <AnimatePresence>
+                  {isOperationOpen && (
+                    <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                      <li className={`sub-nav-item ${view === 'operation' && operationTab === 'schedule'  ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('schedule');  setMobileMenuOpen(false); }}><span>OT Schedule</span></li>
+                      <li className={`sub-nav-item ${view === 'operation' && operationTab === 'resources' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('resources'); setMobileMenuOpen(false); }}><span>Resources</span></li>
+                      <li className={`sub-nav-item ${view === 'operation' && operationTab === 'supplies'  ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('supplies');  setMobileMenuOpen(false); }}><span>Supply Tracking</span></li>
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             {/* Pharmacy 2nd Level Menu */}
-            <li className={`nav-item ${view === 'pharmacy' ? 'active' : ''}`} onClick={() => setIsPharmacyOpen(!isPharmacyOpen)} style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Pill size={20}/> <span>Pharmacy</span></div>
-              <div className="menu-arrow">{isPharmacyOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
-            </li>
-            <AnimatePresence>
-              {isPharmacyOpen && (
-                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                  <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'prescriptions' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('prescriptions'); setMobileMenuOpen(false); }}><span>Prescriptions</span></li>
-                  <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'inventory' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('inventory'); setMobileMenuOpen(false); }}><span>Drug Inventory</span></li>
-                </motion.ul>
-              )}
-            </AnimatePresence>
+            {canSee('pharmacy') && (
+              <>
+                <li className={`nav-item ${view === 'pharmacy' ? 'active' : ''}`} onClick={() => setIsPharmacyOpen(!isPharmacyOpen)} style={{ justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Pill size={20}/> <span>Pharmacy</span></div>
+                  <div className="menu-arrow">{isPharmacyOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+                </li>
+                <AnimatePresence>
+                  {isPharmacyOpen && (
+                    <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                      <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'prescriptions' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('prescriptions'); setMobileMenuOpen(false); }}><span>Prescriptions</span></li>
+                      <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'inventory'     ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('inventory');     setMobileMenuOpen(false); }}><span>Drug Inventory</span></li>
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
             {/* Assets 2nd Level Menu */}
-            <li className={`nav-item ${view === 'assets' ? 'active' : ''}`} onClick={() => setIsAssetsOpen(!isAssetsOpen)} style={{ justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Package size={20}/> <span>Assets</span></div>
-              <div className="menu-arrow">{isAssetsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
-            </li>
-            <AnimatePresence>
-              {isAssetsOpen && (
-                <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                  <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'inventory' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('inventory'); setMobileMenuOpen(false); }}><span>Inventory</span></li>
-                  <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'maintenance' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('maintenance'); setMobileMenuOpen(false); }}><span>Maintenance</span></li>
-                  <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'loss' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('loss'); setMobileMenuOpen(false); }}><span>Loss & Damage</span></li>
-                </motion.ul>
-              )}
-            </AnimatePresence>
+            {canSee('assets') && (
+              <>
+                <li className={`nav-item ${view === 'assets' ? 'active' : ''}`} onClick={() => setIsAssetsOpen(!isAssetsOpen)} style={{ justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><Package size={20}/> <span>Assets</span></div>
+                  <div className="menu-arrow">{isAssetsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</div>
+                </li>
+                <AnimatePresence>
+                  {isAssetsOpen && (
+                    <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
+                      <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'inventory'    ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('inventory');    setMobileMenuOpen(false); }}><span>Inventory</span></li>
+                      <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'maintenance'  ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('maintenance');  setMobileMenuOpen(false); }}><span>Maintenance</span></li>
+                      <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'loss'         ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('loss');         setMobileMenuOpen(false); }}><span>Loss & Damage</span></li>
+                    </motion.ul>
+                  )}
+                </AnimatePresence>
+              </>
+            )}
 
-            <li className={`nav-item ${view === 'billing' ? 'active' : ''}`} onClick={() => { setView('billing'); setMobileMenuOpen(false); }}><CreditCard size={20}/> <span>Billing</span></li>
+            {canSee('billing') && <li className={`nav-item ${view === 'billing' ? 'active' : ''}`} onClick={() => { setView('billing'); setMobileMenuOpen(false); }}><CreditCard size={20}/> <span>Billing</span></li>}
+
+            {/* Permissions — Admin only */}
+            {role === 'Admin' && (
+              <li className={`nav-item ${view === 'permissions' ? 'active' : ''}`} onClick={() => { setView('permissions'); setMobileMenuOpen(false); }}>
+                <Shield size={20}/> <span>Permissions</span>
+              </li>
+            )}
           </ul>
         </nav>
         <div style={{ marginTop: 'auto', padding: '1rem' }}>
@@ -327,6 +353,7 @@ const App: React.FC = () => {
             {view === 'pharmacy' && <PharmacyManagement activeTab={pharmacyTab} />}
             {view === 'assets' && <AssetManagement activeTab={assetsTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'billing' && <BillingManagement />}
+            {view === 'permissions' && role === 'Admin' && <RolePermissions permissions={permissions} onUpdate={savePermissions} />}
           </ErrorBoundary>
         </div>
       </main>
