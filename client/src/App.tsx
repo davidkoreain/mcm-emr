@@ -232,22 +232,36 @@ const App: React.FC = () => {
                           transition={{ duration: 0.3, ease: 'easeInOut' }} 
                           style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}
                         >
-                          {menu.children?.map((child: any) => {
-                            if (!canSee(child.key)) return null;
-                            const isChildActive = view === child.key;
+                           {menu.children?.map((child: any) => {
+                             if (!canSee(child.key)) return null;
+                             
+                             let isChildActive = view === child.key;
+                             const tab = child.key.includes('.') ? child.key.split('.')[1] : child.key;
+                             
+                             if (view === 'staff' && menu.key === 'staff') isChildActive = staffTab === tab;
+                             if (view === 'lab' && menu.key === 'lab') isChildActive = labTab === tab;
+                             if (view === 'operation' && menu.key === 'operation') isChildActive = operationTab === tab;
+                             if (view === 'pharmacy' && menu.key === 'pharmacy') isChildActive = pharmacyTab === tab;
+                             if (view === 'assets' && menu.key === 'assets') isChildActive = assetsTab === tab;
                             
                             return (
                               <li 
                                 key={child.key}
                                 className={`sub-nav-item ${isChildActive ? 'active' : ''}`} 
                                 onClick={() => { 
-                                  setView(child.key);
-                                  // Specific tab logic if needed
-                                  if (menu.key === 'staff') setStaffTab(child.key.split('.')[1] as any);
-                                  if (menu.key === 'lab') setLabTab(child.key.split('.')[1] as any);
-                                  if (menu.key === 'operation') setOperationTab(child.key.split('.')[1] as any);
-                                  if (menu.key === 'pharmacy') setPharmacyTab(child.key.split('.')[1] as any);
-                                  if (menu.key === 'assets') setAssetsTab(child.key.split('.')[1] as any);
+                                  const isModuleWithTabs = ['staff', 'lab', 'operation', 'pharmacy', 'assets'].includes(menu.key);
+                                  
+                                  if (isModuleWithTabs) {
+                                    setView(menu.key);
+                                    const tab = child.key.includes('.') ? child.key.split('.')[1] : child.key;
+                                    if (menu.key === 'staff') setStaffTab(tab as any);
+                                    if (menu.key === 'lab') setLabTab(tab as any);
+                                    if (menu.key === 'operation') setOperationTab(tab as any);
+                                    if (menu.key === 'pharmacy') setPharmacyTab(tab as any);
+                                    if (menu.key === 'assets') setAssetsTab(tab as any);
+                                  } else {
+                                    setView(child.key);
+                                  }
                                   setMobileMenuOpen(false); 
                                 }}
                               >
