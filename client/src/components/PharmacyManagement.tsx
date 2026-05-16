@@ -799,104 +799,98 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
               Showing {filteredDrugs.length} of {drugs.length} drugs
             </div>
 
-            {/* Drug table */}
-            <div className="data-table-container">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Drug</th>
-                    <th>Category</th>
-                    <th>Form / Route</th>
-                    <th>Strength</th>
-                    <th>Stock</th>
-                    <th>Expiry</th>
-                    <th>Price</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredDrugs.map(d => {
-                    const cat = d.category || '';
-                    const colors = CATEGORY_COLORS[cat] || { bg: '#f1f5f9', fg: '#1e293b' };
-                    const days = daysUntil(d.expiryDate);
-                    const exColor = expiryColor(d.expiryDate);
-                    return (
-                      <tr key={d.id}>
-                        <td>
-                          <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <strong style={{ color: '#1e293b' }}>{d.name}</strong>
-                            {d.brandName && <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{d.brandName}</span>}
-                            {d.controlledSubstance && (
-                              <span style={{ marginTop: 4 }}>
-                                <Pill_Badge bg="#1e293b" color="#fbbf24"><ShieldAlert size={11} /> Controlled</Pill_Badge>
-                              </span>
-                            )}
+            {/* Drug card grid */}
+            {filteredDrugs.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0' }}>
+                <Pill size={40} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
+                <p style={{ fontWeight: 600 }}>No drugs match the current filters.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                {filteredDrugs.map(d => {
+                  const cat = d.category || '';
+                  const colors = CATEGORY_COLORS[cat] || { bg: '#f1f5f9', fg: '#1e293b' };
+                  const days = daysUntil(d.expiryDate);
+                  const exColor = expiryColor(d.expiryDate);
+                  const sColor = stockColor(d);
+                  return (
+                    <div key={d.id} style={{
+                      background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column',
+                      overflow: 'hidden', transition: 'box-shadow 0.2s',
+                    }}>
+                      {/* Card header */}
+                      <div style={{ padding: '1rem 1rem 0.75rem', borderBottom: '1px solid #f1f5f9' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b', lineHeight: 1.3 }}>{d.name}</div>
+                            {d.brandName && <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '1px' }}>{d.brandName}</div>}
                           </div>
-                        </td>
-                        <td>
-                          {cat ? <Pill_Badge bg={colors.bg} color={colors.fg}>{cat}</Pill_Badge> : <span style={{ color: '#94a3b8' }}>—</span>}
-                        </td>
-                        <td>
-                          <div style={{ fontSize: '0.82rem' }}>{d.form || '—'}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{d.route || ''}</div>
-                        </td>
-                        <td>{d.strength || '—'}</td>
-                        <td>
-                          <span style={{ color: stockColor(d), fontWeight: 700 }}>{d.stock}</span>
-                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>reorder@{d.reorderLevel ?? 20}</div>
-                        </td>
-                        <td>
-                          {d.expiryDate ? (
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ color: exColor || '#64748b', fontWeight: exColor ? 600 : 400 }}>{d.expiryDate}</span>
-                              {days !== null && (
-                                <span style={{ fontSize: '0.7rem', color: exColor || '#94a3b8' }}>
-                                  {days < 0 ? 'EXPIRED' : `${days}d left`}
-                                </span>
-                              )}
-                            </div>
-                          ) : <span style={{ color: '#94a3b8' }}>—</span>}
-                        </td>
-                        <td>{d.price || '—'}</td>
-                        <td>
-                          <span className={`status-badge ${(d.status || 'Active') === 'Active' ? 'status-active' : 'status-pending'}`}>
+                          <span className={`status-badge ${(d.status || 'Active') === 'Active' ? 'status-active' : 'status-pending'}`} style={{ flexShrink: 0, fontSize: '0.7rem' }}>
                             {d.status || 'Active'}
                           </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
-                            <button
-                              onClick={() => setDetailDrug(d)}
-                              style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#1e293b', padding: '0.35rem 0.65rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            >
-                              <Eye size={13} /> Details
-                            </button>
-                            <button
-                              onClick={() => { setStockModalDrug(d); setStockValue(String(d.stock)); }}
-                              style={{ background: '#dbeafe', border: 'none', color: '#1d4ed8', padding: '0.35rem 0.65rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                            >
-                              <RefreshCw size={13} /> Update Stock
-                            </button>
-                            {role === 'Admin' && (
-                              <button
-                                onClick={() => openEditDrug(d)}
-                                style={{ background: '#fef3c7', border: 'none', color: '#92400e', padding: '0.35rem 0.65rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                              >
-                                <Edit2 size={13} /> Edit
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                  {filteredDrugs.length === 0 && (
-                    <tr><td colSpan={9} style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No drugs match the current filters.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                          {cat && <Pill_Badge bg={colors.bg} color={colors.fg}>{cat}</Pill_Badge>}
+                          <Pill_Badge bg="#f1f5f9" color="#475569">{d.form}{d.route ? ` · ${d.route}` : ''}</Pill_Badge>
+                          {d.controlledSubstance && <Pill_Badge bg="#1e293b" color="#fbbf24"><ShieldAlert size={10} /> Controlled</Pill_Badge>}
+                        </div>
+                      </div>
+
+                      {/* Card body */}
+                      <div style={{ padding: '0.75rem 1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', flex: 1 }}>
+                        <div>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Strength</div>
+                          <div style={{ fontSize: '0.85rem', color: '#1e293b', fontWeight: 600 }}>{d.strength || '—'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Price</div>
+                          <div style={{ fontSize: '0.85rem', color: '#1e293b', fontWeight: 600 }}>{d.price || '—'}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Stock</div>
+                          <div style={{ fontSize: '1rem', color: sColor, fontWeight: 700 }}>{d.stock}</div>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>reorder @ {d.reorderLevel ?? 20}</div>
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Expiry</div>
+                          {d.expiryDate ? (
+                            <>
+                              <div style={{ fontSize: '0.82rem', color: exColor || '#1e293b', fontWeight: exColor ? 700 : 500 }}>{d.expiryDate}</div>
+                              <div style={{ fontSize: '0.68rem', color: exColor || '#94a3b8' }}>{days === null ? '' : days < 0 ? 'EXPIRED' : `${days}d left`}</div>
+                            </>
+                          ) : <div style={{ fontSize: '0.82rem', color: '#94a3b8' }}>—</div>}
+                        </div>
+                      </div>
+
+                      {/* Card actions */}
+                      <div style={{ padding: '0.625rem 1rem', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '0.4rem' }}>
+                        <button
+                          onClick={() => setDetailDrug(d)}
+                          style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#1e293b', padding: '0.45rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                        >
+                          <Eye size={13} /> Details
+                        </button>
+                        <button
+                          onClick={() => { setStockModalDrug(d); setStockValue(String(d.stock)); }}
+                          style={{ flex: 1, background: '#eff6ff', border: 'none', color: '#1d4ed8', padding: '0.45rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                        >
+                          <RefreshCw size={13} /> Stock
+                        </button>
+                        {role === 'Admin' && (
+                          <button
+                            onClick={() => openEditDrug(d)}
+                            style={{ flex: 1, background: '#fffbeb', border: 'none', color: '#92400e', padding: '0.45rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}
+                          >
+                            <Edit2 size={13} /> Edit
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         )}
       </div>
