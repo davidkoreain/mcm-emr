@@ -347,6 +347,7 @@ type EMRContextType = {
   addDrug: (d: Omit<Drug, 'id' | 'addedAt'>) => Promise<void>;
   updateDrug: (id: number, changes: Partial<Drug>) => Promise<void>;
   dispenseMedication: (prescriptionId: number, drugId: number, qty: number) => Promise<void>;
+  cancelPrescription: (id: number) => Promise<void>;
   addPrescription: (rx: Omit<Prescription, 'id' | 'createdAt'>) => Promise<void>;
   addDrugSupplier: (s: Omit<DrugSupplier, 'id' | 'createdAt'>) => Promise<void>;
   createDrugOrder: (o: Omit<DrugOrder, 'id' | 'createdAt'>) => Promise<void>;
@@ -672,6 +673,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await refreshData();
   };
 
+  const cancelPrescription = async (id: number) => {
+    await db.updatePrescriptionStatus(id, 'Cancelled');
+    await refreshData();
+  };
+
   const addDrugSupplier = async (s: Omit<DrugSupplier, 'id' | 'createdAt'>) => {
     if (db.insertDrugSupplier) {
       await db.insertDrugSupplier(s);
@@ -743,7 +749,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
       addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
-      dispenseMedication, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
+      dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
       submitLabResult, deleteMedicalHistory
     }}>
       {children}

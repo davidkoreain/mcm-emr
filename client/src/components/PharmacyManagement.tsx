@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   Pill, ClipboardList, AlertTriangle, Plus, X, CheckCircle2, Eye, Edit2, RefreshCw,
-  Search, Calendar, Package, ShieldAlert, BadgeCheck, FileText, Beaker
+  Search, Calendar, Package, ShieldAlert, BadgeCheck, FileText, Beaker,
+  Users, Clock, XCircle, User, Hash
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import { useEMR, type Drug, type Prescription } from '../context/EMRContext';
@@ -143,6 +144,42 @@ const drugToForm = (d: Drug): DrugFormState => ({
   status: d.status || 'Active',
 });
 
+// --- Prescription form state -------------------------------------------
+const FREQUENCIES = ['OD', 'BD', 'TDS', 'QDS', 'PRN', 'Stat', 'Weekly', 'Monthly'] as const;
+const DURATION_UNITS = ['days', 'weeks', 'months'] as const;
+
+type RxFormState = {
+  patientMrn: string;
+  patientName: string;
+  drug: string;
+  drugId: number | undefined;
+  dosage: string;
+  frequency: string;
+  durationValue: string;
+  durationUnit: string;
+  quantity: string;
+  instructions: string;
+  startDate: string;
+  prescribedBy: string;
+};
+
+const emptyRxForm: RxFormState = {
+  patientMrn: '', patientName: '', drug: '', drugId: undefined,
+  dosage: '', frequency: 'OD', durationValue: '7', durationUnit: 'days',
+  quantity: '7', instructions: '', startDate: new Date().toISOString().slice(0, 10), prescribedBy: '',
+};
+
+const freqPerDay: Record<string, number> = {
+  OD: 1, BD: 2, TDS: 3, QDS: 4, Weekly: 1 / 7, Monthly: 1 / 30, PRN: 0, Stat: 1,
+};
+
+const calcQty = (freq: string, durVal: string, durUnit: string): string => {
+  const f = freqPerDay[freq];
+  if (!f || freq === 'PRN') return '';
+  const days = durUnit === 'weeks' ? Number(durVal) * 7 : durUnit === 'months' ? Number(durVal) * 30 : Number(durVal);
+  return String(Math.ceil(f * days));
+};
+
 const formToDrug = (f: DrugFormState): Omit<Drug, 'id' | 'addedAt'> => ({
   name: f.name.trim(),
   form: f.form,
@@ -214,8 +251,9 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: number |
 // --- Main component -----------------------------------------------------
 const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'inventory' }) => {
   const {
-    drugs, prescriptions, drugSuppliers, dispenseMedication,
-    addDrug, updateDrug, role, loading
+    drugs, prescriptions, drugSuppliers, patients,
+    dispenseMedication, cancelPrescription, addPrescription,
+    addDrug, updateDrug, role, loading, currentStaff,
   } = useEMR();
 
   const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>(initialTab);
@@ -293,9 +331,23 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
   const [stockModalDrug, setStockModalDrug] = useState<Drug | null>(null);
   const [stockValue, setStockValue] = useState('');
 
-  // Prescription tab state (kept similar to legacy implementation)
+  // Prescription tab state
   const [rxSearch, setRxSearch] = useState('');
   const [rxStatus, setRxStatus] = useState('');
+  const [rxDateFilter, setRxDateFilter] = useState<'' | 'today' | 'week' | 'month'>('');
+  const [rxSort, setRxSort] = useState<'newest' | 'oldest' | 'patient'>('newest');
+
+  // Prescription modals
+  const [newRxOpen, setNewRxOpen] = useState(false);
+  const [dispenseRx, setDispenseRx] = useState<Prescription | null>(null);
+  const [detailRx, setDetailRx] = useState<Prescription | null>(null);
+  const [dispenseQty, setDispenseQty] = useState('');
+  const [rxSaving, setRxSaving] = useState(false);
+
+  // New prescription form
+  const [rxForm, setRxForm] = useState<RxFormState>(emptyRxForm);
+  const [rxPatientSearch, setRxPatientSearch] = useState('');
+  const [rxDrugSearch, setRxDrugSearch] = useState('');
 
   // --- Derived data ---------------------------------------------------
   const lowStockCount = useMemo(
@@ -338,14 +390,35 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
     });
   }, [drugs, search, filterCategory, filterForm, filterStatus, filterStock, sortBy]);
 
+  const rxStats = useMemo(() => {
+    const todayStr = new Date().toISOString().slice(0, 10);
+    return {
+      total: prescriptions.length,
+      pending: prescriptions.filter(p => p.status === 'Pending').length,
+      dispensedToday: prescriptions.filter(p => p.status === 'Dispensed' && (p.dispensedAt || p.createdAt || '').slice(0, 10) === todayStr).length,
+      cancelled: prescriptions.filter(p => p.status === 'Cancelled').length,
+    };
+  }, [prescriptions]);
+
   const filteredRx = useMemo(() => {
     const q = rxSearch.toLowerCase();
+    const now = new Date();
     return prescriptions.filter((p) => {
-      if (q && !p.patientName.toLowerCase().includes(q) && !p.drug.toLowerCase().includes(q)) return false;
+      if (q && !p.patientName.toLowerCase().includes(q) && !p.patientMrn.toLowerCase().includes(q) && !p.drug.toLowerCase().includes(q)) return false;
       if (rxStatus && p.status !== rxStatus) return false;
+      if (rxDateFilter) {
+        const d = new Date(p.createdAt);
+        if (rxDateFilter === 'today' && d.toDateString() !== now.toDateString()) return false;
+        if (rxDateFilter === 'week' && (now.getTime() - d.getTime()) > 7 * 86400000) return false;
+        if (rxDateFilter === 'month' && (now.getTime() - d.getTime()) > 30 * 86400000) return false;
+      }
       return true;
+    }).sort((a, b) => {
+      if (rxSort === 'patient') return a.patientName.localeCompare(b.patientName);
+      if (rxSort === 'oldest') return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-  }, [prescriptions, rxSearch, rxStatus]);
+  }, [prescriptions, rxSearch, rxStatus, rxDateFilter, rxSort]);
 
   // --- Handlers -------------------------------------------------------
   const openAddDrug = () => {
@@ -402,15 +475,79 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
     }
   };
 
-  const handleDispenseAction = async (rx: Prescription) => {
-    const drug = drugs.find(d => d.name.toLowerCase() === rx.drug.toLowerCase());
+  const openDispenseModal = (rx: Prescription) => {
+    setDispenseRx(rx);
+    setDispenseQty(String(rx.quantity ?? 1));
+  };
+
+  const handleDispenseWithQty = async () => {
+    if (!dispenseRx) return;
+    const qty = parseInt(dispenseQty, 10);
+    if (isNaN(qty) || qty <= 0) { toast.error('Enter a valid quantity.'); return; }
+    const drug = drugs.find(d => d.id === dispenseRx.drugId || d.name.toLowerCase() === dispenseRx.drug.toLowerCase());
     if (!drug) { toast.error('Drug not found in inventory.'); return; }
-    if (drug.stock <= 0) { toast.error('Out of stock!'); return; }
+    if (drug.stock < qty) { toast.error(`Insufficient stock. Available: ${drug.stock}`); return; }
+    setRxSaving(true);
     try {
-      await dispenseMedication(rx.id, drug.id, 1);
+      await dispenseMedication(dispenseRx.id, drug.id, qty);
       toast.success('Medication dispensed successfully.');
+      setDispenseRx(null);
+      setDispenseQty('');
     } catch (err: any) {
       toast.error('Failed to dispense: ' + err.message);
+    } finally {
+      setRxSaving(false);
+    }
+  };
+
+  const handleCancelRx = async (rx: Prescription) => {
+    if (!window.confirm(`Cancel prescription for ${rx.drug} (${rx.patientName})?`)) return;
+    try {
+      await cancelPrescription(rx.id);
+      toast.success('Prescription cancelled.');
+    } catch (err: any) {
+      toast.error('Failed to cancel: ' + err.message);
+    }
+  };
+
+  const openNewRx = () => {
+    setRxForm({
+      ...emptyRxForm,
+      startDate: new Date().toISOString().slice(0, 10),
+      prescribedBy: currentStaff?.name ?? '',
+    });
+    setRxPatientSearch('');
+    setRxDrugSearch('');
+    setNewRxOpen(true);
+  };
+
+  const saveNewRx = async () => {
+    if (!rxForm.patientMrn) { toast.error('Select a patient.'); return; }
+    if (!rxForm.drug) { toast.error('Select a drug.'); return; }
+    if (!rxForm.dosage) { toast.error('Enter dosage.'); return; }
+    setRxSaving(true);
+    try {
+      const duration = `${rxForm.durationValue} ${rxForm.durationUnit}`;
+      await addPrescription({
+        patientMrn: rxForm.patientMrn,
+        patientName: rxForm.patientName,
+        drug: rxForm.drug,
+        drugId: rxForm.drugId,
+        dosage: rxForm.dosage,
+        frequency: rxForm.frequency,
+        duration,
+        quantity: rxForm.quantity ? parseInt(rxForm.quantity, 10) : undefined,
+        instructions: rxForm.instructions,
+        startDate: rxForm.startDate,
+        prescribedBy: rxForm.prescribedBy,
+        status: 'Pending',
+      });
+      toast.success('Prescription created.');
+      setNewRxOpen(false);
+    } catch (err: any) {
+      toast.error('Failed: ' + err.message);
+    } finally {
+      setRxSaving(false);
     }
   };
 
@@ -693,55 +830,350 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
         </div>
       )}
 
+      {/* New Prescription Modal */}
+      {newRxOpen && (
+        <div style={overlayStyle} onClick={() => setNewRxOpen(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '1rem', width: 'min(640px, 100%)', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FileText size={20} color="#3b82f6" /> New Prescription
+              </div>
+              <button onClick={() => setNewRxOpen(false)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={22} /></button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* Patient search */}
+              <Field label="Patient *" full>
+                <div style={{ position: 'relative' }}>
+                  <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input style={{ ...inputStyle, paddingLeft: '2rem' }} placeholder="Search by name or MRN..." value={rxPatientSearch}
+                    onChange={e => { setRxPatientSearch(e.target.value); setRxForm(f => ({ ...f, patientMrn: '', patientName: '' })); }} />
+                </div>
+                {rxPatientSearch.length >= 1 && !rxForm.patientMrn && (() => {
+                  const q = rxPatientSearch.toLowerCase();
+                  const matches = patients.filter(p => p.name.toLowerCase().includes(q) || p.mrn.toLowerCase().includes(q)).slice(0, 8);
+                  return (
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', marginTop: '0.25rem', background: 'white', maxHeight: 180, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                      {matches.length === 0
+                        ? <div style={{ padding: '0.75rem', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>No patients found</div>
+                        : matches.map(p => (
+                          <div key={p.mrn} onClick={() => { setRxForm(f => ({ ...f, patientMrn: p.mrn, patientName: p.name })); setRxPatientSearch(p.name); }}
+                            style={{ padding: '0.6rem 0.75rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                            <span style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.875rem' }}>{p.name}</span>
+                            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>MRN: {p.mrn}</span>
+                          </div>
+                        ))}
+                    </div>
+                  );
+                })()}
+                {rxForm.patientMrn && <div style={{ marginTop: '0.25rem', fontSize: '0.78rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle2 size={13} /> MRN: {rxForm.patientMrn}</div>}
+              </Field>
+
+              {/* Drug search */}
+              <Field label="Drug *" full>
+                <div style={{ position: 'relative' }}>
+                  <Pill size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input style={{ ...inputStyle, paddingLeft: '2rem' }} placeholder="Search drug name or brand..." value={rxDrugSearch}
+                    onChange={e => { setRxDrugSearch(e.target.value); setRxForm(f => ({ ...f, drug: '', drugId: undefined, dosage: '' })); }} />
+                </div>
+                {rxDrugSearch.length >= 1 && !rxForm.drug && (() => {
+                  const q = rxDrugSearch.toLowerCase();
+                  const matches = drugs.filter(d => (d.status || 'Active') === 'Active' && (d.name.toLowerCase().includes(q) || (d.brandName || '').toLowerCase().includes(q))).slice(0, 8);
+                  return (
+                    <div style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', marginTop: '0.25rem', background: 'white', maxHeight: 180, overflowY: 'auto', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                      {matches.length === 0
+                        ? <div style={{ padding: '0.75rem', color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center' }}>No drugs found</div>
+                        : matches.map(d => (
+                          <div key={d.id} onClick={() => { setRxForm(f => ({ ...f, drug: d.name, drugId: d.id, dosage: d.strength || '' })); setRxDrugSearch(`${d.name}${d.strength ? ` ${d.strength}` : ''}`); }}
+                            style={{ padding: '0.6rem 0.75rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                            onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')} onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                            <div>
+                              <span style={{ fontWeight: 600, color: '#1e293b', fontSize: '0.875rem' }}>{d.name}</span>
+                              {d.strength && <span style={{ fontSize: '0.78rem', color: '#64748b', marginLeft: '0.5rem' }}>{d.strength}</span>}
+                              {d.brandName && <span style={{ fontSize: '0.72rem', color: '#94a3b8', marginLeft: '0.4rem' }}>({d.brandName})</span>}
+                            </div>
+                            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: d.stock < 10 ? '#dc2626' : '#16a34a', flexShrink: 0 }}>Stock: {d.stock}</span>
+                          </div>
+                        ))}
+                    </div>
+                  );
+                })()}
+                {rxForm.drug && <div style={{ marginTop: '0.25rem', fontSize: '0.78rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle2 size={13} /> {rxForm.drug}</div>}
+              </Field>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
+                <Field label="Dosage *">
+                  <input style={inputStyle} value={rxForm.dosage} placeholder="e.g. 500mg"
+                    onChange={e => setRxForm(f => ({ ...f, dosage: e.target.value }))} />
+                </Field>
+                <Field label="Frequency">
+                  <select style={inputStyle} value={rxForm.frequency} onChange={e => {
+                    const freq = e.target.value;
+                    setRxForm(f => ({ ...f, frequency: freq, quantity: calcQty(freq, f.durationValue, f.durationUnit) }));
+                  }}>
+                    {FREQUENCIES.map(fr => <option key={fr} value={fr}>{fr}</option>)}
+                  </select>
+                </Field>
+                <Field label="Duration">
+                  <div style={{ display: 'flex', gap: '0.4rem' }}>
+                    <input type="number" min="1" style={{ ...inputStyle, flex: 1 }} value={rxForm.durationValue}
+                      onChange={e => { const v = e.target.value; setRxForm(f => ({ ...f, durationValue: v, quantity: calcQty(f.frequency, v, f.durationUnit) })); }} />
+                    <select style={{ ...inputStyle, flex: 1.4 }} value={rxForm.durationUnit} onChange={e => {
+                      const u = e.target.value;
+                      setRxForm(f => ({ ...f, durationUnit: u, quantity: calcQty(f.frequency, f.durationValue, u) }));
+                    }}>
+                      {DURATION_UNITS.map(u => <option key={u} value={u}>{u}</option>)}
+                    </select>
+                  </div>
+                </Field>
+                <Field label="Quantity (units)">
+                  <input type="number" min="1" style={inputStyle} value={rxForm.quantity}
+                    onChange={e => setRxForm(f => ({ ...f, quantity: e.target.value }))} placeholder="auto-calculated" />
+                </Field>
+                <Field label="Start Date">
+                  <input type="date" style={inputStyle} value={rxForm.startDate}
+                    onChange={e => setRxForm(f => ({ ...f, startDate: e.target.value }))} />
+                </Field>
+                <Field label="Prescribed By">
+                  <input style={inputStyle} value={rxForm.prescribedBy} placeholder="Doctor name"
+                    onChange={e => setRxForm(f => ({ ...f, prescribedBy: e.target.value }))} />
+                </Field>
+              </div>
+              <Field label="Instructions" full>
+                <textarea style={{ ...inputStyle, minHeight: 72, resize: 'vertical' }} value={rxForm.instructions}
+                  placeholder="e.g. Take after food, avoid sunlight..."
+                  onChange={e => setRxForm(f => ({ ...f, instructions: e.target.value }))} />
+              </Field>
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={() => setNewRxOpen(false)} disabled={rxSaving}>Cancel</button>
+              <button className="btn-primary" onClick={saveNewRx} disabled={rxSaving}>{rxSaving ? 'Saving...' : 'Create Prescription'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dispense Confirmation Modal */}
+      {dispenseRx && (() => {
+        const drug = drugs.find(d => d.id === dispenseRx.drugId || d.name.toLowerCase() === dispenseRx.drug.toLowerCase());
+        const stock = drug?.stock ?? 0;
+        const qty = parseInt(dispenseQty, 10) || 0;
+        const insufficient = qty > stock;
+        return (
+          <div style={overlayStyle} onClick={() => { setDispenseRx(null); setDispenseQty(''); }}>
+            <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '1rem', padding: '1.5rem', width: 'min(460px, 100%)', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+                <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircle2 size={20} color="#16a34a" /> Dispense Medication
+                </div>
+                <button onClick={() => { setDispenseRx(null); setDispenseQty(''); }} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={22} /></button>
+              </div>
+              <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '1rem', marginBottom: '1rem' }}>
+                <div style={{ fontWeight: 700, color: '#1e293b', marginBottom: '0.3rem' }}>{dispenseRx.drug}</div>
+                <div style={{ fontSize: '0.82rem', color: '#64748b' }}>Patient: <strong style={{ color: '#1e293b' }}>{dispenseRx.patientName}</strong> · MRN: {dispenseRx.patientMrn}</div>
+                <div style={{ fontSize: '0.82rem', color: '#64748b', marginTop: '0.2rem' }}>
+                  {dispenseRx.dosage}{dispenseRx.frequency ? ` · ${dispenseRx.frequency}` : ''} · {dispenseRx.duration}
+                  {dispenseRx.quantity ? ` · Prescribed qty: ${dispenseRx.quantity}` : ''}
+                </div>
+                <div style={{ marginTop: '0.6rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Available stock:</span>
+                  <span style={{ fontWeight: 700, color: stock < 10 ? '#dc2626' : stock < 20 ? '#ea580c' : '#16a34a', fontSize: '0.95rem' }}>{stock} units</span>
+                </div>
+              </div>
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label style={labelStyle}>Quantity to Dispense</label>
+                <input type="number" min="1" value={dispenseQty} onChange={e => setDispenseQty(e.target.value)}
+                  style={{ ...inputStyle, border: `1px solid ${insufficient ? '#fca5a5' : '#e2e8f0'}` }} autoFocus />
+                {insufficient && (
+                  <div style={{ marginTop: '0.4rem', color: '#dc2626', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <AlertTriangle size={13} /> Exceeds available stock ({stock})
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+                <button className="btn-secondary" onClick={() => { setDispenseRx(null); setDispenseQty(''); }}>Cancel</button>
+                <button className="btn-primary" onClick={handleDispenseWithQty} disabled={rxSaving || insufficient || qty <= 0}>
+                  {rxSaving ? 'Dispensing...' : 'Confirm Dispense'}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Prescription Detail Modal */}
+      {detailRx && (
+        <div style={overlayStyle} onClick={() => setDetailRx(null)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: 'white', borderRadius: '1rem', width: 'min(580px, 100%)', maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>Prescription Details</div>
+              <button onClick={() => setDetailRx(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={22} /></button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                {detailRx.status === 'Dispensed' && <span style={{ background: '#dcfce7', color: '#166534', padding: '0.3rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>Dispensed</span>}
+                {detailRx.status === 'Pending' && <span style={{ background: '#fef3c7', color: '#92400e', padding: '0.3rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>Pending</span>}
+                {detailRx.status === 'Cancelled' && <span style={{ background: '#f1f5f9', color: '#475569', padding: '0.3rem 0.75rem', borderRadius: '999px', fontSize: '0.8rem', fontWeight: 700 }}>Cancelled</span>}
+              </div>
+              <Section title="Patient" icon={<Users size={16} />}>
+                <KV k="Name" v={detailRx.patientName} />
+                <KV k="MRN" v={detailRx.patientMrn} />
+              </Section>
+              <Section title="Medication" icon={<Pill size={16} />}>
+                <KV k="Drug" v={detailRx.drug} />
+                <KV k="Dosage" v={detailRx.dosage} />
+                <KV k="Frequency" v={detailRx.frequency || '—'} />
+                <KV k="Duration" v={detailRx.duration} />
+                <KV k="Quantity" v={detailRx.quantity ? String(detailRx.quantity) : '—'} />
+                {detailRx.instructions && <KV k="Instructions" v={detailRx.instructions} full />}
+              </Section>
+              <Section title="Timeline" icon={<Clock size={16} />}>
+                <KV k="Prescribed By" v={detailRx.prescribedBy || '—'} />
+                <KV k="Start Date" v={detailRx.startDate || '—'} />
+                <KV k="Created" v={new Date(detailRx.createdAt).toLocaleString()} />
+                {detailRx.dispensedAt && <KV k="Dispensed At" v={new Date(detailRx.dispensedAt).toLocaleString()} />}
+              </Section>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="pharmacy-content">
         {activeTab === 'prescriptions' ? (
           <>
+            {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <FileText size={22} color="#3b82f6" />
-                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>Prescriptions</div>
+                <FileText size={24} color="#3b82f6" />
+                <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Prescriptions</div>
               </div>
-              <button className="btn-secondary" onClick={() => setActiveTab('inventory')}>
-                <Pill size={16} /> Switch to Inventory
-              </button>
+              <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                {(role === 'Admin' || role === 'Doctor' || role === 'Pharmacist') && (
+                  <button className="btn-primary" onClick={openNewRx}><Plus size={16} /> New Prescription</button>
+                )}
+                <button className="btn-secondary" onClick={() => setActiveTab('inventory')}><Pill size={16} /> Drug Inventory</button>
+              </div>
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-              <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
-                <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input value={rxSearch} onChange={e => setRxSearch(e.target.value)} placeholder="Search by patient or drug..." style={{ ...inputStyle, paddingLeft: '2rem' }} />
+
+            {/* Stats */}
+            <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '1.25rem' }}>
+              <StatCard icon={<ClipboardList size={20} />} label="Total" value={rxStats.total} color="#1d4ed8" bg="#dbeafe" />
+              <StatCard icon={<Clock size={20} />} label="Pending" value={rxStats.pending} color="#92400e" bg="#fef3c7" />
+              <StatCard icon={<CheckCircle2 size={20} />} label="Dispensed Today" value={rxStats.dispensedToday} color="#166534" bg="#dcfce7" />
+              <StatCard icon={<XCircle size={20} />} label="Cancelled" value={rxStats.cancelled} color="#475569" bg="#f1f5f9" />
+            </div>
+
+            {/* Filter bar */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1.5fr) repeat(3, minmax(130px, 1fr))', gap: '0.6rem', marginBottom: '0.75rem' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={15} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input value={rxSearch} onChange={e => setRxSearch(e.target.value)} placeholder="Patient name, MRN, or drug..." style={{ ...inputStyle, paddingLeft: '2rem' }} />
               </div>
-              <select value={rxStatus} onChange={e => setRxStatus(e.target.value)} style={{ ...inputStyle, maxWidth: 200 }}>
+              <select value={rxStatus} onChange={e => setRxStatus(e.target.value)} style={inputStyle}>
                 <option value="">All Statuses</option>
                 <option value="Pending">Pending</option>
                 <option value="Dispensed">Dispensed</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
+              <select value={rxDateFilter} onChange={e => setRxDateFilter(e.target.value as any)} style={inputStyle}>
+                <option value="">All Time</option>
+                <option value="today">Today</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+              </select>
+              <select value={rxSort} onChange={e => setRxSort(e.target.value as any)} style={inputStyle}>
+                <option value="newest">Sort: Newest</option>
+                <option value="oldest">Sort: Oldest</option>
+                <option value="patient">Sort: Patient A→Z</option>
+              </select>
             </div>
-            <div className="data-table-container">
-              <table className="data-table">
-                <thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Duration</th><th>Status</th><th>Action</th></tr></thead>
-                <tbody>
-                  {filteredRx.map(rx => (
-                    <tr key={rx.id}>
-                      <td><strong>{rx.patientName}</strong><div style={{ fontSize: '0.75rem', color: '#64748b' }}>{rx.patientMrn}</div></td>
-                      <td>{rx.drug}</td>
-                      <td>{rx.dosage}</td>
-                      <td>{rx.duration}</td>
-                      <td><span className={`status-badge ${rx.status === 'Dispensed' ? 'status-active' : 'status-pending'}`}>{rx.status}</span></td>
-                      <td>
-                        {rx.status === 'Pending' && (
-                          <button className="btn-primary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => handleDispenseAction(rx)}>Dispense</button>
+
+            <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: '0.75rem' }}>
+              Showing {filteredRx.length} of {prescriptions.length} prescriptions
+            </div>
+
+            {/* Card grid */}
+            {filteredRx.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8', background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0' }}>
+                <FileText size={40} style={{ marginBottom: '0.75rem', opacity: 0.35 }} />
+                <p style={{ fontWeight: 600 }}>No prescriptions match the current filters.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                {filteredRx.map(rx => {
+                  const sc = rx.status === 'Dispensed'
+                    ? { bg: '#dcfce7', fg: '#166534', border: '#16a34a' }
+                    : rx.status === 'Cancelled'
+                    ? { bg: '#f1f5f9', fg: '#475569', border: '#94a3b8' }
+                    : { bg: '#fef3c7', fg: '#92400e', border: '#f59e0b' };
+                  return (
+                    <div key={rx.id} style={{ background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0', borderLeft: `4px solid ${sc.border}`, boxShadow: '0 1px 4px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      {/* Card header: patient + status */}
+                      <div style={{ padding: '0.875rem 1rem 0.625rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                        <div>
+                          <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.92rem' }}>{rx.patientName}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.2rem', marginTop: '0.1rem' }}>
+                            <Hash size={10} /> {rx.patientMrn}
+                          </div>
+                        </div>
+                        <span style={{ background: sc.bg, color: sc.fg, padding: '0.2rem 0.55rem', borderRadius: '999px', fontSize: '0.7rem', fontWeight: 700, flexShrink: 0 }}>{rx.status}</span>
+                      </div>
+
+                      {/* Drug info */}
+                      <div style={{ padding: '0.75rem 1rem', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.4rem' }}>
+                          <Pill size={14} color="#3b82f6" />
+                          <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.88rem' }}>{rx.drug}</span>
+                        </div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '0.2rem 0.4rem' }}>
+                          <span>{rx.dosage}</span>
+                          {rx.frequency && <><span style={{ color: '#cbd5e1' }}>·</span><span>{rx.frequency}</span></>}
+                          <span style={{ color: '#cbd5e1' }}>·</span><span>{rx.duration}</span>
+                          {rx.quantity && <><span style={{ color: '#cbd5e1' }}>·</span><span>Qty: {rx.quantity}</span></>}
+                        </div>
+                        {rx.instructions && (
+                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', fontStyle: 'italic', marginTop: '0.3rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>"{rx.instructions}"</div>
                         )}
-                        {rx.status === 'Dispensed' && <CheckCircle2 size={18} color="#16a34a" />}
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredRx.length === 0 && (
-                    <tr><td colSpan={6} style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No prescriptions match the current filters.</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+
+                      {/* Meta row */}
+                      <div style={{ padding: '0.4rem 1rem', background: '#f8fafc', borderTop: '1px solid #f1f5f9', fontSize: '0.7rem', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', gap: '0.2rem 0.4rem', alignItems: 'center' }}>
+                        {rx.prescribedBy && <><User size={10} style={{ flexShrink: 0 }} /><span>{rx.prescribedBy}</span><span style={{ color: '#cbd5e1' }}>·</span></>}
+                        <span>{new Date(rx.createdAt).toLocaleDateString()}</span>
+                        {rx.dispensedAt && <><span style={{ color: '#cbd5e1' }}>·</span><span style={{ color: '#16a34a' }}>Dispensed {new Date(rx.dispensedAt).toLocaleDateString()}</span></>}
+                      </div>
+
+                      {/* Actions */}
+                      <div style={{ padding: '0.625rem 1rem', borderTop: '1px solid #f1f5f9', display: 'flex', gap: '0.4rem' }}>
+                        <button onClick={() => setDetailRx(rx)} style={{ flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', color: '#1e293b', padding: '0.45rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                          <Eye size={13} /> Details
+                        </button>
+                        {rx.status === 'Pending' && (
+                          <>
+                            <button onClick={() => openDispenseModal(rx)} style={{ flex: 1, background: '#dcfce7', border: 'none', color: '#166534', padding: '0.45rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                              <CheckCircle2 size={13} /> Dispense
+                            </button>
+                            <button onClick={() => handleCancelRx(rx)} style={{ flex: 1, background: '#fee2e2', border: 'none', color: '#991b1b', padding: '0.45rem', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                              <XCircle size={13} /> Cancel
+                            </button>
+                          </>
+                        )}
+                        {rx.status === 'Dispensed' && (
+                          <div style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, color: '#16a34a', fontSize: '0.78rem', fontWeight: 600 }}>
+                            <CheckCircle2 size={14} /> Dispensed
+                          </div>
+                        )}
+                        {rx.status === 'Cancelled' && (
+                          <div style={{ flex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, color: '#94a3b8', fontSize: '0.78rem', fontWeight: 600 }}>
+                            <XCircle size={14} /> Cancelled
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </>
         ) : (
           <>
