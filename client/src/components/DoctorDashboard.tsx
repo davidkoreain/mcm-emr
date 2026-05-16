@@ -341,43 +341,38 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
       
       {/* Header Area */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-              <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>
-                {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-              </h2>
-              <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>
-                <button className="cal-nav-btn" onClick={handlePrev}><ChevronLeft size={18} /></button>
-                <button className="cal-nav-btn" onClick={handleNext}><ChevronRight size={18} /></button>
-              </div>
-              <button className="today-btn" onClick={() => setSelectedDate(new Date())}>Today</button>
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <input 
-                  type="date" 
-                  value={selectedDate.toISOString().split('T')[0]} 
-                  onChange={(e) => setSelectedDate(new Date(e.target.value))}
-                  style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
-                />
-                <CalendarIcon size={20} color="#2563eb" style={{ cursor: 'pointer' }} />
-              </div>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>
+              {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            </h2>
+            <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>
+              <button className="cal-nav-btn" onClick={handlePrev}><ChevronLeft size={18} /></button>
+              <button className="cal-nav-btn" onClick={handleNext}><ChevronRight size={18} /></button>
             </div>
-            <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}>
-              {viewType === 'day' ? selectedDate.toDateString() : viewType === 'week' ? `Week of ${weekDays[0].toDateString()}` : 'Monthly Overview'}
-            </p>
+            <button className="today-btn" onClick={() => setSelectedDate(new Date())}>Today</button>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <input
+                type="date"
+                value={selectedDate.toISOString().split('T')[0]}
+                onChange={(e) => setSelectedDate(new Date(e.target.value))}
+                style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }}
+              />
+              <CalendarIcon size={20} color="#2563eb" style={{ cursor: 'pointer' }} />
+            </div>
+            <button className="btn-primary" onClick={() => setShowNewModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Plus size={18} /> New Appointment
+            </button>
           </div>
-
-          <div className="view-selector">
-            <button className={viewType === 'day' ? 'active' : ''} onClick={() => setViewType('day')}>Day</button>
-            <button className={viewType === 'week' ? 'active' : ''} onClick={() => setViewType('week')}>Week</button>
-            <button className={viewType === 'month' ? 'active' : ''} onClick={() => setViewType('month')}>Month</button>
-          </div>
+          <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}>
+            {viewType === 'day' ? selectedDate.toDateString() : viewType === 'week' ? `Week of ${weekDays[0].toDateString()}` : 'Monthly Overview'}
+          </p>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <button className="btn-primary" onClick={() => setShowNewModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Plus size={18} /> New Appointment
-          </button>
+        <div className="view-selector">
+          <button className={viewType === 'day' ? 'active' : ''} onClick={() => setViewType('day')}>Day</button>
+          <button className={viewType === 'week' ? 'active' : ''} onClick={() => setViewType('week')}>Week</button>
+          <button className={viewType === 'month' ? 'active' : ''} onClick={() => setViewType('month')}>Month</button>
         </div>
       </div>
 
