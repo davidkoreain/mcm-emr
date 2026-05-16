@@ -221,6 +221,57 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
   const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>(initialTab);
   const [showCSVModal, setShowCSVModal] = useState(false);
 
+  const CSV_DRUG_HEADERS = [
+    'name','brand_name','manufacturer','supplier_name','active_ingredient','category',
+    'form','strength','unit','route','indication','contraindications','side_effects',
+    'drug_interactions','storage_conditions','handling_precautions','controlled_substance',
+    'prescription_required','stock','purchase_price','price','reorder_level',
+    'reorder_quantity','expiry_date','batch_number','storage_location','status',
+  ];
+
+  const handleCSVImport = async (rows: Record<string, string>[]): Promise<{ imported: number; errors: string[] }> => {
+    let imported = 0;
+    const errors: string[] = [];
+    for (const row of rows) {
+      try {
+        if (!row.name?.trim()) { errors.push(`Row skipped: missing drug name`); continue; }
+        await addDrug({
+          name: row.name?.trim() || '',
+          brand_name: row.brand_name?.trim() || '',
+          manufacturer: row.manufacturer?.trim() || '',
+          supplier_name: row.supplier_name?.trim() || '',
+          active_ingredient: row.active_ingredient?.trim() || '',
+          category: row.category?.trim() || 'Other',
+          form: row.form?.trim() || 'Tablet',
+          strength: row.strength?.trim() || '',
+          unit: row.unit?.trim() || 'Tablet',
+          route: row.route?.trim() || 'Oral',
+          indication: row.indication?.trim() || '',
+          contraindications: row.contraindications?.trim() || '',
+          side_effects: row.side_effects?.trim() || '',
+          drug_interactions: row.drug_interactions?.trim() || '',
+          storage_conditions: row.storage_conditions?.trim() || 'Store at room temperature',
+          handling_precautions: row.handling_precautions?.trim() || '',
+          controlled_substance: row.controlled_substance?.toLowerCase() === 'true',
+          prescription_required: row.prescription_required?.toLowerCase() !== 'false',
+          stock: parseInt(row.stock) || 0,
+          purchase_price: parseFloat(row.purchase_price) || 0,
+          price: row.price?.trim() || '0 ETB',
+          reorder_level: parseInt(row.reorder_level) || 20,
+          reorder_quantity: parseInt(row.reorder_quantity) || 100,
+          expiry_date: row.expiry_date?.trim() || '',
+          batch_number: row.batch_number?.trim() || '',
+          storage_location: row.storage_location?.trim() || '',
+          status: (row.status?.trim() as 'Active' | 'Discontinued' | 'Recalled') || 'Active',
+        });
+        imported++;
+      } catch (err: any) {
+        errors.push(`"${row.name}": ${err.message}`);
+      }
+    }
+    return { imported, errors };
+  };
+
   // Inventory tab state
   const [search, setSearch] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
@@ -494,7 +545,7 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
 
   return (
     <div className="pharmacy-container">
-      {showCSVModal && <CSVImportModal title="Drugs Inventory" onClose={() => setShowCSVModal(false)} onImport={() => {}} />}
+      {showCSVModal && <CSVImportModal title="Drugs Inventory" onClose={() => setShowCSVModal(false)} onImport={handleCSVImport} templateHeaders={CSV_DRUG_HEADERS} />}
 
       {/* Drug Detail Modal */}
       {detailDrug && (
