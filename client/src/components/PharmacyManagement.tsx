@@ -394,6 +394,18 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
     });
   }, [drugs, search, filterCategory, filterForm, filterStatus, filterStock, sortBy]);
 
+  const paginatedDrugs = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredDrugs.slice(start, start + itemsPerPage);
+  }, [filteredDrugs, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredDrugs.length / itemsPerPage);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, filterCategory, filterForm, filterStatus, filterStock, sortBy]);
+
   const rxStats = useMemo(() => {
     const todayStr = new Date().toISOString().slice(0, 10);
     return {
