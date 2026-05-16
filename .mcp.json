@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "node",
+      "args": ["C:\\Users\\dbstj\\AppData\\Roaming\\npm\\node_modules\\@playwright\\mcp\\cli.js"]
+    },
+    "gdrive": {
+      "command": "node",
+      "args": ["C:\\Users\\dbstj\\AppData\\Roaming\\npm\\node_modules\\@modelcontextprotocol\\server-gdrive\\dist\\index.js"],
+      "env": {
+        "GDRIVE_OAUTH_PATH": "C:\\Users\\dbstj\\.claude\\gcp-oauth.keys.json",
+        "GDRIVE_CREDENTIALS_PATH": "C:\\Users\\dbstj\\.claude\\gdrive-server-credentials.json"
+      }
+    }
+  }
+}

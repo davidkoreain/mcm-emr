@@ -6,38 +6,44 @@ export type NonAdminRole = typeof NON_ADMIN_ROLES[number];
 export interface MenuItem {
   key: string;
   label: string;
-  children?: { key: string; label: string }[];
+  icon?: string;
+  children?: { key: string; label: string; icon?: string }[];
 }
 
 export const MENU_STRUCTURE: MenuItem[] = [
-  { key: 'dashboard', label: 'Flow Board' },
-  { key: 'patients',  label: 'Patient Details' },
-  { key: 'calendar',  label: 'Appointments' },
-  { key: 'inpatient', label: 'Inpatient Ward' },
-  { key: 'staff',     label: 'HRM', children: [
+  { key: 'dashboard', label: 'Flow Board', icon: 'LayoutDashboard' },
+  { key: 'patients',  label: 'Patient Details', icon: 'Users' },
+  { key: 'calendar',  label: 'Appointments', icon: 'CalendarDays' },
+  { key: 'inpatient', label: 'Inpatient Ward', icon: 'Bed' },
+  { key: 'staff',     label: 'HRM', icon: 'Users', children: [
     { key: 'staff.portfolio',   label: 'Members' },
     { key: 'staff.leave',       label: 'Leave Mgmt' },
     { key: 'staff.performance', label: 'Performance' },
   ]},
-  { key: 'lab',       label: 'Laboratory', children: [
+  { key: 'lab',       label: 'Laboratory', icon: 'Beaker', children: [
     { key: 'lab.orders',  label: 'Pending Orders' },
     { key: 'lab.results', label: 'Results' },
   ]},
-  { key: 'operation', label: 'Operations', children: [
+  { key: 'operation', label: 'Operations', icon: 'Scissors', children: [
     { key: 'operation.schedule',  label: 'OT Schedule' },
     { key: 'operation.resources', label: 'Resources' },
     { key: 'operation.supplies',  label: 'Supply Tracking' },
   ]},
-  { key: 'pharmacy',  label: 'Pharmacy', children: [
+  { key: 'pharmacy',  label: 'Pharmacy', icon: 'Pill', children: [
     { key: 'pharmacy.prescriptions', label: 'Prescriptions' },
     { key: 'pharmacy.inventory',     label: 'Drug Inventory' },
   ]},
-  { key: 'assets',    label: 'Assets', children: [
+  { key: 'assets',    label: 'Assets', icon: 'Package', children: [
     { key: 'assets.inventory',   label: 'Inventory' },
     { key: 'assets.maintenance', label: 'Maintenance' },
     { key: 'assets.loss',        label: 'Loss & Damage' },
   ]},
-  { key: 'billing',   label: 'Billing' },
+  { key: 'billing',   label: 'Billing', icon: 'CreditCard' },
+  { key: 'settings',  label: 'Settings', icon: 'Settings', children: [
+    { key: 'permissions', label: 'Permissions' },
+    { key: 'menu_config', label: '메뉴구성' },
+    { key: 'adjustment',  label: 'Adjustment' },
+  ]}
 ];
 
 export const DEFAULT_PERMISSIONS: AllPerms = {
@@ -48,6 +54,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: true, 'operation.schedule': true, 'operation.resources': true, 'operation.supplies': true,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': true,
     assets: true, 'assets.inventory': true, 'assets.maintenance': true, 'assets.loss': true,
+    settings: true, permissions: true, menu_config: true, adjustment: true,
   },
   Doctor: {
     dashboard: true, patients: true, calendar: true, inpatient: true, billing: true,
@@ -56,6 +63,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: true, 'operation.schedule': true, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
+    settings: false, permissions: false, menu_config: false, adjustment: false,
   },
   Nurse: {
     dashboard: true, patients: true, calendar: true, inpatient: true, billing: false,
@@ -64,6 +72,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
+    settings: false, permissions: false, menu_config: false, adjustment: false,
   },
   Pharmacist: {
     dashboard: true, patients: true, calendar: false, inpatient: false, billing: false,
@@ -72,6 +81,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': true,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
+    settings: false, permissions: false, menu_config: false, adjustment: false,
   },
   LabTech: {
     dashboard: true, patients: true, calendar: false, inpatient: false, billing: false,
@@ -80,6 +90,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: false, 'pharmacy.prescriptions': false, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
+    settings: false, permissions: false, menu_config: false, adjustment: false,
   },
   Cashier: {
     dashboard: true, patients: true, calendar: true, inpatient: false, billing: true,
@@ -88,6 +99,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: false, 'pharmacy.prescriptions': false, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
+    settings: false, permissions: false, menu_config: false, adjustment: false,
   },
 };
 

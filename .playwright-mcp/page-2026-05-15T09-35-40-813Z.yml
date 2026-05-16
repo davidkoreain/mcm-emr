@@ -1,0 +1,22 @@
+- generic [ref=e6]:
+  - link "MCM Logo" [ref=e8] [cursor=pointer]:
+    - /url: https://mcm-emr-theta.vercel.app/
+    - img "MCM Logo" [ref=e10]
+  - generic [ref=e78]:
+    - button "Back to Roles" [ref=e79] [cursor=pointer]:
+      - img [ref=e80]
+      - text: Back to Roles
+    - heading "Doctor Login" [level=2] [ref=e82]
+    - paragraph [ref=e83]: Enter your credentials to access the medical system
+    - generic [ref=e84]:
+      - generic [ref=e85]:
+        - generic [ref=e86]:
+          - img [ref=e87]
+          - text: Name
+        - textbox "Enter your full name" [active] [ref=e90]
+      - generic [ref=e91]:
+        - generic [ref=e92]:
+          - img [ref=e93]
+          - text: Password
+        - textbox "Enter password" [ref=e96]
+      - button "Login" [ref=e97] [cursor=pointer]

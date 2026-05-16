@@ -43,6 +43,19 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   const activeTab = propTab || internalTab;
   const setActiveTab = setInternalTab;
 
+  // Adjustment Settings
+  const [adjustments] = useState(() => {
+    const saved = localStorage.getItem('emr_page_adjustments');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.staff || { columns: 3, itemsPerPage: 12 };
+      } catch { return { columns: 3, itemsPerPage: 12 }; }
+    }
+    return { columns: 3, itemsPerPage: 12 };
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeave);
@@ -105,14 +118,21 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
     return [...result].sort((a, b) => rosterSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
   }, [staff, rosterSearch, rosterFilters, rosterSort]);
 
+  const paginatedRoster = useMemo(() => {
+    const start = (currentPage - 1) * adjustments.itemsPerPage;
+    return filteredRoster.slice(start, start + adjustments.itemsPerPage);
+  }, [filteredRoster, currentPage, adjustments.itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredRoster.length / adjustments.itemsPerPage);
+
   const groupedRoster = useMemo(() => {
     const categories = ['Doctor', 'Nurse', 'Pharmacist', 'Administration', 'Technical'];
     const grouped: Record<string, Staff[]> = {};
     categories.forEach(cat => {
-      grouped[cat] = filteredRoster.filter(s => getCategory(s.role) === cat);
+      grouped[cat] = paginatedRoster.filter(s => getCategory(s.role) === cat);
     });
     return grouped;
-  }, [filteredRoster]);
+  }, [paginatedRoster]);
 
   const filteredLeave = useMemo(() => {
     let result = leaveRequests.filter((l) => {
@@ -498,7 +518,11 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                           </div>
                           <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{category}s <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500', marginLeft: '0.5rem' }}>({members.length})</span></h3>
                         </div>
-                        <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        <div className="asset-grid" style={{ 
+                          display: 'grid', 
+                          gridTemplateColumns: `repeat(${adjustments.columns}, 1fr)`, 
+                          gap: '1.5rem' 
+                        }}>
                           {members.map((s) => (
                             <div key={s.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                               <div 
@@ -560,6 +584,28 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                     </div>
                   )}
                 </div>
+
+                {totalPages > 1 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '3rem', padding: '1rem', borderTop: '1px solid #f1f5f9' }}>
+                    <button 
+                      disabled={currentPage === 1}
+                      onClick={() => setCurrentPage(prev => prev - 1)}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#cbd5e1' : '#1e293b', fontWeight: '600' }}
+                    >
+                      Previous
+                    </button>
+                    <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <button 
+                      disabled={currentPage === totalPages}
+                      onClick={() => setCurrentPage(prev => prev + 1)}
+                      style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#cbd5e1' : '#1e293b', fontWeight: '600' }}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
               </>
             )}
 

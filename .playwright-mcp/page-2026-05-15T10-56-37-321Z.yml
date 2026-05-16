@@ -1,0 +1,372 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - link "Logo" [ref=e6] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e7]
+      - button [ref=e8] [cursor=pointer]:
+        - img [ref=e9]
+    - navigation [ref=e12]:
+      - list [ref=e13]:
+        - listitem [ref=e14] [cursor=pointer]:
+          - img [ref=e15]
+          - generic [ref=e286]: Flow Board
+        - listitem [ref=e20] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e287]: Patient Details
+        - listitem [ref=e26] [cursor=pointer]:
+          - img [ref=e27]
+          - generic [ref=e288]: Appointments
+        - listitem [ref=e29] [cursor=pointer]:
+          - img [ref=e30]
+          - generic [ref=e289]: Inpatient Ward
+        - listitem [ref=e32] [cursor=pointer]:
+          - generic [ref=e33]:
+            - img [ref=e34]
+            - generic [ref=e39]: HRM
+          - img [ref=e41]
+        - listitem [ref=e43] [cursor=pointer]:
+          - generic [ref=e44]:
+            - img [ref=e45]
+            - generic [ref=e47]: Laboratory
+          - img [ref=e49]
+        - listitem [ref=e51] [cursor=pointer]:
+          - generic [ref=e52]:
+            - img [ref=e53]
+            - generic [ref=e59]: Operations
+          - img [ref=e290]
+        - list [ref=e292]:
+          - listitem [ref=e293] [cursor=pointer]: OT Schedule
+          - listitem [ref=e294] [cursor=pointer]: Resources
+          - listitem [ref=e295] [cursor=pointer]: Supply Tracking
+        - listitem [ref=e63] [cursor=pointer]:
+          - generic [ref=e64]:
+            - img [ref=e65]
+            - generic [ref=e68]: Pharmacy
+          - img [ref=e323]
+        - list [ref=e325]:
+          - listitem [ref=e326] [cursor=pointer]: Prescriptions
+          - listitem [ref=e327] [cursor=pointer]: Drug Inventory
+        - listitem [ref=e72] [cursor=pointer]:
+          - generic [ref=e73]:
+            - img [ref=e74]
+            - generic [ref=e78]: Assets
+          - img [ref=e358]
+        - list [ref=e360]:
+          - listitem [ref=e361] [cursor=pointer]: Inventory
+          - listitem [ref=e362] [cursor=pointer]: Maintenance
+          - listitem [ref=e363] [cursor=pointer]: Loss & Damage
+        - listitem [ref=e82] [cursor=pointer]:
+          - img [ref=e83]
+          - generic [ref=e296]: Billing
+    - button "Logout" [ref=e86] [cursor=pointer]:
+      - img [ref=e297]
+      - generic [ref=e89]: Logout
+  - main [ref=e90]:
+    - generic [ref=e91]:
+      - heading "ASSETS" [level=1] [ref=e364]
+      - generic [ref=e93]:
+        - generic "Master Admin" [ref=e94]:
+          - generic [ref=e95]: MA
+        - generic [ref=e96]:
+          - generic [ref=e97]: Master Admin
+          - generic [ref=e98]: Admin
+    - generic [ref=e366]:
+      - generic [ref=e367]:
+        - generic [ref=e369]:
+          - generic [ref=e370]:
+            - generic [ref=e371]:
+              - img [ref=e372]
+              - textbox "Search by name, serial or supplier..." [ref=e375]
+            - generic [ref=e376]:
+              - img [ref=e377]
+              - generic [ref=e378]: Status
+              - combobox [ref=e379] [cursor=pointer]:
+                - option "All Status" [selected]
+                - option "Functional"
+                - option "Maintenance Required"
+            - generic [ref=e380]:
+              - img [ref=e381]
+              - generic [ref=e382]: Location
+              - combobox [ref=e383] [cursor=pointer]:
+                - option "All Locations" [selected]
+                - option "ICU"
+                - option "Cardiology Dept"
+                - option "Emergency Dept"
+                - option "OT Suite 2"
+                - option "Dialysis Unit"
+                - option "Radiology Dept"
+                - option "Ophthalmology OT"
+                - option "General Ward A"
+                - option "OT Suite"
+            - generic [ref=e384]:
+              - img [ref=e385]
+              - combobox [ref=e388] [cursor=pointer]:
+                - option "Name A→Z" [selected]
+                - option "Name Z→A"
+          - generic [ref=e389]: 11 items
+        - generic [ref=e390]:
+          - button "CSV Import" [ref=e391] [cursor=pointer]:
+            - img [ref=e392]
+            - text: CSV Import
+          - button "Add Asset" [ref=e395] [cursor=pointer]:
+            - img [ref=e396]
+            - text: Add Asset
+      - generic [ref=e397]:
+        - generic [ref=e398]:
+          - img "Anesthesia Machine - Dräger Atlan" [ref=e400]
+          - generic [ref=e401]:
+            - generic [ref=e402]:
+              - generic [ref=e403]:
+                - generic [ref=e404]: "AST-090 | S/N: ANES-ATL-05"
+                - heading "Anesthesia Machine - Dräger Atlan" [level=3] [ref=e405]
+              - generic [ref=e406]:
+                - generic [ref=e407]: In Use
+                - img [ref=e409]
+            - generic [ref=e412]:
+              - generic [ref=e413]:
+                - img [ref=e414]
+                - generic [ref=e417]: OT Suite 2
+              - generic [ref=e418]:
+                - img [ref=e419]
+                - generic [ref=e423]: 180kg
+            - generic [ref=e425]:
+              - img [ref=e426]
+              - text: "Supplier: Dräger Africa"
+            - generic [ref=e431]:
+              - button "Details" [ref=e432] [cursor=pointer]
+              - button "Maintain" [ref=e433] [cursor=pointer]
+        - generic [ref=e434]:
+          - img "C-Arm X-Ray" [ref=e436]
+          - generic [ref=e437]:
+            - generic [ref=e438]:
+              - generic [ref=e439]:
+                - generic [ref=e440]: "AST-088 | S/N: CARM-088"
+                - heading "C-Arm X-Ray" [level=3] [ref=e441]
+              - generic [ref=e442]:
+                - generic [ref=e443]: Functional
+                - img [ref=e445]
+            - generic [ref=e448]:
+              - generic [ref=e449]:
+                - img [ref=e450]
+                - generic [ref=e453]: OT Suite
+              - generic [ref=e454]:
+                - img [ref=e455]
+                - generic [ref=e459]: 120kg
+            - generic [ref=e461]:
+              - img [ref=e462]
+              - text: "Supplier: Siemens Healthineers"
+            - generic [ref=e467]:
+              - button "Details" [ref=e468] [cursor=pointer]
+              - button "Maintain" [ref=e469] [cursor=pointer]
+        - generic [ref=e470]:
+          - img "Defibrillator - Zoll R Series" [ref=e472]
+          - generic [ref=e473]:
+            - generic [ref=e474]:
+              - generic [ref=e475]:
+                - generic [ref=e476]: "AST-092 | S/N: DEFI-ZOL-88"
+                - heading "Defibrillator - Zoll R Series" [level=3] [ref=e477]
+              - generic [ref=e478]:
+                - generic [ref=e479]: Functional
+                - img [ref=e481]
+            - generic [ref=e484]:
+              - generic [ref=e485]:
+                - img [ref=e486]
+                - generic [ref=e489]: Emergency Dept
+              - generic [ref=e490]:
+                - img [ref=e491]
+                - generic [ref=e495]: 6kg
+            - generic [ref=e497]:
+              - img [ref=e498]
+              - text: "Supplier: Zoll Medical"
+            - generic [ref=e503]:
+              - button "Details" [ref=e504] [cursor=pointer]
+              - button "Maintain" [ref=e505] [cursor=pointer]
+        - generic [ref=e506]:
+          - img "Dialysis Machine - Fresenius 4008S" [ref=e508]
+          - generic [ref=e509]:
+            - generic [ref=e510]:
+              - generic [ref=e511]:
+                - generic [ref=e512]: "AST-089 | S/N: DIAL-4008-01"
+                - heading "Dialysis Machine - Fresenius 4008S" [level=3] [ref=e513]
+              - generic [ref=e514]:
+                - generic [ref=e515]: Functional
+                - img [ref=e517]
+            - generic [ref=e520]:
+              - generic [ref=e521]:
+                - img [ref=e522]
+                - generic [ref=e525]: Dialysis Unit
+              - generic [ref=e526]:
+                - img [ref=e527]
+                - generic [ref=e531]: 120kg
+            - generic [ref=e533]:
+              - img [ref=e534]
+              - text: "Supplier: Fresenius Medical Care"
+            - generic [ref=e539]:
+              - button "Details" [ref=e540] [cursor=pointer]
+              - button "Maintain" [ref=e541] [cursor=pointer]
+        - generic [ref=e542]:
+          - img "ECG Machine 12-Lead" [ref=e544]
+          - generic [ref=e545]:
+            - generic [ref=e546]:
+              - generic [ref=e547]:
+                - generic [ref=e548]: "AST-004 | S/N: ECG-3301"
+                - heading "ECG Machine 12-Lead" [level=3] [ref=e549]
+              - generic [ref=e550]:
+                - generic [ref=e551]: Functional
+                - img [ref=e553]
+            - generic [ref=e556]:
+              - generic [ref=e557]:
+                - img [ref=e558]
+                - generic [ref=e561]: Cardiology Dept
+              - generic [ref=e562]:
+                - img [ref=e563]
+                - generic [ref=e567]: 8kg
+            - generic [ref=e569]:
+              - img [ref=e570]
+              - text: "Supplier: GE Healthcare Ethiopia"
+            - generic [ref=e575]:
+              - button "Details" [ref=e576] [cursor=pointer]
+              - button "Maintain" [ref=e577] [cursor=pointer]
+        - generic [ref=e578]:
+          - img "GE Healthcare MRI System" [ref=e580]
+          - generic [ref=e581]:
+            - generic [ref=e582]:
+              - generic [ref=e583]:
+                - generic [ref=e584]: "AST-001 | S/N: GE99283-X"
+                - heading "GE Healthcare MRI System" [level=3] [ref=e585]
+              - generic [ref=e586]:
+                - generic [ref=e587]: Functional
+                - img [ref=e589]
+            - generic [ref=e592]:
+              - generic [ref=e593]:
+                - img [ref=e594]
+                - generic [ref=e597]: Radiology Dept
+              - generic [ref=e598]:
+                - img [ref=e599]
+                - generic [ref=e603]: 1200kg
+            - generic [ref=e605]:
+              - img [ref=e606]
+              - text: "Supplier: GE Healthcare Ethiopia"
+            - generic [ref=e611]:
+              - button "Details" [ref=e612] [cursor=pointer]
+              - button "Maintain" [ref=e613] [cursor=pointer]
+        - generic [ref=e614]:
+          - img "Infusion Pump Set" [ref=e616]
+          - generic [ref=e617]:
+            - generic [ref=e618]:
+              - generic [ref=e619]:
+                - generic [ref=e620]: "AST-005 | S/N: INF-7890"
+                - heading "Infusion Pump Set" [level=3] [ref=e621]
+              - generic [ref=e622]:
+                - generic [ref=e623]: Maintenance Required
+                - img [ref=e625]
+            - generic [ref=e628]:
+              - generic [ref=e629]:
+                - img [ref=e630]
+                - generic [ref=e633]: ICU
+              - generic [ref=e634]:
+                - img [ref=e635]
+                - generic [ref=e639]: 1.2kg
+            - generic [ref=e641]:
+              - img [ref=e642]
+              - text: "Supplier: B. Braun Ethiopia"
+            - generic [ref=e647]:
+              - button "Details" [ref=e648] [cursor=pointer]
+              - button "Maintain" [ref=e649] [cursor=pointer]:
+                - img [ref=e650]
+                - text: Maintain
+        - generic [ref=e652]:
+          - img "Laparoscopic Tower" [ref=e654]
+          - generic [ref=e655]:
+            - generic [ref=e656]:
+              - generic [ref=e657]:
+                - generic [ref=e658]: "AST-045 | S/N: LAP-2045-X"
+                - heading "Laparoscopic Tower" [level=3] [ref=e659]
+              - generic [ref=e660]:
+                - generic [ref=e661]: In Use (OT 1)
+                - img [ref=e663]
+            - generic [ref=e666]:
+              - generic [ref=e667]:
+                - img [ref=e668]
+                - generic [ref=e671]: OT Suite
+              - generic [ref=e672]:
+                - img [ref=e673]
+                - generic [ref=e677]: 85kg
+            - generic [ref=e679]:
+              - img [ref=e680]
+              - text: "Supplier: Karl Storz"
+            - generic [ref=e685]:
+              - button "Details" [ref=e686] [cursor=pointer]
+              - button "Maintain" [ref=e687] [cursor=pointer]
+        - generic [ref=e688]:
+          - img "Patient Monitor B40" [ref=e690]
+          - generic [ref=e691]:
+            - generic [ref=e692]:
+              - generic [ref=e693]:
+                - generic [ref=e694]: "AST-003 | S/N: M-1122-A"
+                - heading "Patient Monitor B40" [level=3] [ref=e695]
+              - generic [ref=e696]:
+                - generic [ref=e697]: Functional
+                - img [ref=e699]
+            - generic [ref=e702]:
+              - generic [ref=e703]:
+                - img [ref=e704]
+                - generic [ref=e707]: General Ward A
+              - generic [ref=e708]:
+                - img [ref=e709]
+                - generic [ref=e713]: 4.5kg
+            - generic [ref=e715]:
+              - img [ref=e716]
+              - text: "Supplier: Philips Medical"
+            - generic [ref=e721]:
+              - button "Details" [ref=e722] [cursor=pointer]
+              - button "Maintain" [ref=e723] [cursor=pointer]
+        - generic [ref=e724]:
+          - img "Surgical Microscope - Zeiss Lumera" [ref=e726]
+          - generic [ref=e727]:
+            - generic [ref=e728]:
+              - generic [ref=e729]:
+                - generic [ref=e730]: "AST-091 | S/N: MICR-ZEI-11"
+                - heading "Surgical Microscope - Zeiss Lumera" [level=3] [ref=e731]
+              - generic [ref=e732]:
+                - generic [ref=e733]: Functional
+                - img [ref=e735]
+            - generic [ref=e738]:
+              - generic [ref=e739]:
+                - img [ref=e740]
+                - generic [ref=e743]: Ophthalmology OT
+              - generic [ref=e744]:
+                - img [ref=e745]
+                - generic [ref=e749]: 250kg
+            - generic [ref=e751]:
+              - img [ref=e752]
+              - text: "Supplier: Carl Zeiss"
+            - generic [ref=e757]:
+              - button "Details" [ref=e758] [cursor=pointer]
+              - button "Maintain" [ref=e759] [cursor=pointer]
+        - generic [ref=e760]:
+          - img "Ventilator - Puritan Bennett 980" [ref=e762]
+          - generic [ref=e763]:
+            - generic [ref=e764]:
+              - generic [ref=e765]:
+                - generic [ref=e766]: "AST-002 | S/N: PB-2026-044"
+                - heading "Ventilator - Puritan Bennett 980" [level=3] [ref=e767]
+              - generic [ref=e768]:
+                - generic [ref=e769]: Maintenance Required
+                - img [ref=e771]
+            - generic [ref=e774]:
+              - generic [ref=e775]:
+                - img [ref=e776]
+                - generic [ref=e779]: ICU
+              - generic [ref=e780]:
+                - img [ref=e781]
+                - generic [ref=e785]: 45kg
+            - generic [ref=e787]:
+              - img [ref=e788]
+              - text: "Supplier: Medtronic Africa"
+            - generic [ref=e793]:
+              - button "Details" [ref=e794] [cursor=pointer]
+              - button "Maintain" [ref=e795] [cursor=pointer]:
+                - img [ref=e796]
+                - text: Maintain

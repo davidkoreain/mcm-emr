@@ -26,6 +26,20 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const [csvResult, setCsvResult] = useState<{ added: number; errors: number } | null>(null);
   const csvInputRef = useRef<HTMLInputElement>(null);
 
+  // Adjustment Settings
+  const [adjustments] = useState(() => {
+    const saved = localStorage.getItem('emr_page_adjustments');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.patients || { columns: 3, itemsPerPage: 12 };
+      } catch { return { columns: 3, itemsPerPage: 12 }; }
+    }
+    return { columns: 3, itemsPerPage: 12 };
+  });
+
+  const [currentPage, setCurrentPage] = useState(1);
+
   const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -103,6 +117,13 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
       return a.name.localeCompare(b.name);
     });
   }, [patients, ptSearch, ptFilters, ptSort]);
+
+  const paginatedPatients = useMemo(() => {
+    const start = (currentPage - 1) * adjustments.itemsPerPage;
+    return filteredPatients.slice(start, start + adjustments.itemsPerPage);
+  }, [filteredPatients, currentPage, adjustments.itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredPatients.length / adjustments.itemsPerPage);
 
   const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
   const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '480px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' };
@@ -316,8 +337,13 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
         filteredCount={filteredPatients.length}
       />
 
-      <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem', marginTop: '1.5rem' }}>
-        {filteredPatients.map((p) => (
+      <div className="asset-grid" style={{ 
+        display: 'grid', 
+        gridTemplateColumns: `repeat(${adjustments.columns}, 1fr)`, 
+        gap: '1.5rem', 
+        marginTop: '1.5rem' 
+      }}>
+        {paginatedPatients.map((p) => (
           <div key={p.mrn} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
             <div 
               onClick={() => setDetailModal(p)}
@@ -393,6 +419,28 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
           </div>
         )}
       </div>
+
+      {totalPages > 1 && (
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '3rem', padding: '1rem', borderTop: '1px solid #f1f5f9' }}>
+          <button 
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(prev => prev - 1)}
+            style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#cbd5e1' : '#1e293b', fontWeight: '600' }}
+          >
+            Previous
+          </button>
+          <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '600' }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button 
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(prev => prev + 1)}
+            style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', background: 'white', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#cbd5e1' : '#1e293b', fontWeight: '600' }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 };

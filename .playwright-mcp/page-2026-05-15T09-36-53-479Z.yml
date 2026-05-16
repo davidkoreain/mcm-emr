@@ -1,0 +1,112 @@
+- generic [ref=e98]:
+  - complementary [ref=e99]:
+    - generic [ref=e100]:
+      - link "Logo" [ref=e101] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e102]
+      - button [ref=e103] [cursor=pointer]:
+        - img [ref=e104]
+    - navigation [ref=e107]:
+      - list [ref=e108]:
+        - listitem [ref=e109] [cursor=pointer]:
+          - img [ref=e110]
+          - generic [ref=e115]: Flow Board
+        - listitem [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+          - generic [ref=e122]: Patient Details
+        - listitem [ref=e123] [cursor=pointer]:
+          - img [ref=e124]
+          - generic [ref=e126]: Appointments
+        - listitem [ref=e127] [cursor=pointer]:
+          - img [ref=e128]
+          - generic [ref=e131]: Registration
+        - listitem [ref=e132] [cursor=pointer]:
+          - img [ref=e133]
+          - generic [ref=e135]: Inpatient Ward
+        - listitem [ref=e136] [cursor=pointer]:
+          - generic [ref=e137]:
+            - img [ref=e138]
+            - generic [ref=e143]: HRM
+          - img [ref=e145]
+        - listitem [ref=e147] [cursor=pointer]:
+          - img [ref=e148]
+          - generic [ref=e150]: Laboratory
+        - listitem [ref=e151] [cursor=pointer]:
+          - img [ref=e152]
+          - generic [ref=e158]: Operations
+        - listitem [ref=e159] [cursor=pointer]:
+          - img [ref=e160]
+          - generic [ref=e163]: Pharmacy
+        - listitem [ref=e164] [cursor=pointer]:
+          - img [ref=e165]
+          - generic [ref=e169]: Assets
+        - listitem [ref=e170] [cursor=pointer]:
+          - img [ref=e171]
+          - generic [ref=e173]: Billing
+    - button "Logout" [ref=e175] [cursor=pointer]:
+      - img [ref=e176]
+      - generic [ref=e179]: Logout
+  - main [ref=e180]:
+    - generic [ref=e181]:
+      - heading "ENCOUNTER" [level=1] [ref=e440]
+      - generic [ref=e183]:
+        - generic "David — click to enlarge" [ref=e184]:
+          - img "David" [ref=e185]
+        - generic [ref=e186]:
+          - generic [ref=e187]: David
+          - generic [ref=e188]: Doctor
+    - generic [ref=e441]:
+      - generic [ref=e442]:
+        - generic [ref=e443]:
+          - img [ref=e444]
+          - generic [ref=e447]:
+            - heading "Comprehensive Clinical Chart" [level=2] [ref=e448]
+            - paragraph [ref=e449]: "Patient: Genet Assefa | Location: MCM OPD"
+        - button [ref=e450] [cursor=pointer]:
+          - img [ref=e451]
+      - generic [ref=e454]:
+        - button "Consultation (SOAP)" [ref=e455] [cursor=pointer]:
+          - img [ref=e456]
+          - text: Consultation (SOAP)
+        - button "Imaging & PACS" [ref=e459] [cursor=pointer]:
+          - img [ref=e460]
+          - text: Imaging & PACS
+        - button "Medical History" [ref=e464] [cursor=pointer]:
+          - img [ref=e465]
+          - text: Medical History
+      - generic [ref=e470]:
+        - generic [ref=e471]:
+          - generic [ref=e472]:
+            - generic [ref=e473]:
+              - img [ref=e474]
+              - text: Subjective (Chief Complaint & History)
+            - textbox "Enter patient symptoms and history..." [ref=e476]
+          - generic [ref=e477]:
+            - generic [ref=e478]:
+              - img [ref=e479]
+              - text: Objective (Physical Examination)
+            - textbox "Enter physical examination findings..." [ref=e481]
+          - generic [ref=e482]:
+            - generic [ref=e483]:
+              - generic [ref=e484]:
+                - img [ref=e485]
+                - text: Assessment (Diagnosis)
+              - generic [ref=e488]:
+                - textbox "ICD-10" [ref=e489]
+                - textbox "Diagnosis" [ref=e490]
+              - textbox "Additional notes..." [ref=e491]
+            - generic [ref=e492]:
+              - generic [ref=e493]:
+                - img [ref=e494]
+                - text: Plan (Treatment & Follow-up)
+              - textbox "Enter treatment plan, prescriptions, and follow-up..." [ref=e499]
+        - generic [ref=e500]:
+          - checkbox "Publish diagnosis and plan to Patient Portal" [checked] [ref=e501]
+          - generic [ref=e502]:
+            - img [ref=e503]
+            - text: Publish diagnosis and plan to Patient Portal
+        - generic [ref=e506]:
+          - button "Cancel" [ref=e507] [cursor=pointer]
+          - button "Finalize Chart" [ref=e508] [cursor=pointer]:
+            - img [ref=e509]
+            - text: Finalize Chart

@@ -1,0 +1,82 @@
+- generic [ref=e61]:
+  - complementary [ref=e62]:
+    - generic [ref=e63]:
+      - generic [ref=e64]:
+        - img [ref=e66]
+        - generic [ref=e68]:
+          - generic [ref=e69]: MCM Medical
+          - generic [ref=e70]: Journey Portal
+      - generic [ref=e71]:
+        - img "Profile" [ref=e72]
+        - generic [ref=e73]:
+          - generic [ref=e74]: Abebe Bikila
+          - generic [ref=e75]: MRN-2026-001
+    - navigation [ref=e76]:
+      - button "Patient Information" [ref=e266] [cursor=pointer]:
+        - img [ref=e267]
+        - generic [ref=e269]: Patient Information
+      - button "Medical Records" [ref=e271] [cursor=pointer]:
+        - img [ref=e272]
+        - generic [ref=e275]: Medical Records
+      - generic [ref=e276]:
+        - button "Appointments" [ref=e277] [cursor=pointer]:
+          - img [ref=e278]
+          - generic [ref=e280]: Appointments
+          - img [ref=e281]
+        - generic [ref=e284]:
+          - button "Discovery" [ref=e285] [cursor=pointer]:
+            - img [ref=e287]
+            - generic [ref=e290]: Discovery
+          - button "Application" [ref=e291] [cursor=pointer]:
+            - img [ref=e293]
+            - generic [ref=e295]: Application
+          - button "Confirmation" [ref=e296] [cursor=pointer]:
+            - img [ref=e298]
+            - generic [ref=e301]: Confirmation
+          - button "Visit" [ref=e302] [cursor=pointer]:
+            - img [ref=e304]
+            - generic [ref=e307]: Visit
+          - button "Admission" [ref=e308] [cursor=pointer]:
+            - img [ref=e310]
+            - generic [ref=e313]: Admission
+          - button "Consultation" [ref=e314] [cursor=pointer]:
+            - img [ref=e316]
+            - generic [ref=e319]: Consultation
+          - button "Examination" [ref=e320] [cursor=pointer]:
+            - img [ref=e322]
+            - generic [ref=e324]: Examination
+          - button "Results" [ref=e325] [cursor=pointer]:
+            - img [ref=e327]
+            - generic [ref=e330]: Results
+          - button "Diagnosis" [ref=e331] [cursor=pointer]:
+            - img [ref=e333]
+            - generic [ref=e335]: Diagnosis
+          - button "Treatment Plan" [ref=e336] [cursor=pointer]:
+            - img [ref=e338]
+            - generic [ref=e341]: Treatment Plan
+          - button "Therapy" [ref=e342] [cursor=pointer]:
+            - img [ref=e344]
+            - generic [ref=e346]: Therapy
+          - button "Procedure" [ref=e347] [cursor=pointer]:
+            - img [ref=e349]
+            - generic [ref=e355]: Procedure
+          - button "Monitoring" [ref=e356] [cursor=pointer]:
+            - img [ref=e358]
+            - generic [ref=e360]: Monitoring
+          - button "Feedback" [ref=e361] [cursor=pointer]:
+            - img [ref=e363]
+            - generic [ref=e366]: Feedback
+      - button "Settings" [ref=e368] [cursor=pointer]:
+        - img [ref=e369]
+        - generic [ref=e372]: Settings
+    - button "Logout" [ref=e186]:
+      - img [ref=e187]
+      - text: Logout
+  - main [ref=e190]:
+    - generic [ref=e373]:
+      - heading "Medical Records" [level=2] [ref=e374]
+      - generic [ref=e375]:
+        - heading "Laboratory Results" [level=3] [ref=e376]:
+          - img [ref=e377]
+          - text: Laboratory Results
+        - paragraph [ref=e379]: No results.

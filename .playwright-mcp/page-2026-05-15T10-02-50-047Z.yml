@@ -1,0 +1,58 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link "MCM Logo" [ref=e5] [cursor=pointer]:
+      - /url: https://mcm-emr-theta.vercel.app/
+      - img "MCM Logo" [ref=e7]
+    - heading "MCM Comprehensive Specialized Hospital" [level=1] [ref=e8]:
+      - text: MCM Comprehensive
+      - text: Specialized Hospital
+    - paragraph [ref=e9]:
+      - text: Electronic Medical Records
+      - text: Management System
+    - paragraph [ref=e11]:
+      - text: Addis Ababa, Ethiopia
+      - text: v2.0 · 2026
+  - generic [ref=e13]:
+    - heading "Select Your Role" [level=2] [ref=e14]
+    - paragraph [ref=e15]: Choose your department to continue to the dashboard
+    - generic [ref=e16]:
+      - button "Admin Full system access & management" [ref=e17] [cursor=pointer]:
+        - img [ref=e19]
+        - generic [ref=e24]:
+          - generic [ref=e25]: Admin
+          - generic [ref=e26]: Full system access & management
+      - button "Doctor Clinical consultations & orders" [ref=e27] [cursor=pointer]:
+        - img [ref=e29]
+        - generic [ref=e31]:
+          - generic [ref=e32]: Doctor
+          - generic [ref=e33]: Clinical consultations & orders
+      - button "Nurse Patient care, vitals & ward" [ref=e34] [cursor=pointer]:
+        - img [ref=e36]
+        - generic [ref=e41]:
+          - generic [ref=e42]: Nurse
+          - generic [ref=e43]: Patient care, vitals & ward
+      - button "Pharmacist Medication dispensing & inventory" [ref=e44] [cursor=pointer]:
+        - img [ref=e46]
+        - generic [ref=e50]:
+          - generic [ref=e51]: Pharmacist
+          - generic [ref=e52]: Medication dispensing & inventory
+      - button "Lab Technician Laboratory tests & results" [ref=e53] [cursor=pointer]:
+        - img [ref=e55]
+        - generic [ref=e57]:
+          - generic [ref=e58]: Lab Technician
+          - generic [ref=e59]: Laboratory tests & results
+      - button "Cashier Billing & payment processing" [ref=e60] [cursor=pointer]:
+        - img [ref=e62]
+        - generic [ref=e64]:
+          - generic [ref=e65]: Cashier
+          - generic [ref=e66]: Billing & payment processing
+      - button "Patient Portal View records, book appointments" [ref=e67] [cursor=pointer]:
+        - img [ref=e69]
+        - generic [ref=e71]:
+          - generic [ref=e72]: Patient Portal
+          - generic [ref=e73]: View records, book appointments
+      - button "Guardian Portal Manage privacy & records" [ref=e74] [cursor=pointer]:
+        - img [ref=e76]
+        - generic [ref=e78]:
+          - generic [ref=e79]: Guardian Portal
+          - generic [ref=e80]: Manage privacy & records

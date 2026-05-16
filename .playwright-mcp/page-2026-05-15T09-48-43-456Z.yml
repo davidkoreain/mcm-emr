@@ -1,0 +1,25 @@
+- generic [ref=e5]:
+  - button "Back to Selection" [ref=e6] [cursor=pointer]:
+    - img [ref=e7]
+    - text: Back to Selection
+  - generic [ref=e9]:
+    - img [ref=e11]
+    - heading "Patient Portal" [level=2] [ref=e14]
+    - paragraph [ref=e15]: Access your medical history and results
+  - generic [ref=e16]:
+    - generic [ref=e17]:
+      - generic [ref=e18]: Full Name
+      - generic [ref=e19]:
+        - img [ref=e20]
+        - textbox "e.g. Abebe Bikila" [ref=e23]: David
+    - generic [ref=e24]:
+      - generic [ref=e25]: Password
+      - generic [ref=e26]:
+        - img [ref=e27]
+        - textbox "••••••••" [ref=e30]: "1234"
+    - button "Login to Portal" [ref=e31] [cursor=pointer]:
+      - text: Login to Portal
+      - img [ref=e32]
+  - paragraph [ref=e35]:
+    - text: Don't have an account?
+    - button "Sign up here" [ref=e36] [cursor=pointer]

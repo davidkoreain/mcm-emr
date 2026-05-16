@@ -1,0 +1,100 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - img "Psychic MD Logo" [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e9]
+            - generic [ref=e14]: Dashboard
+          - link "Flow Board" [ref=e15] [cursor=pointer]:
+            - /url: /flowboard
+            - img [ref=e16]
+            - generic [ref=e19]: Flow Board
+          - link "Appointments" [active] [ref=e20] [cursor=pointer]:
+            - /url: /appointments
+            - img [ref=e21]
+            - generic [ref=e23]: Appointments
+          - link "Patient Details" [ref=e24] [cursor=pointer]:
+            - /url: /Patients-details
+            - img [ref=e25]
+            - generic [ref=e30]: Patient Details
+          - button "Log Out" [ref=e31]:
+            - img [ref=e32]
+            - generic [ref=e35]: Log Out
+    - generic [ref=e36]:
+      - banner [ref=e37]:
+        - generic [ref=e38]:
+          - heading "Dashboard" [level=1] [ref=e40]
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - img [ref=e43]
+              - textbox "Search Patients..." [ref=e46]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Dr. Daniyal
+              - generic [ref=e49]: Provider
+      - main [ref=e50]:
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - generic [ref=e123]:
+              - heading "September" [level=1] [ref=e124]
+              - img [ref=e125]
+            - generic [ref=e127]:
+              - button [ref=e128]:
+                - img
+              - button "Today" [ref=e129]
+              - button [ref=e130]:
+                - img
+          - generic [ref=e131]:
+            - heading "All Appointments - Graph View" [level=2] [ref=e132]
+            - generic [ref=e134]:
+              - generic [ref=e135]: Time
+              - generic [ref=e136]:
+                - generic [ref=e137]: Monday
+                - generic [ref=e138]: "04.9"
+              - generic [ref=e139]:
+                - generic [ref=e140]: Tuesday
+                - generic [ref=e141]: "05.9"
+              - generic [ref=e142]:
+                - generic [ref=e143]: Wednesday
+                - generic [ref=e144]: "06.9"
+              - generic [ref=e145]:
+                - generic [ref=e146]: Thursday
+                - generic [ref=e147]: "07.9"
+              - generic [ref=e148]:
+                - generic [ref=e149]: Friday
+                - generic [ref=e150]: "08.9"
+              - generic [ref=e151]:
+                - generic [ref=e152]: Saturday
+                - generic [ref=e153]: "09.9"
+              - generic [ref=e154]:
+                - generic [ref=e155]: Sunday
+                - generic [ref=e156]: "10.9"
+            - application [ref=e160]:
+              - generic [ref=e165]:
+                - generic [ref=e167]: Mon
+                - generic [ref=e169]: Tue
+                - generic [ref=e171]: Wed
+                - generic [ref=e173]: Thu
+                - generic [ref=e175]: Fri
+                - generic [ref=e177]: Sat
+              - generic [ref=e180]:
+                - generic [ref=e182]: 7:00
+                - generic [ref=e184]: 8:00
+                - generic [ref=e186]: 9:00
+                - generic [ref=e188]: 10:00
+                - generic [ref=e190]: 11:00
+                - generic [ref=e192]: 12:00
+              - generic [ref=e195]:
+                - generic [ref=e199]: Sarah Khan
+                - generic [ref=e203]: John Smith
+                - generic [ref=e207]: Igra
+                - generic [ref=e211]: Sarah Khan
+                - generic [ref=e215]: John Smith
+                - generic [ref=e219]: Igra
+                - generic [ref=e223]: John Smith
+                - generic [ref=e227]: Emily Davis
+                - generic [ref=e231]: Emily Davis
+  - alert [ref=e119]
+  - generic [ref=e232]: 7:00

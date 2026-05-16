@@ -1,0 +1,146 @@
+- generic [ref=e98]:
+  - complementary [ref=e99]:
+    - generic [ref=e100]:
+      - link "Logo" [ref=e101] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e102]
+      - button [ref=e103] [cursor=pointer]:
+        - img [ref=e104]
+    - navigation [ref=e107]:
+      - list [ref=e108]:
+        - listitem [ref=e109] [cursor=pointer]:
+          - img [ref=e110]
+          - generic [ref=e115]: Flow Board
+        - listitem [ref=e116] [cursor=pointer]:
+          - img [ref=e117]
+          - generic [ref=e122]: Patient Details
+        - listitem [ref=e123] [cursor=pointer]:
+          - img [ref=e124]
+          - generic [ref=e126]: Appointments
+        - listitem [ref=e127] [cursor=pointer]:
+          - img [ref=e128]
+          - generic [ref=e131]: Registration
+        - listitem [ref=e132] [cursor=pointer]:
+          - img [ref=e133]
+          - generic [ref=e135]: Inpatient Ward
+        - listitem [ref=e136] [cursor=pointer]:
+          - generic [ref=e137]:
+            - img [ref=e138]
+            - generic [ref=e143]: HRM
+          - img [ref=e145]
+        - listitem [ref=e147] [cursor=pointer]:
+          - img [ref=e148]
+          - generic [ref=e150]: Laboratory
+        - listitem [ref=e151] [cursor=pointer]:
+          - img [ref=e152]
+          - generic [ref=e158]: Operations
+        - listitem [ref=e159] [cursor=pointer]:
+          - img [ref=e160]
+          - generic [ref=e163]: Pharmacy
+        - listitem [ref=e164] [cursor=pointer]:
+          - img [ref=e165]
+          - generic [ref=e169]: Assets
+        - listitem [ref=e170] [cursor=pointer]:
+          - img [ref=e171]
+          - generic [ref=e173]: Billing
+    - button "Logout" [ref=e175] [cursor=pointer]:
+      - img [ref=e176]
+      - generic [ref=e179]: Logout
+  - main [ref=e180]:
+    - generic [ref=e181]:
+      - heading "FLOW BOARD" [level=1] [ref=e182]
+      - generic [ref=e183]:
+        - generic "David — click to enlarge" [ref=e184]:
+          - img "David" [ref=e185]
+        - generic [ref=e186]:
+          - generic [ref=e187]: David
+          - generic [ref=e188]: Doctor
+    - generic [ref=e190]:
+      - generic [ref=e191]:
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - generic [ref=e194]:
+              - heading "2026년 5월" [level=2] [ref=e195]
+              - generic [ref=e196]:
+                - button [ref=e197] [cursor=pointer]:
+                  - img [ref=e198]
+                - button [ref=e200] [cursor=pointer]:
+                  - img [ref=e201]
+              - button "Today" [ref=e203] [cursor=pointer]
+              - generic [ref=e204]:
+                - textbox [ref=e205] [cursor=pointer]: 2026-05-15
+                - img [ref=e206] [cursor=pointer]
+            - paragraph [ref=e208]: Week of Mon May 11 2026
+          - generic [ref=e209]:
+            - button "Day" [ref=e210] [cursor=pointer]
+            - button "Week" [ref=e211] [cursor=pointer]
+            - button "Month" [ref=e212] [cursor=pointer]
+        - button "New Appointment" [ref=e214] [cursor=pointer]:
+          - img [ref=e215]
+          - text: New Appointment
+      - generic [ref=e216]:
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - generic [ref=e220]: Time
+            - generic [ref=e221]:
+              - generic [ref=e222]: Monday
+              - generic [ref=e223]: "11.5"
+            - generic [ref=e224]:
+              - generic [ref=e225]: Tuesday
+              - generic [ref=e226]: "12.5"
+            - generic [ref=e227]:
+              - generic [ref=e228]: Wednesday
+              - generic [ref=e229]: "13.5"
+            - generic [ref=e230]:
+              - generic [ref=e231]: Thursday
+              - generic [ref=e232]: "14.5"
+            - generic [ref=e233]:
+              - generic [ref=e234]: Friday
+              - generic [ref=e235]: "15.5"
+            - generic [ref=e236]:
+              - generic [ref=e237]: Saturday
+              - generic [ref=e238]: "16.5"
+            - generic [ref=e239]:
+              - generic [ref=e240]: Sunday
+              - generic [ref=e241]: "17.5"
+          - generic [ref=e243]:
+            - generic [ref=e244]:
+              - generic [ref=e245]: 7:00
+              - generic [ref=e246]: 8:00
+              - generic [ref=e247]: 9:00
+              - generic [ref=e248]: 10:00
+              - generic [ref=e249]: 11:00
+              - generic [ref=e250]: 12:00
+              - generic [ref=e251]: 13:00
+              - generic [ref=e252]: 14:00
+              - generic [ref=e253]: 15:00
+              - generic [ref=e254]: 16:00
+              - generic [ref=e255]: 17:00
+              - generic [ref=e256]: 18:00
+              - generic [ref=e257]: 19:00
+              - generic [ref=e258]: 20:00
+            - generic [ref=e259]:
+              - generic [ref=e274] [cursor=pointer]: Genet Assefa
+              - generic [ref=e275] [cursor=pointer]: Bekele Molla
+            - generic [ref=e276]:
+              - generic [ref=e291] [cursor=pointer]: Zewditu Haile
+              - generic [ref=e292] [cursor=pointer]: Tadesse Gebre
+            - generic [ref=e293]:
+              - generic [ref=e308] [cursor=pointer]: Abebe Bikila
+              - generic [ref=e309] [cursor=pointer]: Mulu Worku
+              - generic [ref=e310] [cursor=pointer]: Kassa Tessema
+            - generic [ref=e311]:
+              - generic [ref=e326] [cursor=pointer]: Selam Adane
+              - generic [ref=e327] [cursor=pointer]: Tigist Hailu
+              - generic [ref=e328] [cursor=pointer]: Biruk Alemu
+            - generic [ref=e329]:
+              - generic [ref=e344] [cursor=pointer]: Dawit Mesfin
+              - generic [ref=e345] [cursor=pointer]: Hana Bekele
+            - generic [ref=e346]:
+              - generic [ref=e361] [cursor=pointer]: Yohannes Tesfaye
+              - generic [ref=e362] [cursor=pointer]: Mulugeta Berhanu
+              - generic [ref=e363] [cursor=pointer]: Lemlem Negash
+        - generic [ref=e379]:
+          - img [ref=e381]
+          - paragraph [ref=e384]: Select a patient to view details
+          - paragraph [ref=e385]: Click any appointment card in the calendar

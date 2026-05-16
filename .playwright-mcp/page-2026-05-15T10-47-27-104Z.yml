@@ -1,0 +1,103 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - img "Psychic MD Logo" [ref=e5]
+      - navigation [ref=e6]:
+        - generic [ref=e7]:
+          - link "Dashboard" [ref=e8] [cursor=pointer]:
+            - /url: /dashboard
+            - img [ref=e9]
+            - generic [ref=e14]: Dashboard
+          - link "Flow Board" [ref=e15] [cursor=pointer]:
+            - /url: /flowboard
+            - img [ref=e16]
+            - generic [ref=e19]: Flow Board
+          - link "Appointments" [ref=e20] [cursor=pointer]:
+            - /url: /appointments
+            - img [ref=e21]
+            - generic [ref=e23]: Appointments
+          - link "Patient Details" [ref=e24] [cursor=pointer]:
+            - /url: /Patients-details
+            - img [ref=e25]
+            - generic [ref=e30]: Patient Details
+          - button "Log Out" [ref=e31]:
+            - img [ref=e32]
+            - generic [ref=e35]: Log Out
+    - generic [ref=e36]:
+      - banner [ref=e37]:
+        - generic [ref=e38]:
+          - heading "Dashboard" [level=1] [ref=e40]
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - img [ref=e43]
+              - textbox "Search Patients..." [ref=e46]
+            - generic [ref=e47]:
+              - generic [ref=e48]: Dr. Daniyal
+              - generic [ref=e49]: Provider
+      - main [ref=e50]:
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - heading "Hello Dr.Daniyal," [level=2] [ref=e55]
+              - paragraph [ref=e56]: You have got 12 appointments for today!
+            - generic [ref=e57]: "Today: 2 September, 2025"
+          - generic [ref=e58]:
+            - generic [ref=e59]:
+              - generic [ref=e60]: Total Patients
+              - generic [ref=e61]: "24"
+            - generic [ref=e62]:
+              - generic [ref=e63]: Waiting Patients
+              - generic [ref=e64]: "8"
+            - generic [ref=e65]:
+              - generic [ref=e66]: Completed
+              - generic [ref=e67]: "16"
+            - generic [ref=e68]:
+              - generic [ref=e69]: Total Appointments
+              - generic [ref=e70]: "42"
+          - generic [ref=e71]:
+            - generic [ref=e73]:
+              - generic [ref=e74]:
+                - heading "Today's Appointments" [level=3] [ref=e75]
+                - button "View All" [ref=e76]
+              - generic [ref=e77]:
+                - generic [ref=e78]:
+                  - generic [ref=e79]:
+                    - generic [ref=e80]: Sarah Khan
+                    - generic [ref=e81]: "Age: 28 • Routine Checkup"
+                  - generic [ref=e82]: In Progress
+                - generic [ref=e83]:
+                  - generic [ref=e84]:
+                    - generic [ref=e85]: Maria Garcia
+                    - generic [ref=e86]: "Age: 34 • Diabetes Consultation"
+                  - generic [ref=e87]: Waiting
+                - generic [ref=e88]:
+                  - generic [ref=e89]:
+                    - generic [ref=e90]: David Wilson
+                    - generic [ref=e91]: "Age: 45 • Hypertension"
+                  - generic [ref=e92]: In Progress
+                - generic [ref=e93]:
+                  - generic [ref=e94]:
+                    - generic [ref=e95]: Emily Smith
+                    - generic [ref=e96]: "Age: 31 • Dermatology"
+                  - generic [ref=e97]: Waiting
+                - generic [ref=e98]:
+                  - generic [ref=e99]:
+                    - generic [ref=e100]: James Brown
+                    - generic [ref=e101]: "Age: 52 • Cardiology"
+                  - generic [ref=e102]: In Progress
+            - generic [ref=e104]:
+              - heading "Recent Update" [level=3] [ref=e105]
+              - generic [ref=e106]:
+                - generic [ref=e107]:
+                  - generic [ref=e108]: Critical Lab Result
+                  - generic [ref=e109]: "Patient: Robert Johnson - High Troponin levels"
+                  - generic [ref=e110]: 10:30 AM
+                - generic [ref=e111]:
+                  - generic [ref=e112]: Appointment Rescheduled
+                  - generic [ref=e113]: "Patient: Jennifer Lee - Changed to tomorrow"
+                  - generic [ref=e114]: 9:15 AM
+                - generic [ref=e115]:
+                  - generic [ref=e116]: New Appointment
+                  - generic [ref=e117]: "Patient: Dr. Michael Chen"
+                  - generic [ref=e118]: 8:45 AM
+  - alert [ref=e119]
