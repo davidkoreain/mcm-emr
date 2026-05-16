@@ -1,0 +1,149 @@
+- generic [ref=e102]:
+  - complementary [ref=e103]:
+    - generic [ref=e104]:
+      - link "Logo" [ref=e105] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e106]
+      - button [ref=e107] [cursor=pointer]:
+        - img [ref=e108]
+    - navigation [ref=e111]:
+      - list [ref=e112]:
+        - listitem [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - img [ref=e115]
+            - generic [ref=e120]: Flow Board
+        - listitem [ref=e121] [cursor=pointer]:
+          - generic [ref=e122]:
+            - img [ref=e123]
+            - generic [ref=e128]: Patient Details
+        - listitem [ref=e129] [cursor=pointer]:
+          - generic [ref=e130]:
+            - img [ref=e131]
+            - generic [ref=e134]: Pharmacy
+          - img [ref=e331]
+        - list [ref=e333]:
+          - listitem [ref=e334] [cursor=pointer]: Prescriptions
+          - listitem [ref=e335] [cursor=pointer]: Drug Inventory
+    - button "Logout" [ref=e139] [cursor=pointer]:
+      - generic [ref=e142]: Logout
+  - main [ref=e143]:
+    - generic [ref=e144]:
+      - heading "PHARMACY" [level=1] [ref=e337]
+      - generic [ref=e146]:
+        - generic "Pharmacist Hana Bekele — click to enlarge" [ref=e147]:
+          - img "Pharmacist Hana Bekele" [ref=e148]
+        - generic [ref=e149]:
+          - generic [ref=e150]: Pharmacist Hana Bekele
+          - generic [ref=e151]: Pharmacist
+    - generic [ref=e338]:
+      - generic [ref=e444]:
+        - generic [ref=e445]:
+          - generic [ref=e446]:
+            - img [ref=e447]
+            - text: Dispense Medication
+          - button [ref=e450] [cursor=pointer]:
+            - img [ref=e451]
+        - generic [ref=e454]:
+          - generic [ref=e455]: Amlodipine
+          - generic [ref=e456]:
+            - text: "Patient:"
+            - strong [ref=e457]: Abebe Germa
+            - text: "· MRN: MRN-2026-5992"
+          - generic [ref=e458]: "5mg · OD · 30 days · Prescribed qty: 30"
+          - generic [ref=e459]:
+            - generic [ref=e460]: "Available stock:"
+            - generic [ref=e461]: 640 units
+        - generic [ref=e462]:
+          - generic [ref=e463]: Quantity to Dispense
+          - spinbutton [active] [ref=e464]: "30"
+        - generic [ref=e465]:
+          - button "Cancel" [ref=e466] [cursor=pointer]
+          - button "Confirm Dispense" [ref=e467] [cursor=pointer]
+      - generic [ref=e339]:
+        - generic [ref=e340]:
+          - generic [ref=e341]:
+            - img [ref=e342]
+            - generic [ref=e345]: Prescriptions
+          - generic [ref=e346]:
+            - button "New Prescription" [ref=e347] [cursor=pointer]:
+              - img [ref=e348]
+              - text: New Prescription
+            - button "Drug Inventory" [ref=e349] [cursor=pointer]:
+              - img [ref=e350]
+              - text: Drug Inventory
+        - generic [ref=e353]:
+          - generic [ref=e354]:
+            - img [ref=e356]
+            - generic [ref=e359]:
+              - generic [ref=e360]: Total
+              - generic [ref=e361]: "1"
+          - generic [ref=e362]:
+            - img [ref=e364]
+            - generic [ref=e367]:
+              - generic [ref=e368]: Pending
+              - generic [ref=e369]: "1"
+          - generic [ref=e370]:
+            - img [ref=e372]
+            - generic [ref=e375]:
+              - generic [ref=e376]: Dispensed Today
+              - generic [ref=e377]: "0"
+          - generic [ref=e378]:
+            - img [ref=e380]
+            - generic [ref=e384]:
+              - generic [ref=e385]: Cancelled
+              - generic [ref=e386]: "0"
+        - generic [ref=e387]:
+          - generic [ref=e388]:
+            - img [ref=e389]
+            - textbox "Patient name, MRN, or drug..." [ref=e392]
+          - combobox [ref=e393]:
+            - option "All Statuses" [selected]
+            - option "Pending"
+            - option "Dispensed"
+            - option "Cancelled"
+          - combobox [ref=e394]:
+            - option "All Time" [selected]
+            - option "Today"
+            - option "This Week"
+            - option "This Month"
+          - combobox [ref=e395]:
+            - 'option "Sort: Newest" [selected]'
+            - 'option "Sort: Oldest"'
+            - 'option "Sort: Patient A→Z"'
+        - generic [ref=e396]: Showing 1 of 1 prescriptions
+        - generic [ref=e398]:
+          - generic [ref=e399]:
+            - generic [ref=e400]:
+              - generic [ref=e401]: Abebe Germa
+              - generic [ref=e402]:
+                - img [ref=e403]
+                - text: MRN-2026-5992
+            - generic [ref=e406]: Pending
+          - generic [ref=e407]:
+            - generic [ref=e408]:
+              - img [ref=e409]
+              - generic [ref=e412]: Amlodipine
+            - generic [ref=e413]:
+              - generic [ref=e414]: 5mg
+              - generic [ref=e415]: ·
+              - generic [ref=e416]: OD
+              - generic [ref=e417]: ·
+              - generic [ref=e418]: 30 days
+              - generic [ref=e419]: ·
+              - generic [ref=e420]: "Qty: 30"
+            - generic [ref=e421]: "\"Take once daily in the morning. Can be taken with or without food.\""
+          - generic [ref=e422]:
+            - img [ref=e423]
+            - generic [ref=e426]: David
+            - generic [ref=e427]: ·
+            - generic [ref=e428]: 2026. 5. 16.
+          - generic [ref=e429]:
+            - button "Details" [ref=e430] [cursor=pointer]:
+              - img [ref=e431]
+              - text: Details
+            - button "Dispense" [ref=e434] [cursor=pointer]:
+              - img [ref=e435]
+              - text: Dispense
+            - button "Cancel" [ref=e438] [cursor=pointer]:
+              - img [ref=e439]
+              - text: Cancel

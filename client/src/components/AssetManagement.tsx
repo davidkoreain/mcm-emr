@@ -4,6 +4,8 @@ import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
 import { useEMR, type Asset } from '../context/EMRContext';
 import { QRCodeSVG } from 'qrcode.react';
+import { usePageAdjustments } from '../hooks/usePageAdjustments';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 type MaintenanceLog = { id: number; asset: string; task: string; technician: string; date: string; status: string };
 type LossRecord = { id: number; asset: string; type: string; reason: string; date: string; action: string };
@@ -32,6 +34,10 @@ interface AssetManagementProps {
 const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalClose, activeTab: initialTab = 'inventory' }) => {
   const { assets, addAsset, updateAsset, role } = useEMR();
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>(initialTab);
+
+  // Adjustment Settings
+  const { columns, itemsPerPage } = usePageAdjustments('assets');
+  const [currentPage, setCurrentPage] = useState(1);
 
   React.useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -82,6 +88,18 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
     });
     return [...result].sort((a, b) => invSort === 'name_desc' ? b.name.localeCompare(a.name) : a.name.localeCompare(b.name));
   }, [assets, invSearch, invFilters, invSort]);
+
+  const paginatedAssets = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredAssets.slice(start, start + itemsPerPage);
+  }, [filteredAssets, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAssets.length / itemsPerPage);
+
+  // Reset to first page when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [invSearch, invFilters, invSort]);
 
   const filteredMaint = useMemo(() => {
     let result = maintLogs.filter((m) => {
@@ -360,8 +378,8 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                 <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddAssetModal(true)}><Plus size={18} /> Add Asset</button>
               </div>
             </div>
-            <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '1.5rem' }}>
-              {filteredAssets.map((asset) => (
+            <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '1.5rem' }}>
+              {paginatedAssets.map((asset) => (
                 <div key={asset.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <div style={{ width: '100%', height: '160px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {asset.photoUrl ? (
@@ -427,6 +445,46 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                 </div>
               )}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '2rem', padding: '1rem' }}>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', color: currentPage === 1 ? '#cbd5e1' : '#475569', fontWeight: 600 }}
+                >
+                  <ChevronLeft size={16} /> Previous
+                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  {[...Array(totalPages)].map((_, i) => {
+                    const page = i + 1;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        style={{
+                          width: '2.5rem', height: '2.5rem', borderRadius: '0.5rem', border: '1px solid',
+                          background: currentPage === page ? '#2563eb' : 'white',
+                          borderColor: currentPage === page ? '#2563eb' : '#e2e8f0',
+                          color: currentPage === page ? 'white' : '#475569',
+                          fontWeight: 700, cursor: 'pointer'
+                        }}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+                <button 
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.5rem', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', color: currentPage === totalPages ? '#cbd5e1' : '#475569', fontWeight: 600 }}
+                >
+                  Next <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
           </>
         )}
 

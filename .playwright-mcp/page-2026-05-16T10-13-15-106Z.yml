@@ -1,0 +1,32 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - link "MCM Logo" [ref=e5] [cursor=pointer]:
+      - /url: https://mcm-emr-theta.vercel.app/
+      - img "MCM Logo" [ref=e7]
+    - heading "MCM Comprehensive Specialized Hospital" [level=1] [ref=e8]:
+      - text: MCM Comprehensive
+      - text: Specialized Hospital
+    - paragraph [ref=e9]:
+      - text: Electronic Medical Records
+      - text: Management System
+    - paragraph [ref=e11]:
+      - text: Addis Ababa, Ethiopia
+      - text: v2.0 · 2026
+  - generic [ref=e81]:
+    - button "Back to Roles" [ref=e82] [cursor=pointer]:
+      - img [ref=e83]
+      - text: Back to Roles
+    - heading "Doctor Login" [level=2] [ref=e85]
+    - paragraph [ref=e86]: Enter your credentials to access the medical system
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - img [ref=e90]
+          - text: Name
+        - textbox "Enter your full name" [active] [ref=e93]
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - img [ref=e96]
+          - text: Password
+        - textbox "Enter password" [ref=e99]
+      - button "Login" [ref=e100] [cursor=pointer]

@@ -1,0 +1,385 @@
+- generic [ref=e102]:
+  - complementary [ref=e103]:
+    - generic [ref=e104]:
+      - link "Logo" [ref=e105] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e106]
+      - button [ref=e107] [cursor=pointer]:
+        - img [ref=e108]
+    - navigation [ref=e111]:
+      - list [ref=e112]:
+        - listitem [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - img [ref=e115]
+            - generic [ref=e120]: Flow Board
+        - listitem [ref=e121] [cursor=pointer]:
+          - generic [ref=e122]:
+            - img [ref=e123]
+            - generic [ref=e128]: Patient Details
+        - listitem [ref=e129] [cursor=pointer]:
+          - generic [ref=e130]:
+            - img [ref=e131]
+            - generic [ref=e133]: Appointments
+        - listitem [ref=e134] [cursor=pointer]:
+          - generic [ref=e135]:
+            - img [ref=e136]
+            - generic [ref=e138]: Inpatient Ward
+        - listitem [ref=e139] [cursor=pointer]:
+          - generic [ref=e140]:
+            - img [ref=e141]
+            - generic [ref=e146]: HRM
+          - img [ref=e774]
+        - list [ref=e776]:
+          - listitem [ref=e777] [cursor=pointer]: Members
+          - listitem [ref=e778] [cursor=pointer]: Leave Mgmt
+          - listitem [ref=e779] [cursor=pointer]: Performance
+        - listitem [ref=e150] [cursor=pointer]:
+          - generic [ref=e151]:
+            - img [ref=e152]
+            - generic [ref=e154]: Laboratory
+          - img [ref=e156]
+        - listitem [ref=e158] [cursor=pointer]:
+          - generic [ref=e159]:
+            - img [ref=e160]
+            - generic [ref=e166]: Operations
+          - img [ref=e168]
+        - listitem [ref=e170] [cursor=pointer]:
+          - generic [ref=e171]:
+            - img [ref=e172]
+            - generic [ref=e175]: Pharmacy
+          - img [ref=e177]
+        - listitem [ref=e179] [cursor=pointer]:
+          - generic [ref=e180]:
+            - img [ref=e181]
+            - generic [ref=e185]: Assets
+          - img [ref=e187]
+        - listitem [ref=e189] [cursor=pointer]:
+          - generic [ref=e190]:
+            - img [ref=e191]
+            - generic [ref=e193]: Billing
+        - listitem [ref=e194] [cursor=pointer]:
+          - generic [ref=e195]:
+            - img [ref=e196]
+            - generic [ref=e199]: Settings
+          - img [ref=e201]
+    - button "Logout" [ref=e204] [cursor=pointer]:
+      - img [ref=e396]
+      - generic [ref=e207]: Logout
+  - main [ref=e208]:
+    - generic [ref=e209]:
+      - heading "PATIENT DETAILS" [level=1] [ref=e397]
+      - generic [ref=e211]:
+        - generic "Master Admin" [ref=e212]:
+          - generic [ref=e213]: MA
+        - generic [ref=e214]:
+          - generic [ref=e215]: Master Admin
+          - generic [ref=e216]: Admin
+    - generic [ref=e398]:
+      - generic [ref=e399]:
+        - generic [ref=e400]:
+          - img [ref=e401]
+          - heading "Patient List" [level=2] [ref=e406]
+        - generic [ref=e407]:
+          - button "CSV Import" [ref=e408] [cursor=pointer]:
+            - img [ref=e409]
+            - text: CSV Import
+          - button "New Patient" [ref=e412] [cursor=pointer]:
+            - img [ref=e413]
+            - text: New Patient
+      - generic [ref=e415]:
+        - generic [ref=e416]:
+          - generic [ref=e417]:
+            - img [ref=e418]
+            - textbox "Search by name, Amharic name, or MRN..." [ref=e421]
+          - generic [ref=e422]:
+            - img [ref=e423]
+            - generic [ref=e424]: Visit Type
+            - combobox [ref=e425] [cursor=pointer]:
+              - option "All Types" [selected]
+              - option "OPD"
+              - option "Emergency"
+              - option "Follow-up"
+              - option "Inpatient"
+          - generic [ref=e426]:
+            - img [ref=e427]
+            - generic [ref=e428]: Status
+            - combobox [ref=e429] [cursor=pointer]:
+              - option "All" [selected]
+              - option "Waiting"
+              - option "In Progress"
+              - option "Consulting"
+              - option "Completed"
+          - generic [ref=e430]:
+            - img [ref=e431]
+            - combobox [ref=e434] [cursor=pointer]:
+              - option "Name A→Z" [selected]
+              - option "Name Z→A"
+              - option "Registered Newest"
+              - option "Registered Oldest"
+        - generic [ref=e435]: 63 items
+      - generic [ref=e436]:
+        - generic [ref=e437]:
+          - img "Abc De" [ref=e439] [cursor=pointer]
+          - generic [ref=e440]:
+            - generic [ref=e441]:
+              - generic [ref=e442]:
+                - generic [ref=e443]: MRN-2026-0238
+                - heading "Abc De" [level=3] [ref=e444] [cursor=pointer]
+              - generic [ref=e445]:
+                - generic [ref=e446]: Waiting
+                - img [ref=e448]
+            - generic [ref=e451]:
+              - generic [ref=e452]:
+                - img [ref=e453]
+                - text: OPD
+              - generic [ref=e457]:
+                - img [ref=e458]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e460]:
+              - button "Details" [ref=e461] [cursor=pointer]
+              - button "Vitals" [ref=e462] [cursor=pointer]
+              - button "Consult" [ref=e463] [cursor=pointer]
+        - generic [ref=e464]:
+          - img "Abeba Aregawi" [ref=e466] [cursor=pointer]
+          - generic [ref=e467]:
+            - generic [ref=e468]:
+              - generic [ref=e469]:
+                - generic [ref=e470]: MRN-2026-024
+                - heading "Abeba Aregawi" [level=3] [ref=e471] [cursor=pointer]
+                - generic [ref=e472]: አበባ አረጋዊ
+              - generic [ref=e473]:
+                - generic [ref=e474]: Completed
+                - img [ref=e476]
+            - generic [ref=e479]:
+              - generic [ref=e480]:
+                - img [ref=e481]
+                - text: OPD
+              - generic [ref=e485]:
+                - img [ref=e486]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e488]:
+              - button "Details" [ref=e489] [cursor=pointer]
+              - button "Vitals" [ref=e490] [cursor=pointer]
+              - button "Consult" [ref=e491] [cursor=pointer]
+        - generic [ref=e492]:
+          - img "Abebe Bikila" [ref=e494] [cursor=pointer]
+          - generic [ref=e495]:
+            - generic [ref=e496]:
+              - generic [ref=e497]:
+                - generic [ref=e498]: MRN-2026-001
+                - heading "Abebe Bikila" [level=3] [ref=e499] [cursor=pointer]
+                - generic [ref=e500]: አበበ ቢቂላ
+              - generic [ref=e501]:
+                - generic [ref=e502]: In Progress
+                - img [ref=e504]
+            - generic [ref=e507]:
+              - generic [ref=e508]:
+                - img [ref=e509]
+                - text: OPD
+              - generic [ref=e513]:
+                - img [ref=e514]
+                - text: "Registered: 2026-05-12"
+            - generic [ref=e516]:
+              - button "Details" [ref=e517] [cursor=pointer]
+              - button "Vitals" [ref=e518] [cursor=pointer]
+              - button "Consult" [ref=e519] [cursor=pointer]
+        - generic [ref=e520]:
+          - img "Abebe Germa" [ref=e522] [cursor=pointer]
+          - generic [ref=e523]:
+            - generic [ref=e524]:
+              - generic [ref=e525]:
+                - generic [ref=e526]: MRN-2026-5992
+                - heading "Abebe Germa" [level=3] [ref=e527] [cursor=pointer]
+              - generic [ref=e528]:
+                - generic [ref=e529]: Waiting
+                - img [ref=e531]
+            - generic [ref=e534]:
+              - generic [ref=e535]:
+                - img [ref=e536]
+                - text: OPD
+              - generic [ref=e540]:
+                - img [ref=e541]
+                - text: "Registered: 2026-05-14"
+            - generic [ref=e543]:
+              - button "Details" [ref=e544] [cursor=pointer]
+              - button "Vitals" [ref=e545] [cursor=pointer]
+              - button "Consult" [ref=e546] [cursor=pointer]
+        - generic [ref=e547]:
+          - img "Abebe Hailu" [ref=e549] [cursor=pointer]
+          - generic [ref=e550]:
+            - generic [ref=e551]:
+              - generic [ref=e552]:
+                - generic [ref=e553]: MRN-2026-7026
+                - heading "Abebe Hailu" [level=3] [ref=e554] [cursor=pointer]
+              - generic [ref=e555]:
+                - generic [ref=e556]: Waiting
+                - img [ref=e558]
+            - generic [ref=e561]:
+              - generic [ref=e562]:
+                - img [ref=e563]
+                - text: OPD
+              - generic [ref=e567]:
+                - img [ref=e568]
+                - text: "Registered: 2026-05-14"
+            - generic [ref=e570]:
+              - button "Details" [ref=e571] [cursor=pointer]
+              - button "Vitals" [ref=e572] [cursor=pointer]
+              - button "Consult" [ref=e573] [cursor=pointer]
+        - generic [ref=e574]:
+          - img "Abinet Agonafir" [ref=e576] [cursor=pointer]
+          - generic [ref=e577]:
+            - generic [ref=e578]:
+              - generic [ref=e579]:
+                - generic [ref=e580]: MRN-2026-035
+                - heading "Abinet Agonafir" [level=3] [ref=e581] [cursor=pointer]
+                - generic [ref=e582]: አቢነት አጎናፍር
+              - generic [ref=e583]:
+                - generic [ref=e584]: Waiting
+                - img [ref=e586]
+            - generic [ref=e589]:
+              - generic [ref=e590]:
+                - img [ref=e591]
+                - text: Emergency
+              - generic [ref=e595]:
+                - img [ref=e596]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e598]:
+              - button "Details" [ref=e599] [cursor=pointer]
+              - button "Vitals" [ref=e600] [cursor=pointer]
+              - button "Consult" [ref=e601] [cursor=pointer]
+        - generic [ref=e602]:
+          - img "Abiy Ahmed" [ref=e604] [cursor=pointer]
+          - generic [ref=e605]:
+            - generic [ref=e606]:
+              - generic [ref=e607]:
+                - generic [ref=e608]: MRN-2026-045
+                - heading "Abiy Ahmed" [level=3] [ref=e609] [cursor=pointer]
+                - generic [ref=e610]: አብይ አህመድ
+              - generic [ref=e611]:
+                - generic [ref=e612]: Waiting
+                - img [ref=e614]
+            - generic [ref=e617]:
+              - generic [ref=e618]:
+                - img [ref=e619]
+                - text: Emergency
+              - generic [ref=e623]:
+                - img [ref=e624]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e626]:
+              - button "Details" [ref=e627] [cursor=pointer]
+              - button "Vitals" [ref=e628] [cursor=pointer]
+              - button "Consult" [ref=e629] [cursor=pointer]
+        - generic [ref=e630]:
+          - img "Adanech Abebe" [ref=e632] [cursor=pointer]
+          - generic [ref=e633]:
+            - generic [ref=e634]:
+              - generic [ref=e635]:
+                - generic [ref=e636]: MRN-2026-050
+                - heading "Adanech Abebe" [level=3] [ref=e637] [cursor=pointer]
+                - generic [ref=e638]: አዳነች አቤቤ
+              - generic [ref=e639]:
+                - generic [ref=e640]: Waiting
+                - img [ref=e642]
+            - generic [ref=e645]:
+              - generic [ref=e646]:
+                - img [ref=e647]
+                - text: Emergency
+              - generic [ref=e651]:
+                - img [ref=e652]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e654]:
+              - button "Details" [ref=e655] [cursor=pointer]
+              - button "Vitals" [ref=e656] [cursor=pointer]
+              - button "Consult" [ref=e657] [cursor=pointer]
+        - generic [ref=e658]:
+          - img "Ali Birra" [ref=e660] [cursor=pointer]
+          - generic [ref=e661]:
+            - generic [ref=e662]:
+              - generic [ref=e663]:
+                - generic [ref=e664]: MRN-2026-040
+                - heading "Ali Birra" [level=3] [ref=e665] [cursor=pointer]
+                - generic [ref=e666]: አሊ ቢራ
+              - generic [ref=e667]:
+                - generic [ref=e668]: Waiting
+                - img [ref=e670]
+            - generic [ref=e673]:
+              - generic [ref=e674]:
+                - img [ref=e675]
+                - text: Emergency
+              - generic [ref=e679]:
+                - img [ref=e680]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e682]:
+              - button "Details" [ref=e683] [cursor=pointer]
+              - button "Vitals" [ref=e684] [cursor=pointer]
+              - button "Consult" [ref=e685] [cursor=pointer]
+        - generic [ref=e686]:
+          - img "Almaz Teferra" [ref=e688] [cursor=pointer]
+          - generic [ref=e689]:
+            - generic [ref=e690]:
+              - generic [ref=e691]:
+                - generic [ref=e692]: MRN-2026-017
+                - heading "Almaz Teferra" [level=3] [ref=e693] [cursor=pointer]
+                - generic [ref=e694]: አልማዝ ተፈራ
+              - generic [ref=e695]:
+                - generic [ref=e696]: Waiting
+                - img [ref=e698]
+            - generic [ref=e701]:
+              - generic [ref=e702]:
+                - img [ref=e703]
+                - text: OPD
+              - generic [ref=e707]:
+                - img [ref=e708]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e710]:
+              - button "Details" [ref=e711] [cursor=pointer]
+              - button "Vitals" [ref=e712] [cursor=pointer]
+              - button "Consult" [ref=e713] [cursor=pointer]
+        - generic [ref=e714]:
+          - img "Aster Aweke" [ref=e716] [cursor=pointer]
+          - generic [ref=e717]:
+            - generic [ref=e718]:
+              - generic [ref=e719]:
+                - generic [ref=e720]: MRN-2026-019
+                - heading "Aster Aweke" [level=3] [ref=e721] [cursor=pointer]
+                - generic [ref=e722]: አስቴር አወቀ
+              - generic [ref=e723]:
+                - generic [ref=e724]: Completed
+                - img [ref=e726]
+            - generic [ref=e729]:
+              - generic [ref=e730]:
+                - img [ref=e731]
+                - text: OPD
+              - generic [ref=e735]:
+                - img [ref=e736]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e738]:
+              - button "Details" [ref=e739] [cursor=pointer]
+              - button "Vitals" [ref=e740] [cursor=pointer]
+              - button "Consult" [ref=e741] [cursor=pointer]
+        - generic [ref=e742]:
+          - img "Bekele Molla" [ref=e744] [cursor=pointer]
+          - generic [ref=e745]:
+            - generic [ref=e746]:
+              - generic [ref=e747]:
+                - generic [ref=e748]: MRN-2026-011
+                - heading "Bekele Molla" [level=3] [ref=e749] [cursor=pointer]
+                - generic [ref=e750]: በቀለ ሞላ
+              - generic [ref=e751]:
+                - generic [ref=e752]: Consulting
+                - img [ref=e754]
+            - generic [ref=e757]:
+              - generic [ref=e758]:
+                - img [ref=e759]
+                - text: Follow-up
+              - generic [ref=e763]:
+                - img [ref=e764]
+                - text: "Registered: 2026-05-13"
+            - generic [ref=e766]:
+              - button "Details" [ref=e767] [cursor=pointer]
+              - button "Vitals" [ref=e768] [cursor=pointer]
+              - button "Consult" [ref=e769] [cursor=pointer]
+      - generic [ref=e770]:
+        - button "Previous" [disabled] [ref=e771]
+        - generic [ref=e772]: Page 1 of 6
+        - button "Next" [ref=e773] [cursor=pointer]

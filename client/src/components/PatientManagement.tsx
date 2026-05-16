@@ -3,6 +3,7 @@ import { PlusCircle, Upload, Users, X, Info, Activity, Stethoscope, Clock, Calen
 import { useEMR, type Patient } from '../context/EMRContext';
 import ListFilterControl from './ListFilterControl';
 import Avatar from './Avatar';
+import { usePageAdjustments } from '../hooks/usePageAdjustments';
 import { QRCodeSVG } from 'qrcode.react';
 
 interface PatientManagementProps {
@@ -27,16 +28,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   // Adjustment Settings
-  const [adjustments] = useState(() => {
-    const saved = localStorage.getItem('emr_page_adjustments');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.patients || { columns: 3, itemsPerPage: 12 };
-      } catch { return { columns: 3, itemsPerPage: 12 }; }
-    }
-    return { columns: 3, itemsPerPage: 12 };
-  });
+  const { columns, itemsPerPage } = usePageAdjustments('patients');
 
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -119,11 +111,11 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   }, [patients, ptSearch, ptFilters, ptSort]);
 
   const paginatedPatients = useMemo(() => {
-    const start = (currentPage - 1) * adjustments.itemsPerPage;
-    return filteredPatients.slice(start, start + adjustments.itemsPerPage);
-  }, [filteredPatients, currentPage, adjustments.itemsPerPage]);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredPatients.slice(start, start + itemsPerPage);
+  }, [filteredPatients, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(filteredPatients.length / adjustments.itemsPerPage);
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
 
   const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
   const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '480px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', maxHeight: '90vh', overflowY: 'auto' };
@@ -337,9 +329,9 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
         filteredCount={filteredPatients.length}
       />
 
-      <div className="asset-grid" style={{ 
+      <div className="patient-grid" style={{ 
         display: 'grid', 
-        gridTemplateColumns: `repeat(${adjustments.columns}, 1fr)`, 
+        gridTemplateColumns: `repeat(${columns}, 1fr)`, 
         gap: '1.5rem', 
         marginTop: '1.5rem' 
       }}>

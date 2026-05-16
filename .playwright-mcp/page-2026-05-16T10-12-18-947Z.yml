@@ -1,0 +1,132 @@
+- generic [ref=e114]:
+  - complementary [ref=e115]:
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - img [ref=e119]
+        - generic [ref=e121]:
+          - generic [ref=e122]: MCM Medical
+          - generic [ref=e123]: Journey Portal
+      - generic [ref=e124]:
+        - img "Profile" [ref=e125]
+        - generic [ref=e126]:
+          - generic [ref=e127]: Abebe Germa
+          - generic [ref=e128]: MRN-2026-5992
+    - navigation [ref=e129]:
+      - button "Patient Information" [ref=e787] [cursor=pointer]:
+        - img [ref=e788]
+        - generic [ref=e790]: Patient Information
+      - button "Medical Records" [ref=e792] [cursor=pointer]:
+        - img [ref=e793]
+        - generic [ref=e796]: Medical Records
+      - generic [ref=e797]:
+        - button "Appointments" [ref=e798] [cursor=pointer]:
+          - img [ref=e799]
+          - generic [ref=e801]: Appointments
+          - img [ref=e802]
+        - generic [ref=e805]:
+          - button "Discovery" [ref=e806] [cursor=pointer]:
+            - img [ref=e808]
+            - generic [ref=e811]: Discovery
+          - button "Application" [ref=e812] [cursor=pointer]:
+            - img [ref=e814]
+            - generic [ref=e816]: Application
+          - button "Confirmation" [ref=e817] [cursor=pointer]:
+            - img [ref=e819]
+            - generic [ref=e822]: Confirmation
+          - button "Visit" [ref=e823] [cursor=pointer]:
+            - img [ref=e825]
+            - generic [ref=e828]: Visit
+          - button "Admission" [ref=e829] [cursor=pointer]:
+            - img [ref=e831]
+            - generic [ref=e834]: Admission
+          - button "Consultation" [ref=e835] [cursor=pointer]:
+            - img [ref=e837]
+            - generic [ref=e840]: Consultation
+          - button "Examination" [ref=e841] [cursor=pointer]:
+            - img [ref=e843]
+            - generic [ref=e845]: Examination
+          - button "Results" [ref=e846] [cursor=pointer]:
+            - img [ref=e848]
+            - generic [ref=e851]: Results
+          - button "Diagnosis" [ref=e852] [cursor=pointer]:
+            - img [ref=e854]
+            - generic [ref=e856]: Diagnosis
+          - button "Treatment Plan" [ref=e857] [cursor=pointer]:
+            - img [ref=e859]
+            - generic [ref=e862]: Treatment Plan
+          - button "Therapy" [ref=e863] [cursor=pointer]:
+            - img [ref=e865]
+            - generic [ref=e867]: Therapy
+          - button "Procedure" [ref=e868] [cursor=pointer]:
+            - img [ref=e870]
+            - generic [ref=e876]: Procedure
+          - button "Monitoring" [ref=e877] [cursor=pointer]:
+            - img [ref=e879]
+            - generic [ref=e881]: Monitoring
+          - button "Feedback" [ref=e882] [cursor=pointer]:
+            - img [ref=e884]
+            - generic [ref=e887]: Feedback
+      - button "Settings" [ref=e889] [cursor=pointer]:
+        - img [ref=e890]
+        - generic [ref=e893]: Settings
+    - button "Logout" [ref=e239]:
+      - img [ref=e240]
+      - text: Logout
+  - main [ref=e243]:
+    - generic [ref=e245]:
+      - generic [ref=e247]:
+        - generic [ref=e248]:
+          - generic [ref=e249]: Step 1
+          - generic [ref=e250]: Discovery
+        - heading "Find doctors and available appointment dates" [level=2] [ref=e251]
+        - paragraph [ref=e252]: Explore medical experts and secure your consultation schedule.
+        - button "Next Step" [ref=e253]:
+          - text: Next Step
+          - img [ref=e254]
+      - generic [ref=e256]:
+        - generic [ref=e257]:
+          - heading "Specialist Details" [level=3] [ref=e894]
+          - button "Back" [ref=e683]
+        - generic [ref=e895]:
+          - generic [ref=e896]:
+            - generic [ref=e897]:
+              - generic "David" [ref=e898]:
+                - generic [ref=e899]: D
+              - generic [ref=e900]:
+                - img [ref=e901]
+                - text: 4.9 Rating
+            - generic [ref=e903]:
+              - heading "Dr. David" [level=4] [ref=e904]
+              - paragraph [ref=e905]: Cardiology Specialist
+              - generic [ref=e906]:
+                - generic [ref=e907]:
+                  - img [ref=e909]
+                  - generic [ref=e912]:
+                    - generic [ref=e913]: Education
+                    - generic [ref=e914]: Harvard Medical School
+                - generic [ref=e915]:
+                  - img [ref=e917]
+                  - generic [ref=e919]:
+                    - generic [ref=e920]: License
+                    - generic [ref=e921]: MD-2026-99182
+                - generic [ref=e922]:
+                  - img [ref=e924]
+                  - generic [ref=e927]: Training
+                - generic [ref=e928]:
+                  - img [ref=e930]
+                  - generic [ref=e933]:
+                    - generic [ref=e934]: Experience
+                    - generic [ref=e935]: Over 12 years of clinical practice
+                - generic [ref=e936]:
+                  - img [ref=e938]
+                  - generic [ref=e945]: Awards
+          - generic [ref=e946]:
+            - heading "Appointment Summary" [level=5] [ref=e947]
+            - generic [ref=e948]:
+              - generic [ref=e949]:
+                - generic [ref=e950]: DATE
+                - generic [ref=e951]: Saturday, May 16
+              - generic [ref=e952]:
+                - generic [ref=e953]: TIME
+                - generic [ref=e954]: 10:00
+            - button "Confirm Appointment" [ref=e955] [cursor=pointer]

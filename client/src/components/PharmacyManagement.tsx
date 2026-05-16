@@ -2,10 +2,11 @@ import React, { useState, useMemo } from 'react';
 import {
   Pill, ClipboardList, AlertTriangle, Plus, X, CheckCircle2, Eye, Edit2, RefreshCw,
   Search, Calendar, Package, ShieldAlert, BadgeCheck, FileText, Beaker,
-  Users, Clock, XCircle, User, Hash
+  Users, Clock, XCircle, User, Hash, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import { useEMR, type Drug, type Prescription } from '../context/EMRContext';
+import { usePageAdjustments } from '../hooks/usePageAdjustments';
 
 // Simple toast shim (matches existing pattern in this file)
 const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m) };
@@ -250,6 +251,9 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: number |
 
 // --- Main component -----------------------------------------------------
 const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'inventory' }) => {
+  // Adjustment Settings
+  const { columns, itemsPerPage } = usePageAdjustments('pharmacy');
+  const [currentPage, setCurrentPage] = useState(1);
   const {
     drugs, prescriptions, drugSuppliers, patients,
     dispenseMedication, cancelPrescription, addPrescription,
@@ -1243,8 +1247,8 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                 <p style={{ fontWeight: 600 }}>No drugs match the current filters.</p>
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                {filteredDrugs.map(d => {
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '1rem' }}>
+                {paginatedDrugs.map(d => {
                   const cat = d.category || '';
                   const colors = CATEGORY_COLORS[cat] || { bg: '#f1f5f9', fg: '#1e293b' };
                   const days = daysUntil(d.expiryDate);

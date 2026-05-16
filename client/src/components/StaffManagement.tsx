@@ -8,6 +8,7 @@ import ListFilterControl from './ListFilterControl';
 import { useEMR, type StaffMember as Staff } from '../context/EMRContext';
 import Avatar from './Avatar';
 import { QRCodeSVG } from 'qrcode.react';
+import { usePageAdjustments } from '../hooks/usePageAdjustments';
 
 const fmtStaffId = (id: number) => `STF-${String(id).padStart(3, '0')}`;
 
@@ -48,16 +49,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   }, [propTab]);
 
   // Adjustment Settings
-  const [adjustments] = useState(() => {
-    const saved = localStorage.getItem('emr_page_adjustments');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.staff || { columns: 3, itemsPerPage: 12 };
-      } catch { return { columns: 3, itemsPerPage: 12 }; }
-    }
-    return { columns: 3, itemsPerPage: 12 };
-  });
+  const { columns, itemsPerPage } = usePageAdjustments('staff');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
@@ -123,11 +115,11 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   }, [staff, rosterSearch, rosterFilters, rosterSort]);
 
   const paginatedRoster = useMemo(() => {
-    const start = (currentPage - 1) * adjustments.itemsPerPage;
-    return filteredRoster.slice(start, start + adjustments.itemsPerPage);
-  }, [filteredRoster, currentPage, adjustments.itemsPerPage]);
+    const start = (currentPage - 1) * itemsPerPage;
+    return filteredRoster.slice(start, start + itemsPerPage);
+  }, [filteredRoster, currentPage, itemsPerPage]);
 
-  const totalPages = Math.ceil(filteredRoster.length / adjustments.itemsPerPage);
+  const totalPages = Math.ceil(filteredRoster.length / itemsPerPage);
 
   const groupedRoster = useMemo(() => {
     const categories = ['Doctor', 'Nurse', 'Pharmacist', 'Administration', 'Technical'];
@@ -524,7 +516,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                         </div>
                         <div className="asset-grid" style={{ 
                           display: 'grid', 
-                          gridTemplateColumns: `repeat(${adjustments.columns}, 1fr)`, 
+                          gridTemplateColumns: `repeat(${columns}, 1fr)`, 
                           gap: '1.5rem' 
                         }}>
                           {members.map((s) => (

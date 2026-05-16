@@ -1,0 +1,176 @@
+- generic [ref=e114]:
+  - complementary [ref=e115]:
+    - generic [ref=e116]:
+      - generic [ref=e117]:
+        - img [ref=e119]
+        - generic [ref=e121]:
+          - generic [ref=e122]: MCM Medical
+          - generic [ref=e123]: Journey Portal
+      - generic [ref=e124]:
+        - img "Profile" [ref=e125]
+        - generic [ref=e126]:
+          - generic [ref=e127]: Abebe Germa
+          - generic [ref=e128]: MRN-2026-5992
+    - navigation [ref=e129]:
+      - button "Patient Information" [ref=e467] [cursor=pointer]:
+        - img [ref=e468]
+        - generic [ref=e470]: Patient Information
+      - button "Medical Records" [ref=e472] [cursor=pointer]:
+        - img [ref=e473]
+        - generic [ref=e476]: Medical Records
+      - generic [ref=e477]:
+        - button "Appointments" [ref=e478] [cursor=pointer]:
+          - img [ref=e479]
+          - generic [ref=e481]: Appointments
+          - img [ref=e482]
+        - generic [ref=e485]:
+          - button "Discovery" [ref=e486] [cursor=pointer]:
+            - img [ref=e488]
+            - generic [ref=e491]: Discovery
+          - button "Application" [ref=e492] [cursor=pointer]:
+            - img [ref=e494]
+            - generic [ref=e496]: Application
+          - button "Confirmation" [ref=e497] [cursor=pointer]:
+            - img [ref=e499]
+            - generic [ref=e502]: Confirmation
+          - button "Visit" [ref=e503] [cursor=pointer]:
+            - img [ref=e505]
+            - generic [ref=e508]: Visit
+          - button "Admission" [ref=e509] [cursor=pointer]:
+            - img [ref=e511]
+            - generic [ref=e514]: Admission
+          - button "Consultation" [ref=e515] [cursor=pointer]:
+            - img [ref=e517]
+            - generic [ref=e520]: Consultation
+          - button "Examination" [ref=e521] [cursor=pointer]:
+            - img [ref=e523]
+            - generic [ref=e525]: Examination
+          - button "Results" [ref=e526] [cursor=pointer]:
+            - img [ref=e528]
+            - generic [ref=e531]: Results
+          - button "Diagnosis" [ref=e532] [cursor=pointer]:
+            - img [ref=e534]
+            - generic [ref=e536]: Diagnosis
+          - button "Treatment Plan" [ref=e537] [cursor=pointer]:
+            - img [ref=e539]
+            - generic [ref=e542]: Treatment Plan
+          - button "Therapy" [ref=e543] [cursor=pointer]:
+            - img [ref=e545]
+            - generic [ref=e547]: Therapy
+          - button "Procedure" [ref=e548] [cursor=pointer]:
+            - img [ref=e550]
+            - generic [ref=e556]: Procedure
+          - button "Monitoring" [ref=e557] [cursor=pointer]:
+            - img [ref=e559]
+            - generic [ref=e561]: Monitoring
+          - button "Feedback" [ref=e562] [cursor=pointer]:
+            - img [ref=e564]
+            - generic [ref=e567]: Feedback
+      - button "Settings" [ref=e569] [cursor=pointer]:
+        - img [ref=e570]
+        - generic [ref=e573]: Settings
+    - button "Logout" [ref=e239]:
+      - img [ref=e240]
+      - text: Logout
+  - main [ref=e243]:
+    - generic [ref=e245]:
+      - generic [ref=e247]:
+        - generic [ref=e248]:
+          - generic [ref=e249]: Step 1
+          - generic [ref=e250]: Discovery
+        - heading "Find doctors and available appointment dates" [level=2] [ref=e251]
+        - paragraph [ref=e252]: Explore medical experts and secure your consultation schedule.
+        - button "Next Step" [ref=e253]:
+          - text: Next Step
+          - img [ref=e254]
+      - generic [ref=e256]:
+        - heading "Select Date & Time" [level=3] [ref=e258]
+        - generic [ref=e259]:
+          - generic [ref=e260]:
+            - generic [ref=e261]:
+              - generic [ref=e262]:
+                - img [ref=e263]
+                - heading "1. Select Date" [level=4] [ref=e265]
+              - generic [ref=e266]:
+                - button [ref=e267] [cursor=pointer]:
+                  - img [ref=e268]
+                - generic [ref=e270]: May 2026
+                - button [ref=e271] [cursor=pointer]:
+                  - img [ref=e272]
+            - generic [ref=e274]:
+              - generic [ref=e275]: SUN
+              - generic [ref=e276]: MON
+              - generic [ref=e277]: TUE
+              - generic [ref=e278]: WED
+              - generic [ref=e279]: THU
+              - generic [ref=e280]: FRI
+              - generic [ref=e281]: SAT
+              - button "1" [ref=e287] [cursor=pointer]
+              - button "2" [ref=e288] [cursor=pointer]
+              - button "3" [ref=e289] [cursor=pointer]
+              - button "4" [ref=e290] [cursor=pointer]
+              - button "5" [ref=e291] [cursor=pointer]
+              - button "6" [ref=e292] [cursor=pointer]
+              - button "7" [ref=e293] [cursor=pointer]
+              - button "8" [ref=e294] [cursor=pointer]
+              - button "9" [ref=e295] [cursor=pointer]
+              - button "10" [ref=e296] [cursor=pointer]
+              - button "11" [ref=e297] [cursor=pointer]
+              - button "12" [ref=e298] [cursor=pointer]
+              - button "13" [ref=e299] [cursor=pointer]
+              - button "14" [ref=e300] [cursor=pointer]
+              - button "15" [ref=e301] [cursor=pointer]
+              - button "16" [ref=e302] [cursor=pointer]
+              - button "17" [ref=e303] [cursor=pointer]
+              - button "18" [ref=e304] [cursor=pointer]
+              - button "19" [ref=e305] [cursor=pointer]
+              - button "20" [ref=e306] [cursor=pointer]
+              - button "21" [ref=e307] [cursor=pointer]
+              - button "22" [ref=e308] [cursor=pointer]
+              - button "23" [ref=e309] [cursor=pointer]
+              - button "24" [ref=e310] [cursor=pointer]
+              - button "25" [ref=e311] [cursor=pointer]
+              - button "26" [ref=e312] [cursor=pointer]
+              - button "27" [ref=e313] [cursor=pointer]
+              - button "28" [ref=e314] [cursor=pointer]
+              - button "29" [ref=e315] [cursor=pointer]
+              - button "30" [ref=e316] [cursor=pointer]
+              - button "31" [ref=e317] [cursor=pointer]
+          - generic [ref=e426]:
+            - generic [ref=e427]:
+              - img [ref=e428]
+              - heading "2. Select Time" [level=4] [ref=e431]
+            - generic [ref=e432]:
+              - button "09:00" [ref=e433] [cursor=pointer]
+              - button "09:15" [ref=e434] [cursor=pointer]
+              - button "09:30" [ref=e435] [cursor=pointer]
+              - button "09:45" [ref=e436] [cursor=pointer]
+              - button "10:00" [active] [ref=e437] [cursor=pointer]
+              - button "10:15" [ref=e438] [cursor=pointer]
+              - button "10:30" [ref=e439] [cursor=pointer]
+              - button "10:45" [ref=e440] [cursor=pointer]
+              - button "11:00" [ref=e441] [cursor=pointer]
+              - button "11:15" [ref=e442] [cursor=pointer]
+              - button "11:30" [ref=e443] [cursor=pointer]
+              - button "11:45" [ref=e444] [cursor=pointer]
+              - button "12:00" [ref=e445] [cursor=pointer]
+              - button "12:15" [ref=e446] [cursor=pointer]
+              - button "12:30" [ref=e447] [cursor=pointer]
+              - button "12:45" [ref=e448] [cursor=pointer]
+              - button "13:00" [ref=e449] [cursor=pointer]
+              - button "13:15" [ref=e450] [cursor=pointer]
+              - button "13:30" [ref=e451] [cursor=pointer]
+              - button "13:45" [ref=e452] [cursor=pointer]
+              - button "14:00" [ref=e453] [cursor=pointer]
+              - button "14:15" [ref=e454] [cursor=pointer]
+              - button "14:30" [ref=e455] [cursor=pointer]
+              - button "14:45" [ref=e456] [cursor=pointer]
+              - button "15:00" [ref=e457] [cursor=pointer]
+              - button "15:15" [ref=e458] [cursor=pointer]
+              - button "15:30" [ref=e459] [cursor=pointer]
+              - button "15:45" [ref=e460] [cursor=pointer]
+              - button "16:00" [ref=e461] [cursor=pointer]
+              - button "16:15" [ref=e462] [cursor=pointer]
+              - button "16:30" [ref=e463] [cursor=pointer]
+              - button "16:45" [ref=e464] [cursor=pointer]
+            - button "Proceed to Specialist Selection" [ref=e465] [cursor=pointer]

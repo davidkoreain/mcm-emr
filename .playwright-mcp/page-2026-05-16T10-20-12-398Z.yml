@@ -1,0 +1,173 @@
+- generic [ref=e101]:
+  - complementary [ref=e102]:
+    - generic [ref=e103]:
+      - link "Logo" [ref=e104] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e105]
+      - button [ref=e106] [cursor=pointer]:
+        - img [ref=e107]
+    - navigation [ref=e110]:
+      - list [ref=e111]:
+        - listitem [ref=e112] [cursor=pointer]:
+          - generic [ref=e113]:
+            - img [ref=e114]
+            - generic [ref=e119]: Flow Board
+        - listitem [ref=e120] [cursor=pointer]:
+          - generic [ref=e121]:
+            - img [ref=e122]
+            - generic [ref=e127]: Patient Details
+        - listitem [ref=e128] [cursor=pointer]:
+          - generic [ref=e129]:
+            - img [ref=e130]
+            - generic [ref=e132]: Appointments
+        - listitem [ref=e133] [cursor=pointer]:
+          - generic [ref=e134]:
+            - img [ref=e135]
+            - generic [ref=e137]: Inpatient Ward
+        - listitem [ref=e138] [cursor=pointer]:
+          - generic [ref=e139]:
+            - img [ref=e140]
+            - generic [ref=e142]: Laboratory
+          - img [ref=e144]
+        - listitem [ref=e146] [cursor=pointer]:
+          - generic [ref=e147]:
+            - img [ref=e148]
+            - generic [ref=e154]: Operations
+          - img [ref=e156]
+        - listitem [ref=e158] [cursor=pointer]:
+          - generic [ref=e159]:
+            - img [ref=e160]
+            - generic [ref=e163]: Pharmacy
+          - img [ref=e1473]
+        - list [ref=e1475]:
+          - listitem [ref=e1476] [cursor=pointer]: Prescriptions
+        - listitem [ref=e167] [cursor=pointer]:
+          - generic [ref=e168]:
+            - img [ref=e169]
+            - generic [ref=e171]: Billing
+    - button "Logout" [ref=e173] [cursor=pointer]:
+      - generic [ref=e176]: Logout
+  - main [ref=e177]:
+    - generic [ref=e178]:
+      - heading "PHARMACY" [level=1] [ref=e1477]
+      - generic [ref=e180]:
+        - generic "David — click to enlarge" [ref=e181]:
+          - img "David" [ref=e182]
+        - generic [ref=e183]:
+          - generic [ref=e184]: David
+          - generic [ref=e185]: Doctor
+    - generic [ref=e1478]:
+      - generic [ref=e1543]:
+        - generic [ref=e1544]:
+          - generic [ref=e1545]:
+            - img [ref=e1546]
+            - text: New Prescription
+          - button [ref=e1549] [cursor=pointer]:
+            - img [ref=e1550]
+        - generic [ref=e1553]:
+          - generic [ref=e1554]:
+            - generic [ref=e1555]: Patient *
+            - generic [ref=e1556]:
+              - img [ref=e1557]
+              - textbox "Search by name or MRN..." [ref=e1560]: Abebe Germa
+            - generic [ref=e1599]:
+              - img [ref=e1600]
+              - text: "MRN: MRN-2026-5992"
+          - generic [ref=e1561]:
+            - generic [ref=e1562]: Drug *
+            - generic [ref=e1563]:
+              - img [ref=e1564]
+              - textbox "Search drug name or brand..." [ref=e1567]
+          - generic [ref=e1568]:
+            - generic [ref=e1569]:
+              - generic [ref=e1570]: Dosage *
+              - textbox "e.g. 500mg" [ref=e1571]
+            - generic [ref=e1572]:
+              - generic [ref=e1573]: Frequency
+              - combobox [ref=e1574]:
+                - option "OD" [selected]
+                - option "BD"
+                - option "TDS"
+                - option "QDS"
+                - option "PRN"
+                - option "Stat"
+                - option "Weekly"
+                - option "Monthly"
+            - generic [ref=e1575]:
+              - generic [ref=e1576]: Duration
+              - generic [ref=e1577]:
+                - spinbutton [ref=e1578]: "7"
+                - combobox [ref=e1579]:
+                  - option "days" [selected]
+                  - option "weeks"
+                  - option "months"
+            - generic [ref=e1580]:
+              - generic [ref=e1581]: Quantity (units)
+              - spinbutton [ref=e1582]: "7"
+            - generic [ref=e1583]:
+              - generic [ref=e1584]: Start Date
+              - textbox [ref=e1585]: 2026-05-16
+            - generic [ref=e1586]:
+              - generic [ref=e1587]: Prescribed By
+              - textbox "Doctor name" [ref=e1588]: David
+          - generic [ref=e1589]:
+            - generic [ref=e1590]: Instructions
+            - textbox "e.g. Take after food, avoid sunlight..." [ref=e1591]
+        - generic [ref=e1592]:
+          - button "Cancel" [ref=e1593] [cursor=pointer]
+          - button "Create Prescription" [ref=e1594] [cursor=pointer]
+      - generic [ref=e1479]:
+        - generic [ref=e1480]:
+          - generic [ref=e1481]:
+            - img [ref=e1482]
+            - generic [ref=e1485]: Prescriptions
+          - generic [ref=e1486]:
+            - button "New Prescription" [ref=e1487] [cursor=pointer]:
+              - img [ref=e1488]
+              - text: New Prescription
+            - button "Drug Inventory" [ref=e1489] [cursor=pointer]:
+              - img [ref=e1490]
+              - text: Drug Inventory
+        - generic [ref=e1493]:
+          - generic [ref=e1494]:
+            - img [ref=e1496]
+            - generic [ref=e1499]:
+              - generic [ref=e1500]: Total
+              - generic [ref=e1501]: "0"
+          - generic [ref=e1502]:
+            - img [ref=e1504]
+            - generic [ref=e1507]:
+              - generic [ref=e1508]: Pending
+              - generic [ref=e1509]: "0"
+          - generic [ref=e1510]:
+            - img [ref=e1512]
+            - generic [ref=e1515]:
+              - generic [ref=e1516]: Dispensed Today
+              - generic [ref=e1517]: "0"
+          - generic [ref=e1518]:
+            - img [ref=e1520]
+            - generic [ref=e1524]:
+              - generic [ref=e1525]: Cancelled
+              - generic [ref=e1526]: "0"
+        - generic [ref=e1527]:
+          - generic [ref=e1528]:
+            - img [ref=e1529]
+            - textbox "Patient name, MRN, or drug..." [ref=e1532]
+          - combobox [ref=e1533]:
+            - option "All Statuses" [selected]
+            - option "Pending"
+            - option "Dispensed"
+            - option "Cancelled"
+          - combobox [ref=e1534]:
+            - option "All Time" [selected]
+            - option "Today"
+            - option "This Week"
+            - option "This Month"
+          - combobox [ref=e1535]:
+            - 'option "Sort: Newest" [selected]'
+            - 'option "Sort: Oldest"'
+            - 'option "Sort: Patient A→Z"'
+        - generic [ref=e1536]: Showing 0 of 0 prescriptions
+        - generic [ref=e1537]:
+          - img [ref=e1538]
+          - paragraph [ref=e1541]: No prescriptions match the current filters.

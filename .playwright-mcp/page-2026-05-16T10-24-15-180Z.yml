@@ -1,0 +1,105 @@
+- generic [ref=e102]:
+  - complementary [ref=e103]:
+    - generic [ref=e104]:
+      - link "Logo" [ref=e105] [cursor=pointer]:
+        - /url: https://mcm-emr-theta.vercel.app/
+        - img "Logo" [ref=e106]
+      - button [ref=e107] [cursor=pointer]:
+        - img [ref=e108]
+    - navigation [ref=e111]:
+      - list [ref=e112]:
+        - listitem [ref=e113] [cursor=pointer]:
+          - generic [ref=e114]:
+            - img [ref=e115]
+            - generic [ref=e120]: Flow Board
+        - listitem [ref=e121] [cursor=pointer]:
+          - generic [ref=e122]:
+            - img [ref=e123]
+            - generic [ref=e128]: Patient Details
+        - listitem [ref=e129] [cursor=pointer]:
+          - generic [ref=e130]:
+            - img [ref=e131]
+            - generic [ref=e134]: Pharmacy
+          - img [ref=e331]
+        - list [ref=e333]:
+          - listitem [ref=e334] [cursor=pointer]: Prescriptions
+          - listitem [ref=e335] [cursor=pointer]: Drug Inventory
+    - button "Logout" [ref=e139] [cursor=pointer]:
+      - img [ref=e336]
+      - generic [ref=e142]: Logout
+  - main [ref=e143]:
+    - generic [ref=e144]:
+      - heading "FLOW BOARD" [level=1] [ref=e145]
+      - generic [ref=e146]:
+        - generic "Pharmacist Hana Bekele — click to enlarge" [ref=e147]:
+          - img "Pharmacist Hana Bekele" [ref=e148]
+        - generic [ref=e149]:
+          - generic [ref=e150]: Pharmacist Hana Bekele
+          - generic [ref=e151]: Pharmacist
+    - generic [ref=e153]:
+      - generic [ref=e154]:
+        - generic [ref=e155]:
+          - heading "2026년 5월" [level=2] [ref=e156]
+          - generic [ref=e157]:
+            - button [ref=e158] [cursor=pointer]:
+              - img [ref=e159]
+            - button [ref=e161] [cursor=pointer]:
+              - img [ref=e162]
+          - button "Today" [ref=e164] [cursor=pointer]
+          - generic [ref=e165]:
+            - textbox [ref=e166] [cursor=pointer]: 2026-05-16
+            - img [ref=e167] [cursor=pointer]
+          - button "New Appointment" [ref=e169] [cursor=pointer]:
+            - img [ref=e170]
+            - text: New Appointment
+          - generic [ref=e171]:
+            - button "Day" [ref=e172] [cursor=pointer]
+            - button "Week" [ref=e173] [cursor=pointer]
+            - button "Month" [ref=e174] [cursor=pointer]
+        - paragraph [ref=e175]: Week of Mon May 11 2026
+      - generic [ref=e178]:
+        - generic [ref=e179]:
+          - generic [ref=e180]: Time
+          - generic [ref=e181]:
+            - generic [ref=e182]: Monday
+            - generic [ref=e183]: "11.5"
+          - generic [ref=e184]:
+            - generic [ref=e185]: Tuesday
+            - generic [ref=e186]: "12.5"
+          - generic [ref=e187]:
+            - generic [ref=e188]: Wednesday
+            - generic [ref=e189]: "13.5"
+          - generic [ref=e190]:
+            - generic [ref=e191]: Thursday
+            - generic [ref=e192]: "14.5"
+          - generic [ref=e193]:
+            - generic [ref=e194]: Friday
+            - generic [ref=e195]: "15.5"
+          - generic [ref=e196]:
+            - generic [ref=e197]: Saturday
+            - generic [ref=e198]: "16.5"
+          - generic [ref=e199]:
+            - generic [ref=e200]: Sunday
+            - generic [ref=e201]: "17.5"
+        - generic [ref=e203]:
+          - generic [ref=e204]:
+            - generic [ref=e205]: 7:00
+            - generic [ref=e206]: 8:00
+            - generic [ref=e207]: 9:00
+            - generic [ref=e208]: 10:00
+            - generic [ref=e209]: 11:00
+            - generic [ref=e210]: 12:00
+            - generic [ref=e211]: 13:00
+            - generic [ref=e212]: 14:00
+            - generic [ref=e213]: 15:00
+            - generic [ref=e214]: 16:00
+            - generic [ref=e215]: 17:00
+            - generic [ref=e216]: 18:00
+            - generic [ref=e217]: 19:00
+            - generic [ref=e218]: 20:00
+          - generic [ref=e249]:
+            - generic [ref=e264] [cursor=pointer]: Abebe Bikila
+            - generic [ref=e265] [cursor=pointer]: Mulu Worku
+            - generic [ref=e266] [cursor=pointer]: Kassa Tessema
+          - generic [ref=e282] [cursor=pointer]: Selam Adane
+          - generic [ref=e298] [cursor=pointer]: Tigist Hailu
