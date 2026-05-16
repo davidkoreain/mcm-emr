@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -61,12 +61,34 @@ function rowToAppointment(r: Record<string, unknown>): Appointment {
 function rowToDrug(r: Record<string, unknown>): Drug {
   return {
     id: r.id as number,
-    name: r.name as string,
-    form: r.form as string,
-    strength: r.strength as string,
-    stock: r.stock as number,
-    price: r.price as string,
-    addedAt: r.added_at as string,
+    name: (r.name as string) ?? '',
+    form: (r.form as string) ?? '',
+    strength: (r.strength as string) ?? '',
+    stock: (r.stock as number) ?? 0,
+    price: (r.price as string) ?? '',
+    addedAt: (r.added_at as string) ?? '',
+    brandName: (r.brand_name as string) ?? '',
+    manufacturer: (r.manufacturer as string) ?? '',
+    supplierName: (r.supplier_name as string) ?? '',
+    activeIngredient: (r.active_ingredient as string) ?? '',
+    category: (r.category as string) ?? '',
+    unit: (r.unit as string) ?? '',
+    route: (r.route as string) ?? '',
+    indication: (r.indication as string) ?? '',
+    contraindications: (r.contraindications as string) ?? '',
+    sideEffects: (r.side_effects as string) ?? '',
+    drugInteractions: (r.drug_interactions as string) ?? '',
+    storageConditions: (r.storage_conditions as string) ?? '',
+    handlingPrecautions: (r.handling_precautions as string) ?? '',
+    controlledSubstance: (r.controlled_substance as boolean) ?? false,
+    prescriptionRequired: (r.prescription_required as boolean) ?? true,
+    purchasePrice: (r.purchase_price as number) ?? 0,
+    reorderLevel: (r.reorder_level as number) ?? 20,
+    reorderQuantity: (r.reorder_quantity as number) ?? 100,
+    expiryDate: (r.expiry_date as string) ?? '',
+    batchNumber: (r.batch_number as string) ?? '',
+    storageLocation: (r.storage_location as string) ?? '',
+    status: (r.status as string) ?? 'Active',
   };
 }
 
@@ -80,6 +102,66 @@ function rowToPrescription(r: Record<string, unknown>): Prescription {
     duration: r.duration as string,
     status: r.status as 'Pending' | 'Dispensed' | 'Cancelled',
     createdAt: r.created_at as string,
+    drugId: (r.drug_id as number) ?? undefined,
+    frequency: (r.frequency as string) ?? '',
+    instructions: (r.instructions as string) ?? '',
+    startDate: (r.start_date as string) ?? '',
+    endDate: (r.end_date as string) ?? '',
+    prescribedBy: (r.prescribed_by as string) ?? '',
+    dispensedAt: (r.dispensed_at as string) ?? '',
+    quantity: (r.quantity as number) ?? 1,
+  };
+}
+
+function rowToDrugSupplier(r: Record<string, unknown>): DrugSupplier {
+  return {
+    id: r.id as number,
+    name: (r.name as string) ?? '',
+    contactPerson: (r.contact_person as string) ?? '',
+    phone: (r.phone as string) ?? '',
+    email: (r.email as string) ?? '',
+    address: (r.address as string) ?? '',
+    paymentTerms: (r.payment_terms as string) ?? '',
+    leadTimeDays: (r.lead_time_days as number) ?? 7,
+    notes: (r.notes as string) ?? '',
+    createdAt: (r.created_at as string) ?? '',
+  };
+}
+
+function rowToMedicationSchedule(r: Record<string, unknown>): MedicationSchedule {
+  return {
+    id: r.id as number,
+    prescriptionId: (r.prescription_id as number) ?? 0,
+    patientMrn: (r.patient_mrn as string) ?? '',
+    drugId: (r.drug_id as number) ?? 0,
+    drugName: (r.drug_name as string) ?? '',
+    dosage: (r.dosage as string) ?? '',
+    scheduledDate: (r.scheduled_date as string) ?? '',
+    scheduledTime: (r.scheduled_time as string) ?? '',
+    taken: (r.taken as boolean) ?? false,
+    takenAt: (r.taken_at as string) ?? null,
+    notes: (r.notes as string) ?? '',
+    createdAt: (r.created_at as string) ?? '',
+  };
+}
+
+function rowToDrugOrder(r: Record<string, unknown>): DrugOrder {
+  return {
+    id: r.id as number,
+    supplierId: (r.supplier_id as number) ?? 0,
+    supplierName: (r.supplier_name as string) ?? '',
+    drugId: (r.drug_id as number) ?? 0,
+    drugName: (r.drug_name as string) ?? '',
+    quantityOrdered: (r.quantity_ordered as number) ?? 0,
+    unitPrice: (r.unit_price as number) ?? 0,
+    totalAmount: (r.total_amount as number) ?? 0,
+    status: (r.status as 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled') ?? 'Pending',
+    orderDate: (r.order_date as string) ?? '',
+    expectedDelivery: (r.expected_delivery as string) ?? '',
+    orderedBy: (r.ordered_by as string) ?? '',
+    triggerType: (r.trigger_type as 'Manual' | 'Auto') ?? 'Manual',
+    notes: (r.notes as string) ?? '',
+    createdAt: (r.created_at as string) ?? '',
   };
 }
 
@@ -604,14 +686,37 @@ export class SupabaseService implements IDBService {
     return (data ?? []).map(rowToDrug);
   }
   async insertDrug(d: Omit<Drug, 'id' | 'addedAt'>): Promise<void> {
-    const { error } = await this.client.from('drugs').insert({
+    const row: Record<string, unknown> = {
       name: d.name,
       form: d.form,
       strength: d.strength,
       stock: d.stock,
       price: d.price,
-      added_at: new Date().toISOString()
-    });
+      added_at: new Date().toISOString(),
+    };
+    if (d.brandName !== undefined) row.brand_name = d.brandName;
+    if (d.manufacturer !== undefined) row.manufacturer = d.manufacturer;
+    if (d.supplierName !== undefined) row.supplier_name = d.supplierName;
+    if (d.activeIngredient !== undefined) row.active_ingredient = d.activeIngredient;
+    if (d.category !== undefined) row.category = d.category;
+    if (d.unit !== undefined) row.unit = d.unit;
+    if (d.route !== undefined) row.route = d.route;
+    if (d.indication !== undefined) row.indication = d.indication;
+    if (d.contraindications !== undefined) row.contraindications = d.contraindications;
+    if (d.sideEffects !== undefined) row.side_effects = d.sideEffects;
+    if (d.drugInteractions !== undefined) row.drug_interactions = d.drugInteractions;
+    if (d.storageConditions !== undefined) row.storage_conditions = d.storageConditions;
+    if (d.handlingPrecautions !== undefined) row.handling_precautions = d.handlingPrecautions;
+    if (d.controlledSubstance !== undefined) row.controlled_substance = d.controlledSubstance;
+    if (d.prescriptionRequired !== undefined) row.prescription_required = d.prescriptionRequired;
+    if (d.purchasePrice !== undefined) row.purchase_price = d.purchasePrice;
+    if (d.reorderLevel !== undefined) row.reorder_level = d.reorderLevel;
+    if (d.reorderQuantity !== undefined) row.reorder_quantity = d.reorderQuantity;
+    if (d.expiryDate !== undefined && d.expiryDate !== '') row.expiry_date = d.expiryDate;
+    if (d.batchNumber !== undefined) row.batch_number = d.batchNumber;
+    if (d.storageLocation !== undefined) row.storage_location = d.storageLocation;
+    if (d.status !== undefined) row.status = d.status;
+    const { error } = await this.client.from('drugs').insert(row);
     if (error) throw new Error(error.message);
   }
 
@@ -620,12 +725,34 @@ export class SupabaseService implements IDBService {
     if (error) throw new Error(error.message);
   }
   async updateDrug(id: number, changes: Partial<Drug>): Promise<void> {
-    const row: any = {};
+    const row: Record<string, unknown> = {};
     if (changes.name !== undefined) row.name = changes.name;
     if (changes.form !== undefined) row.form = changes.form;
     if (changes.strength !== undefined) row.strength = changes.strength;
     if (changes.stock !== undefined) row.stock = changes.stock;
     if (changes.price !== undefined) row.price = changes.price;
+    if (changes.brandName !== undefined) row.brand_name = changes.brandName;
+    if (changes.manufacturer !== undefined) row.manufacturer = changes.manufacturer;
+    if (changes.supplierName !== undefined) row.supplier_name = changes.supplierName;
+    if (changes.activeIngredient !== undefined) row.active_ingredient = changes.activeIngredient;
+    if (changes.category !== undefined) row.category = changes.category;
+    if (changes.unit !== undefined) row.unit = changes.unit;
+    if (changes.route !== undefined) row.route = changes.route;
+    if (changes.indication !== undefined) row.indication = changes.indication;
+    if (changes.contraindications !== undefined) row.contraindications = changes.contraindications;
+    if (changes.sideEffects !== undefined) row.side_effects = changes.sideEffects;
+    if (changes.drugInteractions !== undefined) row.drug_interactions = changes.drugInteractions;
+    if (changes.storageConditions !== undefined) row.storage_conditions = changes.storageConditions;
+    if (changes.handlingPrecautions !== undefined) row.handling_precautions = changes.handlingPrecautions;
+    if (changes.controlledSubstance !== undefined) row.controlled_substance = changes.controlledSubstance;
+    if (changes.prescriptionRequired !== undefined) row.prescription_required = changes.prescriptionRequired;
+    if (changes.purchasePrice !== undefined) row.purchase_price = changes.purchasePrice;
+    if (changes.reorderLevel !== undefined) row.reorder_level = changes.reorderLevel;
+    if (changes.reorderQuantity !== undefined) row.reorder_quantity = changes.reorderQuantity;
+    if (changes.expiryDate !== undefined && changes.expiryDate !== '') row.expiry_date = changes.expiryDate;
+    if (changes.batchNumber !== undefined) row.batch_number = changes.batchNumber;
+    if (changes.storageLocation !== undefined) row.storage_location = changes.storageLocation;
+    if (changes.status !== undefined) row.status = changes.status;
     const { error } = await this.client.from('drugs').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }
@@ -637,19 +764,123 @@ export class SupabaseService implements IDBService {
   }
 
   async insertPrescription(p: Omit<Prescription, 'id' | 'createdAt'>): Promise<void> {
-    const { error } = await this.client.from('prescriptions').insert({
+    const row: Record<string, unknown> = {
       patient_mrn: p.patientMrn,
       patient_name: p.patientName,
       drug: p.drug,
       dosage: p.dosage,
       duration: p.duration,
       status: p.status,
-    });
+    };
+    if (p.drugId !== undefined) row.drug_id = p.drugId;
+    if (p.frequency !== undefined) row.frequency = p.frequency;
+    if (p.instructions !== undefined) row.instructions = p.instructions;
+    if (p.startDate !== undefined && p.startDate !== '') row.start_date = p.startDate;
+    if (p.endDate !== undefined && p.endDate !== '') row.end_date = p.endDate;
+    if (p.prescribedBy !== undefined) row.prescribed_by = p.prescribedBy;
+    if (p.dispensedAt !== undefined && p.dispensedAt !== '') row.dispensed_at = p.dispensedAt;
+    if (p.quantity !== undefined) row.quantity = p.quantity;
+    const { error } = await this.client.from('prescriptions').insert(row);
     if (error) throw new Error(error.message);
   }
 
   async updatePrescriptionStatus(id: number, status: string): Promise<void> {
     const { error } = await this.client.from('prescriptions').update({ status }).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Pharmacy Phase 1: suppliers / orders / medication schedules ─────────
+
+  async fetchDrugSuppliers(): Promise<DrugSupplier[]> {
+    const { data, error } = await this.client.from('drug_suppliers').select('*').order('name');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToDrugSupplier);
+  }
+
+  async insertDrugSupplier(s: Omit<DrugSupplier, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('drug_suppliers').insert({
+      name: s.name,
+      contact_person: s.contactPerson,
+      phone: s.phone,
+      email: s.email,
+      address: s.address,
+      payment_terms: s.paymentTerms,
+      lead_time_days: s.leadTimeDays,
+      notes: s.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async fetchMedicationSchedules(patientMrn?: string): Promise<MedicationSchedule[]> {
+    let q = this.client.from('medication_schedules').select('*').order('scheduled_date', { ascending: true });
+    if (patientMrn) q = q.eq('patient_mrn', patientMrn);
+    const { data, error } = await q;
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToMedicationSchedule);
+  }
+
+  async insertMedicationSchedule(s: Omit<MedicationSchedule, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('medication_schedules').insert({
+      prescription_id: s.prescriptionId,
+      patient_mrn: s.patientMrn,
+      drug_id: s.drugId,
+      drug_name: s.drugName,
+      dosage: s.dosage,
+      scheduled_date: s.scheduledDate,
+      scheduled_time: s.scheduledTime,
+      taken: s.taken,
+      taken_at: s.takenAt,
+      notes: s.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async updateMedicationSchedule(id: number, changes: Partial<MedicationSchedule>): Promise<void> {
+    const row: Record<string, unknown> = {};
+    if (changes.taken !== undefined) row.taken = changes.taken;
+    if (changes.takenAt !== undefined) row.taken_at = changes.takenAt;
+    if (changes.notes !== undefined) row.notes = changes.notes;
+    if (changes.scheduledDate !== undefined) row.scheduled_date = changes.scheduledDate;
+    if (changes.scheduledTime !== undefined) row.scheduled_time = changes.scheduledTime;
+    const { error } = await this.client.from('medication_schedules').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async fetchDrugOrders(): Promise<DrugOrder[]> {
+    const { data, error } = await this.client.from('drug_orders').select('*').order('order_date', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToDrugOrder);
+  }
+
+  async insertDrugOrder(o: Omit<DrugOrder, 'id' | 'createdAt'>): Promise<void> {
+    const row: Record<string, unknown> = {
+      supplier_id: o.supplierId,
+      supplier_name: o.supplierName,
+      drug_id: o.drugId,
+      drug_name: o.drugName,
+      quantity_ordered: o.quantityOrdered,
+      unit_price: o.unitPrice,
+      total_amount: o.totalAmount,
+      status: o.status,
+      ordered_by: o.orderedBy,
+      trigger_type: o.triggerType,
+      notes: o.notes,
+    };
+    if (o.orderDate) row.order_date = o.orderDate;
+    if (o.expectedDelivery) row.expected_delivery = o.expectedDelivery;
+    const { error } = await this.client.from('drug_orders').insert(row);
+    if (error) throw new Error(error.message);
+  }
+
+  async updateDrugOrder(id: number, changes: Partial<DrugOrder>): Promise<void> {
+    const row: Record<string, unknown> = {};
+    if (changes.status !== undefined) row.status = changes.status;
+    if (changes.expectedDelivery !== undefined && changes.expectedDelivery !== '') row.expected_delivery = changes.expectedDelivery;
+    if (changes.notes !== undefined) row.notes = changes.notes;
+    if (changes.quantityOrdered !== undefined) row.quantity_ordered = changes.quantityOrdered;
+    if (changes.unitPrice !== undefined) row.unit_price = changes.unitPrice;
+    if (changes.totalAmount !== undefined) row.total_amount = changes.totalAmount;
+    const { error } = await this.client.from('drug_orders').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }
 

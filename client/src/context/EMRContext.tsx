@@ -183,6 +183,29 @@ export type Drug = {
   stock: number;
   price: string;
   addedAt: string;
+  // Extended pharmacy metadata (Phase 1)
+  brandName?: string;
+  manufacturer?: string;
+  supplierName?: string;
+  activeIngredient?: string;
+  category?: string;
+  unit?: string;
+  route?: string;
+  indication?: string;
+  contraindications?: string;
+  sideEffects?: string;
+  drugInteractions?: string;
+  storageConditions?: string;
+  handlingPrecautions?: string;
+  controlledSubstance?: boolean;
+  prescriptionRequired?: boolean;
+  purchasePrice?: number;
+  reorderLevel?: number;
+  reorderQuantity?: number;
+  expiryDate?: string;
+  batchNumber?: string;
+  storageLocation?: string;
+  status?: string;
 };
 
 export type Prescription = {
@@ -193,6 +216,61 @@ export type Prescription = {
   dosage: string;
   duration: string;
   status: 'Pending' | 'Dispensed' | 'Cancelled';
+  createdAt: string;
+  // Phase 1 extensions
+  drugId?: number;
+  frequency?: string;
+  instructions?: string;
+  startDate?: string;
+  endDate?: string;
+  prescribedBy?: string;
+  dispensedAt?: string;
+  quantity?: number;
+};
+
+export type DrugSupplier = {
+  id: number;
+  name: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  address: string;
+  paymentTerms: string;
+  leadTimeDays: number;
+  notes: string;
+  createdAt: string;
+};
+
+export type MedicationSchedule = {
+  id: number;
+  prescriptionId: number;
+  patientMrn: string;
+  drugId: number;
+  drugName: string;
+  dosage: string;
+  scheduledDate: string;
+  scheduledTime: string;
+  taken: boolean;
+  takenAt: string | null;
+  notes: string;
+  createdAt: string;
+};
+
+export type DrugOrder = {
+  id: number;
+  supplierId: number;
+  supplierName: string;
+  drugId: number;
+  drugName: string;
+  quantityOrdered: number;
+  unitPrice: number;
+  totalAmount: number;
+  status: 'Pending' | 'Confirmed' | 'Delivered' | 'Cancelled';
+  orderDate: string;
+  expectedDelivery: string;
+  orderedBy: string;
+  triggerType: 'Manual' | 'Auto';
+  notes: string;
   createdAt: string;
 };
 
@@ -227,6 +305,9 @@ type EMRContextType = {
   guardians: GuardianUser[];
   drugs: Drug[];
   prescriptions: Prescription[];
+  drugSuppliers: DrugSupplier[];
+  medicationSchedules: MedicationSchedule[];
+  drugOrders: DrugOrder[];
   labOrders: LabOrder[];
   labResults: LabResult[];
   medicalHistory: MedicalHistoryItem[];
@@ -266,6 +347,11 @@ type EMRContextType = {
   addDrug: (d: Omit<Drug, 'id' | 'addedAt'>) => Promise<void>;
   updateDrug: (id: number, changes: Partial<Drug>) => Promise<void>;
   dispenseMedication: (prescriptionId: number, drugId: number, qty: number) => Promise<void>;
+  addPrescription: (rx: Omit<Prescription, 'id' | 'createdAt'>) => Promise<void>;
+  addDrugSupplier: (s: Omit<DrugSupplier, 'id' | 'createdAt'>) => Promise<void>;
+  createDrugOrder: (o: Omit<DrugOrder, 'id' | 'createdAt'>) => Promise<void>;
+  markMedicationTaken: (scheduleId: number, taken: boolean) => Promise<void>;
+  createMedicationSchedule: (rx: Prescription, drug: Drug) => Promise<void>;
   // Lab
   submitLabResult: (orderId: number, result: Omit<LabResult, 'id' | 'createdAt'>) => Promise<void>;
 };
@@ -321,6 +407,9 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [drugs, setDrugs] = useState<Drug[]>([]);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
+  const [drugSuppliers, setDrugSuppliers] = useState<DrugSupplier[]>([]);
+  const [medicationSchedules, setMedicationSchedules] = useState<MedicationSchedule[]>([]);
+  const [drugOrders, setDrugOrders] = useState<DrugOrder[]>([]);
   const [labOrders, setLabOrders] = useState<LabOrder[]>([]);
   const [labResults, setLabResults] = useState<LabResult[]>([]);
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
@@ -411,7 +500,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -423,7 +512,10 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchSurgeries(), []),
         safeFetch(db.fetchGuardians(), []),
         safeFetch(db.fetchMedicalHistory(), []),
-        safeFetch(db.fetchStaffLeave(), [])
+        safeFetch(db.fetchStaffLeave(), []),
+        safeFetch(db.fetchDrugSuppliers ? db.fetchDrugSuppliers() : Promise.resolve([] as DrugSupplier[]), [] as DrugSupplier[]),
+        safeFetch(db.fetchMedicationSchedules ? db.fetchMedicationSchedules() : Promise.resolve([] as MedicationSchedule[]), [] as MedicationSchedule[]),
+        safeFetch(db.fetchDrugOrders ? db.fetchDrugOrders() : Promise.resolve([] as DrugOrder[]), [] as DrugOrder[]),
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -446,6 +538,9 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setGuardians(gd);
       setMedicalHistory(mh);
       setStaffLeave(l);
+      setDrugSuppliers(dsup);
+      setMedicationSchedules(msch);
+      setDrugOrders(dord);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -572,14 +667,84 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await refreshData();
   };
 
+  const addPrescription = async (rx: Omit<Prescription, 'id' | 'createdAt'>) => {
+    await db.insertPrescription(rx);
+    await refreshData();
+  };
+
+  const addDrugSupplier = async (s: Omit<DrugSupplier, 'id' | 'createdAt'>) => {
+    if (db.insertDrugSupplier) {
+      await db.insertDrugSupplier(s);
+      await refreshData();
+    }
+  };
+
+  const createDrugOrder = async (o: Omit<DrugOrder, 'id' | 'createdAt'>) => {
+    if (db.insertDrugOrder) {
+      await db.insertDrugOrder(o);
+      await refreshData();
+    }
+  };
+
+  const markMedicationTaken = async (scheduleId: number, taken: boolean) => {
+    if (db.updateMedicationSchedule) {
+      await db.updateMedicationSchedule(scheduleId, { taken, takenAt: taken ? new Date().toISOString() : null });
+      await refreshData();
+    }
+  };
+
+  const createMedicationSchedule = async (rx: Prescription, drug: Drug) => {
+    if (!db.insertMedicationSchedule) return;
+    // Build a simple schedule based on the prescription's frequency/duration.
+    // Default: 1 dose per day for the requested duration (e.g. "5 days").
+    const days = (() => {
+      const m = (rx.duration || '').match(/(\d+)/);
+      const n = m ? parseInt(m[1], 10) : 5;
+      return Math.max(1, Math.min(30, n));
+    })();
+    const dosesPerDay = (() => {
+      const f = (rx.frequency || '').toLowerCase();
+      if (f.includes('qid') || f.includes('four')) return 4;
+      if (f.includes('tid') || f.includes('three') || f.includes('8h')) return 3;
+      if (f.includes('bid') || f.includes('twice') || f.includes('12h')) return 2;
+      if (f.includes('qd') || f.includes('once') || f.includes('daily')) return 1;
+      return 2;
+    })();
+    const slots = ['08:00', '14:00', '20:00', '02:00'].slice(0, dosesPerDay);
+    const start = rx.startDate ? new Date(rx.startDate) : new Date();
+    for (let day = 0; day < days; day++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + day);
+      const dateStr = d.toISOString().slice(0, 10);
+      for (const t of slots) {
+        await db.insertMedicationSchedule({
+          prescriptionId: rx.id,
+          patientMrn: rx.patientMrn,
+          drugId: drug.id,
+          drugName: drug.name,
+          dosage: rx.dosage,
+          scheduledDate: dateStr,
+          scheduledTime: t,
+          taken: false,
+          takenAt: null,
+          notes: rx.instructions || '',
+        });
+      }
+    }
+    await refreshData();
+  };
+
   return (
     <EMRContext.Provider value={{
-      patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions, labOrders, labResults, medicalHistory, staffLeave,
+      patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions,
+      drugSuppliers, medicationSchedules, drugOrders,
+      labOrders, labResults, medicalHistory, staffLeave,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
       addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
-      dispenseMedication, submitLabResult, deleteMedicalHistory
+      dispenseMedication, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
+      submitLabResult, deleteMedicalHistory
     }}>
       {children}
     </EMRContext.Provider>

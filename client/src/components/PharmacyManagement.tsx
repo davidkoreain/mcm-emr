@@ -1,66 +1,355 @@
 import React, { useState, useMemo } from 'react';
-import { Package, ClipboardList, AlertTriangle, FileText, Plus, X, CheckCircle2 } from 'lucide-react';
+import {
+  Pill, ClipboardList, AlertTriangle, Plus, X, CheckCircle2, Eye, Edit2, RefreshCw,
+  Search, Calendar, Package, ShieldAlert, BadgeCheck, FileText, Beaker
+} from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
-import ListFilterControl from './ListFilterControl';
 import { useEMR, type Drug, type Prescription } from '../context/EMRContext';
-// import { toast } from 'react-hot-toast';
+
+// Simple toast shim (matches existing pattern in this file)
 const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m) };
 
-const emptyDrug = { name: '', form: 'Tablet', strength: '', stock: '', price: '' };
+// --- Constants ----------------------------------------------------------
+const CATEGORIES: string[] = [
+  'Analgesic', 'Antibiotic', 'Antihypertensive', 'Antidiabetic', 'Antimalarial',
+  'Antiretroviral', 'Anti-TB', 'Antifungal', 'Antiparasitic', 'Cardiovascular',
+  'Respiratory', 'Gastrointestinal', 'Neurological', 'Vitamins/Supplements',
+  'Hormonal', 'Ophthalmology', 'Controlled Substance'
+];
 
-const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'prescriptions' }) => {
-  const { drugs, prescriptions, dispenseMedication, addDrug, updateDrug, role, loading } = useEMR();
+const FORMS: string[] = [
+  'Tablet', 'Capsule', 'Injection', 'Syrup', 'Suspension', 'Inhaler',
+  'Eye Drops', 'Ointment', 'Cream', 'Sachet', 'Suppository'
+];
+
+const ROUTES: string[] = [
+  'Oral', 'IV', 'IM', 'IV/IM', 'IV/IM/SC', 'Subcutaneous', 'Inhalation',
+  'Topical', 'Ophthalmic', 'Rectal', 'Sublingual'
+];
+
+const STATUSES: string[] = ['Active', 'Discontinued', 'Recalled'];
+
+const CATEGORY_COLORS: Record<string, { bg: string; fg: string }> = {
+  Analgesic: { bg: '#dbeafe', fg: '#1d4ed8' },
+  Antibiotic: { bg: '#dcfce7', fg: '#166534' },
+  Antihypertensive: { bg: '#fef3c7', fg: '#92400e' },
+  Antidiabetic: { bg: '#fce7f3', fg: '#9d174d' },
+  Antimalarial: { bg: '#fee2e2', fg: '#991b1b' },
+  Antiretroviral: { bg: '#ede9fe', fg: '#5b21b6' },
+  'Anti-TB': { bg: '#fef9c3', fg: '#854d0e' },
+  Antifungal: { bg: '#cffafe', fg: '#155e75' },
+  Antiparasitic: { bg: '#e0e7ff', fg: '#3730a3' },
+  Cardiovascular: { bg: '#fee2e2', fg: '#b91c1c' },
+  Respiratory: { bg: '#e0f2fe', fg: '#0369a1' },
+  Gastrointestinal: { bg: '#f1f5f9', fg: '#334155' },
+  Neurological: { bg: '#f3e8ff', fg: '#6b21a8' },
+  'Vitamins/Supplements': { bg: '#ecfccb', fg: '#3f6212' },
+  Hormonal: { bg: '#fde2e7', fg: '#9f1239' },
+  Ophthalmology: { bg: '#d1fae5', fg: '#065f46' },
+  'Controlled Substance': { bg: '#1e293b', fg: '#fbbf24' },
+};
+
+// --- Helpers ------------------------------------------------------------
+const daysUntil = (iso?: string): number | null => {
+  if (!iso) return null;
+  const t = Date.parse(iso);
+  if (Number.isNaN(t)) return null;
+  return Math.ceil((t - Date.now()) / 86400000);
+};
+
+const stockColor = (d: Drug): string => {
+  const r = d.reorderLevel ?? 20;
+  if (d.stock < 10) return '#dc2626';
+  if (d.stock < r) return '#ea580c';
+  return '#16a34a';
+};
+
+const expiryColor = (iso?: string): string | null => {
+  const days = daysUntil(iso);
+  if (days === null) return null;
+  if (days <= 30) return '#dc2626';
+  if (days <= 90) return '#ea580c';
+  return '#64748b';
+};
+
+// --- Form state types ---------------------------------------------------
+type DrugFormState = {
+  name: string;
+  brandName: string;
+  manufacturer: string;
+  supplierName: string;
+  activeIngredient: string;
+  category: string;
+  form: string;
+  strength: string;
+  unit: string;
+  route: string;
+  indication: string;
+  contraindications: string;
+  sideEffects: string;
+  drugInteractions: string;
+  storageConditions: string;
+  storageLocation: string;
+  handlingPrecautions: string;
+  controlledSubstance: boolean;
+  prescriptionRequired: boolean;
+  stock: string;
+  purchasePrice: string;
+  price: string;
+  reorderLevel: string;
+  reorderQuantity: string;
+  expiryDate: string;
+  batchNumber: string;
+  status: string;
+};
+
+const emptyForm: DrugFormState = {
+  name: '', brandName: '', manufacturer: '', supplierName: '', activeIngredient: '',
+  category: 'Analgesic', form: 'Tablet', strength: '', unit: 'tablet', route: 'Oral',
+  indication: '', contraindications: '', sideEffects: '', drugInteractions: '',
+  storageConditions: 'Below 25C; dry', storageLocation: '', handlingPrecautions: '',
+  controlledSubstance: false, prescriptionRequired: true,
+  stock: '0', purchasePrice: '0', price: '', reorderLevel: '20', reorderQuantity: '100',
+  expiryDate: '', batchNumber: '', status: 'Active'
+};
+
+const drugToForm = (d: Drug): DrugFormState => ({
+  name: d.name || '',
+  brandName: d.brandName || '',
+  manufacturer: d.manufacturer || '',
+  supplierName: d.supplierName || '',
+  activeIngredient: d.activeIngredient || '',
+  category: d.category || 'Analgesic',
+  form: d.form || 'Tablet',
+  strength: d.strength || '',
+  unit: d.unit || 'tablet',
+  route: d.route || 'Oral',
+  indication: d.indication || '',
+  contraindications: d.contraindications || '',
+  sideEffects: d.sideEffects || '',
+  drugInteractions: d.drugInteractions || '',
+  storageConditions: d.storageConditions || '',
+  storageLocation: d.storageLocation || '',
+  handlingPrecautions: d.handlingPrecautions || '',
+  controlledSubstance: !!d.controlledSubstance,
+  prescriptionRequired: d.prescriptionRequired !== false,
+  stock: String(d.stock ?? 0),
+  purchasePrice: String(d.purchasePrice ?? 0),
+  price: d.price || '',
+  reorderLevel: String(d.reorderLevel ?? 20),
+  reorderQuantity: String(d.reorderQuantity ?? 100),
+  expiryDate: d.expiryDate || '',
+  batchNumber: d.batchNumber || '',
+  status: d.status || 'Active',
+});
+
+const formToDrug = (f: DrugFormState): Omit<Drug, 'id' | 'addedAt'> => ({
+  name: f.name.trim(),
+  form: f.form,
+  strength: f.strength,
+  stock: parseInt(f.stock, 10) || 0,
+  price: f.price,
+  brandName: f.brandName,
+  manufacturer: f.manufacturer,
+  supplierName: f.supplierName,
+  activeIngredient: f.activeIngredient,
+  category: f.category,
+  unit: f.unit,
+  route: f.route,
+  indication: f.indication,
+  contraindications: f.contraindications,
+  sideEffects: f.sideEffects,
+  drugInteractions: f.drugInteractions,
+  storageConditions: f.storageConditions,
+  storageLocation: f.storageLocation,
+  handlingPrecautions: f.handlingPrecautions,
+  controlledSubstance: f.controlledSubstance,
+  prescriptionRequired: f.prescriptionRequired,
+  purchasePrice: parseFloat(f.purchasePrice) || 0,
+  reorderLevel: parseInt(f.reorderLevel, 10) || 20,
+  reorderQuantity: parseInt(f.reorderQuantity, 10) || 100,
+  expiryDate: f.expiryDate,
+  batchNumber: f.batchNumber,
+  status: f.status,
+});
+
+// --- Reusable presentational sub-components -----------------------------
+const inputStyle: React.CSSProperties = {
+  width: '100%', padding: '0.6rem 0.75rem', border: '1px solid #e2e8f0',
+  borderRadius: '0.5rem', fontSize: '0.875rem', color: '#1e293b', background: 'white',
+};
+const labelStyle: React.CSSProperties = {
+  fontSize: '0.8rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '0.3rem',
+};
+
+const Field: React.FC<{ label: string; children: React.ReactNode; full?: boolean }> = ({ label, children, full }) => (
+  <div style={{ gridColumn: full ? '1 / -1' : undefined }}>
+    <label style={labelStyle}>{label}</label>
+    {children}
+  </div>
+);
+
+const Pill_Badge: React.FC<{ color?: string; bg?: string; children: React.ReactNode; title?: string }> = ({ color = '#1e293b', bg = '#f1f5f9', children, title }) => (
+  <span title={title} style={{
+    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+    padding: '0.2rem 0.55rem', borderRadius: '999px', fontSize: '0.72rem',
+    fontWeight: 600, background: bg, color, whiteSpace: 'nowrap'
+  }}>{children}</span>
+);
+
+const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: number | string; color: string; bg: string }> = ({ icon, label, value, color, bg }) => (
+  <div style={{
+    flex: 1, minWidth: 180, background: 'white', border: '1px solid #e2e8f0',
+    borderRadius: '0.75rem', padding: '1rem 1.25rem', display: 'flex', alignItems: 'center', gap: '1rem',
+    boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+  }}>
+    <div style={{ background: bg, color, borderRadius: '0.5rem', padding: '0.6rem', display: 'flex' }}>{icon}</div>
+    <div>
+      <div style={{ fontSize: '0.78rem', color: '#64748b', fontWeight: 500 }}>{label}</div>
+      <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#1e293b', lineHeight: 1.1 }}>{value}</div>
+    </div>
+  </div>
+);
+
+// --- Main component -----------------------------------------------------
+const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'inventory' }) => {
+  const {
+    drugs, prescriptions, drugSuppliers, dispenseMedication,
+    addDrug, updateDrug, role, loading
+  } = useEMR();
+
   const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>(initialTab);
   const [showCSVModal, setShowCSVModal] = useState(false);
-  const [modal, setModal] = useState<{ type: 'addDrug' | 'editDrug' | 'updateStock'; data?: Drug } | null>(null);
-  const [newDrug, setNewDrug] = useState(emptyDrug);
+
+  // Inventory tab state
+  const [search, setSearch] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [filterForm, setFilterForm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
+  const [filterStock, setFilterStock] = useState('');
+  const [sortBy, setSortBy] = useState<'name' | 'stock' | 'expiry'>('name');
+
+  // Modal state
+  const [drugModal, setDrugModal] = useState<{ mode: 'add' | 'edit'; data?: Drug } | null>(null);
+  const [formState, setFormState] = useState<DrugFormState>(emptyForm);
+  const [activeFormTab, setActiveFormTab] = useState<'basic' | 'clinical' | 'storage' | 'inventory'>('basic');
+  const [detailDrug, setDetailDrug] = useState<Drug | null>(null);
+  const [stockModalDrug, setStockModalDrug] = useState<Drug | null>(null);
   const [stockValue, setStockValue] = useState('');
 
-  const [invSearch, setInvSearch] = useState('');
-  const [invFilters, setInvFilters] = useState<Record<string, string>>({ form: '', stock: '' });
-  const [invSort, setInvSort] = useState('name_asc');
+  // Prescription tab state (kept similar to legacy implementation)
   const [rxSearch, setRxSearch] = useState('');
-  const [rxFilters, setRxFilters] = useState<Record<string, string>>({ status: '' });
-  const [rxSort, setRxSort] = useState('time_desc');
+  const [rxStatus, setRxStatus] = useState('');
+
+  // --- Derived data ---------------------------------------------------
+  const lowStockCount = useMemo(
+    () => drugs.filter(d => d.stock < (d.reorderLevel ?? 20)).length,
+    [drugs]
+  );
+
+  const expiringSoonCount = useMemo(
+    () => drugs.filter(d => {
+      const days = daysUntil(d.expiryDate);
+      return days !== null && days >= 0 && days <= 90;
+    }).length,
+    [drugs]
+  );
 
   const filteredDrugs = useMemo(() => {
-    let result = drugs.filter((d) => {
-      const q = invSearch.toLowerCase();
-      if (q && !d.name.toLowerCase().includes(q) && !d.form.toLowerCase().includes(q)) return false;
-      if (invFilters.form && d.form !== invFilters.form) return false;
-      if (invFilters.stock === 'low' && d.stock >= 20) return false;
-      if (invFilters.stock === 'ok' && d.stock < 20) return false;
+    const q = search.trim().toLowerCase();
+    const result = drugs.filter((d) => {
+      if (q) {
+        const hay = `${d.name} ${d.brandName || ''} ${d.activeIngredient || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (filterCategory && d.category !== filterCategory) return false;
+      if (filterForm && d.form !== filterForm) return false;
+      if (filterStatus && (d.status || 'Active') !== filterStatus) return false;
+      if (filterStock === 'low' && d.stock >= (d.reorderLevel ?? 20)) return false;
+      if (filterStock === 'critical' && d.stock >= 10) return false;
+      if (filterStock === 'in_stock' && d.stock < (d.reorderLevel ?? 20)) return false;
       return true;
     });
     return [...result].sort((a, b) => {
-      if (invSort === 'name_asc') return a.name.localeCompare(b.name);
-      if (invSort === 'name_desc') return b.name.localeCompare(a.name);
-      if (invSort === 'stock_asc') return a.stock - b.stock;
-      if (invSort === 'stock_desc') return b.stock - a.stock;
+      if (sortBy === 'name') return a.name.localeCompare(b.name);
+      if (sortBy === 'stock') return a.stock - b.stock;
+      if (sortBy === 'expiry') {
+        const av = a.expiryDate ? Date.parse(a.expiryDate) : Infinity;
+        const bv = b.expiryDate ? Date.parse(b.expiryDate) : Infinity;
+        return av - bv;
+      }
       return 0;
     });
-  }, [drugs, invSearch, invFilters, invSort]);
+  }, [drugs, search, filterCategory, filterForm, filterStatus, filterStock, sortBy]);
 
   const filteredRx = useMemo(() => {
-    let result = prescriptions.filter((p) => {
-      const q = rxSearch.toLowerCase();
+    const q = rxSearch.toLowerCase();
+    return prescriptions.filter((p) => {
       if (q && !p.patientName.toLowerCase().includes(q) && !p.drug.toLowerCase().includes(q)) return false;
-      if (rxFilters.status && p.status !== rxFilters.status) return false;
+      if (rxStatus && p.status !== rxStatus) return false;
       return true;
     });
-    return rxSort === 'time_asc' ? [...result].reverse() : result;
-  }, [prescriptions, rxSearch, rxFilters, rxSort]);
+  }, [prescriptions, rxSearch, rxStatus]);
+
+  // --- Handlers -------------------------------------------------------
+  const openAddDrug = () => {
+    setFormState(emptyForm);
+    setActiveFormTab('basic');
+    setDrugModal({ mode: 'add' });
+  };
+
+  const openEditDrug = (d: Drug) => {
+    setFormState(drugToForm(d));
+    setActiveFormTab('basic');
+    setDrugModal({ mode: 'edit', data: d });
+  };
+
+  const closeDrugModal = () => {
+    setDrugModal(null);
+    setFormState(emptyForm);
+  };
+
+  const saveDrug = async () => {
+    if (!formState.name.trim()) {
+      toast.error('Drug name is required.');
+      return;
+    }
+    try {
+      const payload = formToDrug(formState);
+      if (drugModal?.mode === 'edit' && drugModal.data) {
+        await updateDrug(drugModal.data.id, payload);
+        toast.success('Drug updated.');
+      } else {
+        await addDrug(payload);
+        toast.success('Drug added to inventory.');
+      }
+      closeDrugModal();
+    } catch (err: any) {
+      toast.error('Save failed: ' + (err?.message || 'unknown error'));
+    }
+  };
+
+  const saveStock = async () => {
+    if (!stockModalDrug) return;
+    const n = parseInt(stockValue, 10);
+    if (Number.isNaN(n) || n < 0) {
+      toast.error('Enter a valid stock quantity.');
+      return;
+    }
+    try {
+      await updateDrug(stockModalDrug.id, { stock: n });
+      toast.success('Stock updated.');
+      setStockModalDrug(null);
+      setStockValue('');
+    } catch (err: any) {
+      toast.error('Stock update failed: ' + (err?.message || 'unknown error'));
+    }
+  };
 
   const handleDispenseAction = async (rx: Prescription) => {
     const drug = drugs.find(d => d.name.toLowerCase() === rx.drug.toLowerCase());
-    if (!drug) {
-      toast.error('Drug not found in inventory.');
-      return;
-    }
-    if (drug.stock <= 0) {
-      toast.error('Out of stock!');
-      return;
-    }
+    if (!drug) { toast.error('Drug not found in inventory.'); return; }
+    if (drug.stock <= 0) { toast.error('Out of stock!'); return; }
     try {
       await dispenseMedication(rx.id, drug.id, 1);
       toast.success('Medication dispensed successfully.');
@@ -69,73 +358,280 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
     }
   };
 
-  const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };
-  const boxStyle: React.CSSProperties = { background: 'white', borderRadius: '1rem', padding: '2rem', width: '420px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' };
+  // --- Styles ---------------------------------------------------------
+  const overlayStyle: React.CSSProperties = {
+    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+    background: 'rgba(15,23,42,0.55)', display: 'flex', alignItems: 'center',
+    justifyContent: 'center', zIndex: 1000, padding: '1.5rem'
+  };
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading pharmacy data...</div>;
+
+  // --- Modals ---------------------------------------------------------
+  const renderFormTab = () => {
+    if (activeFormTab === 'basic') {
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
+          <Field label="Generic Name *" full>
+            <input style={inputStyle} value={formState.name} onChange={e => setFormState({ ...formState, name: e.target.value })} placeholder="e.g. Amoxicillin" />
+          </Field>
+          <Field label="Brand Name">
+            <input style={inputStyle} value={formState.brandName} onChange={e => setFormState({ ...formState, brandName: e.target.value })} placeholder="e.g. Amoxil" />
+          </Field>
+          <Field label="Active Ingredient">
+            <input style={inputStyle} value={formState.activeIngredient} onChange={e => setFormState({ ...formState, activeIngredient: e.target.value })} />
+          </Field>
+          <Field label="Manufacturer">
+            <input style={inputStyle} value={formState.manufacturer} onChange={e => setFormState({ ...formState, manufacturer: e.target.value })} />
+          </Field>
+          <Field label="Supplier">
+            <select style={inputStyle} value={formState.supplierName} onChange={e => setFormState({ ...formState, supplierName: e.target.value })}>
+              <option value="">— Select —</option>
+              {drugSuppliers.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+            </select>
+          </Field>
+          <Field label="Category">
+            <select style={inputStyle} value={formState.category} onChange={e => setFormState({ ...formState, category: e.target.value })}>
+              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </Field>
+          <Field label="Form">
+            <select style={inputStyle} value={formState.form} onChange={e => setFormState({ ...formState, form: e.target.value })}>
+              {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </Field>
+          <Field label="Strength">
+            <input style={inputStyle} value={formState.strength} onChange={e => setFormState({ ...formState, strength: e.target.value })} placeholder="e.g. 500mg" />
+          </Field>
+          <Field label="Unit">
+            <input style={inputStyle} value={formState.unit} onChange={e => setFormState({ ...formState, unit: e.target.value })} placeholder="e.g. tablet, vial" />
+          </Field>
+          <Field label="Route">
+            <select style={inputStyle} value={formState.route} onChange={e => setFormState({ ...formState, route: e.target.value })}>
+              {ROUTES.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </Field>
+        </div>
+      );
+    }
+    if (activeFormTab === 'clinical') {
+      return (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+          <Field label="Indication">
+            <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={formState.indication} onChange={e => setFormState({ ...formState, indication: e.target.value })} />
+          </Field>
+          <Field label="Contraindications">
+            <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={formState.contraindications} onChange={e => setFormState({ ...formState, contraindications: e.target.value })} />
+          </Field>
+          <Field label="Side Effects">
+            <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={formState.sideEffects} onChange={e => setFormState({ ...formState, sideEffects: e.target.value })} />
+          </Field>
+          <Field label="Drug Interactions">
+            <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={formState.drugInteractions} onChange={e => setFormState({ ...formState, drugInteractions: e.target.value })} />
+          </Field>
+        </div>
+      );
+    }
+    if (activeFormTab === 'storage') {
+      return (
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
+          <Field label="Storage Conditions" full>
+            <input style={inputStyle} value={formState.storageConditions} onChange={e => setFormState({ ...formState, storageConditions: e.target.value })} placeholder="e.g. Below 25°C, dry" />
+          </Field>
+          <Field label="Storage Location" full>
+            <input style={inputStyle} value={formState.storageLocation} onChange={e => setFormState({ ...formState, storageLocation: e.target.value })} placeholder="e.g. Ward A Pharmacy, Cold Storage Room" />
+          </Field>
+          <Field label="Handling Precautions" full>
+            <textarea style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} value={formState.handlingPrecautions} onChange={e => setFormState({ ...formState, handlingPrecautions: e.target.value })} />
+          </Field>
+          <Field label="Controlled Substance">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#1e293b' }}>
+              <input type="checkbox" checked={formState.controlledSubstance} onChange={e => setFormState({ ...formState, controlledSubstance: e.target.checked })} />
+              Requires controlled-drugs register
+            </label>
+          </Field>
+          <Field label="Prescription Required">
+            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', color: '#1e293b' }}>
+              <input type="checkbox" checked={formState.prescriptionRequired} onChange={e => setFormState({ ...formState, prescriptionRequired: e.target.checked })} />
+              Rx-only (not OTC)
+            </label>
+          </Field>
+        </div>
+      );
+    }
+    // inventory tab
+    return (
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.9rem' }}>
+        <Field label="Stock Quantity">
+          <input type="number" style={inputStyle} value={formState.stock} onChange={e => setFormState({ ...formState, stock: e.target.value })} />
+        </Field>
+        <Field label="Status">
+          <select style={inputStyle} value={formState.status} onChange={e => setFormState({ ...formState, status: e.target.value })}>
+            {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </Field>
+        <Field label="Purchase Price (ETB)">
+          <input type="number" step="0.01" style={inputStyle} value={formState.purchasePrice} onChange={e => setFormState({ ...formState, purchasePrice: e.target.value })} />
+        </Field>
+        <Field label="Selling Price (ETB)">
+          <input style={inputStyle} value={formState.price} onChange={e => setFormState({ ...formState, price: e.target.value })} placeholder="e.g. 15.00 ETB" />
+        </Field>
+        <Field label="Reorder Level">
+          <input type="number" style={inputStyle} value={formState.reorderLevel} onChange={e => setFormState({ ...formState, reorderLevel: e.target.value })} />
+        </Field>
+        <Field label="Reorder Quantity">
+          <input type="number" style={inputStyle} value={formState.reorderQuantity} onChange={e => setFormState({ ...formState, reorderQuantity: e.target.value })} />
+        </Field>
+        <Field label="Expiry Date">
+          <input type="date" style={inputStyle} value={formState.expiryDate} onChange={e => setFormState({ ...formState, expiryDate: e.target.value })} />
+        </Field>
+        <Field label="Batch Number">
+          <input style={inputStyle} value={formState.batchNumber} onChange={e => setFormState({ ...formState, batchNumber: e.target.value })} />
+        </Field>
+      </div>
+    );
+  };
 
   return (
     <div className="pharmacy-container">
       {showCSVModal && <CSVImportModal title="Drugs Inventory" onClose={() => setShowCSVModal(false)} onImport={() => {}} />}
-      
-      {modal && (
-        <div style={overlayStyle}>
-          <div style={{ ...boxStyle, width: modal.type === 'updateStock' ? '420px' : '500px' }}>
-            <h3 style={{ marginBottom: '1rem' }}>
-              {modal.type === 'addDrug' ? 'Add New Drug' : modal.type === 'editDrug' ? 'Edit Drug Details' : 'Update Stock'}
-            </h3>
-            
-            {(modal.type === 'addDrug' || modal.type === 'editDrug') && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
-                <div>
-                  <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Drug Name</label>
-                  <input type="text" value={newDrug.name} onChange={e => setNewDrug({...newDrug, name: e.target.value})} placeholder="e.g. Paracetamol" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Form</label>
-                    <select value={newDrug.form} onChange={e => setNewDrug({...newDrug, form: e.target.value})} style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }}>
-                      <option>Tablet</option><option>Capsule</option><option>Syrup</option><option>Injection</option><option>Ointment</option>
-                    </select>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Strength</label>
-                    <input type="text" value={newDrug.strength} onChange={e => setNewDrug({...newDrug, strength: e.target.value})} placeholder="e.g. 500mg" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Initial Stock</label>
-                    <input type="number" value={newDrug.stock} onChange={e => setNewDrug({...newDrug, stock: e.target.value})} placeholder="0" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={{ fontSize: '0.85rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Price</label>
-                    <input type="text" value={newDrug.price} onChange={e => setNewDrug({...newDrug, price: e.target.value})} placeholder="e.g. 15.00 ETB" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' }} />
-                  </div>
-                </div>
+
+      {/* Drug Detail Modal */}
+      {detailDrug && (
+        <div style={overlayStyle} onClick={() => setDetailDrug(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: '1rem', padding: 0, width: 'min(880px, 100%)',
+            maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+          }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>{detailDrug.name}</div>
+                {detailDrug.brandName && <div style={{ fontSize: '0.85rem', color: '#64748b' }}>{detailDrug.brandName}</div>}
               </div>
-            )}
+              <button onClick={() => setDetailDrug(null)} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={22} />
+              </button>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Flags */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                {detailDrug.category && (
+                  <Pill_Badge bg={(CATEGORY_COLORS[detailDrug.category]?.bg) || '#f1f5f9'} color={(CATEGORY_COLORS[detailDrug.category]?.fg) || '#1e293b'}>{detailDrug.category}</Pill_Badge>
+                )}
+                <Pill_Badge bg="#f1f5f9" color="#1e293b">{detailDrug.form} / {detailDrug.route || 'Oral'}</Pill_Badge>
+                {detailDrug.controlledSubstance && (
+                  <Pill_Badge bg="#1e293b" color="#fbbf24" title="Controlled drug — requires register"><ShieldAlert size={12} /> Controlled</Pill_Badge>
+                )}
+                {detailDrug.prescriptionRequired === false ? (
+                  <Pill_Badge bg="#dcfce7" color="#166534">OTC</Pill_Badge>
+                ) : (
+                  <Pill_Badge bg="#dbeafe" color="#1d4ed8"><BadgeCheck size={12} /> Rx Required</Pill_Badge>
+                )}
+                <Pill_Badge bg="#fef3c7" color="#92400e">{detailDrug.status || 'Active'}</Pill_Badge>
+              </div>
 
-            {modal.type === 'updateStock' && (
-              <>
-                <p style={{ color: '#64748b', fontSize: '0.875rem', marginBottom: '1rem' }}>Updating stock for: <strong>{modal.data?.name}</strong></p>
-                <input type="number" value={stockValue} onChange={e => setStockValue(e.target.value)} placeholder="New stock quantity" style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem', marginBottom: '1.5rem' }} />
-              </>
-            )}
+              <Section title="Basic Info" icon={<FileText size={16} />}>
+                <KV k="Generic Name" v={detailDrug.name} />
+                <KV k="Brand Name" v={detailDrug.brandName || '—'} />
+                <KV k="Manufacturer" v={detailDrug.manufacturer || '—'} />
+                <KV k="Supplier" v={detailDrug.supplierName || '—'} />
+                <KV k="Active Ingredient" v={detailDrug.activeIngredient || '—'} />
+              </Section>
 
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-              <button className="btn-secondary" onClick={() => { setModal(null); setNewDrug(emptyDrug); }}>Cancel</button>
-              <button className="btn-primary" onClick={async () => {
-                if (modal.type === 'addDrug') {
-                  await addDrug({ ...newDrug, stock: parseInt(newDrug.stock) || 0 });
-                } else if (modal.type === 'editDrug' && modal.data) {
-                  await updateDrug(modal.data.id, { ...newDrug, stock: parseInt(newDrug.stock) || 0 });
-                } else if (modal.type === 'updateStock' && modal.data) {
-                  await updateDrug(modal.data.id, { stock: parseInt(stockValue) || 0 });
-                }
-                setModal(null);
-                setNewDrug(emptyDrug);
-              }}>Confirm</button>
+              <Section title="Clinical Info" icon={<Beaker size={16} />}>
+                <KV k="Category" v={detailDrug.category || '—'} />
+                <KV k="Form" v={detailDrug.form || '—'} />
+                <KV k="Strength" v={detailDrug.strength || '—'} />
+                <KV k="Route" v={detailDrug.route || '—'} />
+                <KV k="Unit" v={detailDrug.unit || '—'} />
+                <KV k="Indication" v={detailDrug.indication || '—'} full />
+              </Section>
+
+              <Section title="Safety" icon={<ShieldAlert size={16} />}>
+                <KV k="Contraindications" v={detailDrug.contraindications || '—'} full />
+                <KV k="Side Effects" v={detailDrug.sideEffects || '—'} full />
+                <KV k="Drug Interactions" v={detailDrug.drugInteractions || '—'} full />
+                <KV k="Handling Precautions" v={detailDrug.handlingPrecautions || '—'} full />
+              </Section>
+
+              <Section title="Storage" icon={<Package size={16} />}>
+                <KV k="Storage Conditions" v={detailDrug.storageConditions || '—'} />
+                <KV k="Storage Location" v={detailDrug.storageLocation || '—'} />
+                <KV k="Batch Number" v={detailDrug.batchNumber || '—'} />
+                <KV k="Expiry Date" v={detailDrug.expiryDate || '—'} />
+              </Section>
+
+              <Section title="Inventory" icon={<ClipboardList size={16} />}>
+                <KV k="Current Stock" v={String(detailDrug.stock)} />
+                <KV k="Reorder Level" v={String(detailDrug.reorderLevel ?? 20)} />
+                <KV k="Reorder Quantity" v={String(detailDrug.reorderQuantity ?? 100)} />
+                <KV k="Purchase Price" v={detailDrug.purchasePrice ? `${detailDrug.purchasePrice.toFixed(2)} ETB` : '—'} />
+                <KV k="Selling Price" v={detailDrug.price || '—'} />
+              </Section>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Drug Modal */}
+      {drugModal && (
+        <div style={overlayStyle} onClick={closeDrugModal}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: '1rem', padding: 0, width: 'min(720px, 100%)',
+            maxHeight: '88vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+          }}>
+            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: '1.1rem', fontWeight: 700, color: '#1e293b' }}>
+                {drugModal.mode === 'add' ? 'Add Drug' : 'Edit Drug'}
+              </div>
+              <button onClick={closeDrugModal} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={22} />
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.25rem', padding: '0.75rem 1.5rem', borderBottom: '1px solid #e2e8f0', flexWrap: 'wrap' }}>
+              {(['basic', 'clinical', 'storage', 'inventory'] as const).map(tab => {
+                const labels: Record<typeof tab, string> = { basic: 'Basic Info', clinical: 'Clinical Info', storage: 'Storage & Safety', inventory: 'Inventory' };
+                const active = activeFormTab === tab;
+                return (
+                  <button key={tab} onClick={() => setActiveFormTab(tab)} style={{
+                    padding: '0.45rem 0.9rem', borderRadius: '0.5rem', fontSize: '0.82rem',
+                    fontWeight: 600, cursor: 'pointer', border: '1px solid transparent',
+                    background: active ? '#3b82f6' : '#f1f5f9', color: active ? 'white' : '#475569'
+                  }}>{labels[tab]}</button>
+                );
+              })}
+            </div>
+            <div style={{ overflowY: 'auto', padding: '1.25rem 1.5rem', flex: 1 }}>
+              {renderFormTab()}
+            </div>
+            <div style={{ padding: '1rem 1.5rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
+              <button className="btn-secondary" onClick={closeDrugModal}>Cancel</button>
+              <button className="btn-primary" onClick={saveDrug}>
+                {drugModal.mode === 'add' ? 'Add Drug' : 'Save Changes'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Update Stock Modal */}
+      {stockModalDrug && (
+        <div style={overlayStyle} onClick={() => setStockModalDrug(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: '1rem', padding: '1.5rem', width: 'min(420px, 100%)',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
+          }}>
+            <div style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: '#1e293b' }}>Update Stock</div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1rem' }}>
+              Drug: <strong style={{ color: '#1e293b' }}>{stockModalDrug.name}</strong>
+              {' '}(current: {stockModalDrug.stock})
+            </div>
+            <input type="number" value={stockValue} onChange={e => setStockValue(e.target.value)} placeholder="New stock quantity" style={inputStyle} autoFocus />
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button className="btn-secondary" onClick={() => { setStockModalDrug(null); setStockValue(''); }}>Cancel</button>
+              <button className="btn-primary" onClick={saveStock}>Update</button>
             </div>
           </div>
         </div>
@@ -144,13 +640,27 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
       <div className="pharmacy-content">
         {activeTab === 'prescriptions' ? (
           <>
-            <ListFilterControl
-              searchValue={rxSearch} onSearchChange={setRxSearch} searchPlaceholder="Search by patient or drug..."
-              filters={[{ key: 'status', label: 'Status', options: [{ label: 'All', value: '' }, { label: 'Pending', value: 'Pending' }, { label: 'Dispensed', value: 'Dispensed' }] }]}
-              filterValues={rxFilters} onFilterChange={(k, v) => setRxFilters(prev => ({ ...prev, [k]: v }))}
-              sortValue={rxSort} sortOptions={[{ label: 'Newest First', value: 'time_desc' }, { label: 'Oldest First', value: 'time_asc' }]}
-              onSortChange={setRxSort} totalCount={prescriptions.length} filteredCount={filteredRx.length}
-            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <FileText size={22} color="#3b82f6" />
+                <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#1e293b' }}>Prescriptions</div>
+              </div>
+              <button className="btn-secondary" onClick={() => setActiveTab('inventory')}>
+                <Pill size={16} /> Switch to Inventory
+              </button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ position: 'relative', flex: '1 1 240px', minWidth: 220 }}>
+                <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input value={rxSearch} onChange={e => setRxSearch(e.target.value)} placeholder="Search by patient or drug..." style={{ ...inputStyle, paddingLeft: '2rem' }} />
+              </div>
+              <select value={rxStatus} onChange={e => setRxStatus(e.target.value)} style={{ ...inputStyle, maxWidth: 200 }}>
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Dispensed">Dispensed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </div>
             <div className="data-table-container">
               <table className="data-table">
                 <thead><tr><th>Patient</th><th>Medication</th><th>Dosage</th><th>Duration</th><th>Status</th><th>Action</th></tr></thead>
@@ -170,70 +680,169 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                       </td>
                     </tr>
                   ))}
+                  {filteredRx.length === 0 && (
+                    <tr><td colSpan={6} style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No prescriptions match the current filters.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
           </>
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button className="btn-primary" onClick={() => setModal({ type: 'addDrug' })}><Plus size={18} /> Add Drug</button>
-                <button className="btn-secondary" onClick={() => setShowCSVModal(true)}><ClipboardList size={18} /> Import CSV</button>
-              </div>
-              <div style={{ display: 'flex', gap: '1.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444', fontSize: '0.875rem', fontWeight: '600' }}>
-                  <AlertTriangle size={18} /> {drugs.filter(d => d.stock < 20).length} Low Stock
+            {/* Header: title + stat cards + actions */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Pill size={24} color="#3b82f6" />
+                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Drug Inventory</div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
+                  <button className="btn-primary" onClick={openAddDrug}><Plus size={16} /> Add Drug</button>
+                  <button className="btn-secondary" onClick={() => setShowCSVModal(true)}><ClipboardList size={16} /> Import CSV</button>
+                  <button className="btn-secondary" onClick={() => setActiveTab('prescriptions')}><FileText size={16} /> Prescriptions</button>
                 </div>
               </div>
+
+              <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <StatCard icon={<Pill size={20} />} label="Total Drugs" value={drugs.length} color="#1d4ed8" bg="#dbeafe" />
+                <StatCard icon={<AlertTriangle size={20} />} label="Low Stock" value={lowStockCount} color="#b45309" bg="#fef3c7" />
+                <StatCard icon={<Calendar size={20} />} label="Expiring within 90 days" value={expiringSoonCount} color="#b91c1c" bg="#fee2e2" />
+              </div>
             </div>
-            <ListFilterControl
-              searchValue={invSearch} onSearchChange={setInvSearch} searchPlaceholder="Search drugs..."
-              filters={[
-                { key: 'form', label: 'Form', options: [{ label: 'All', value: '' }, { label: 'Tablet', value: 'Tablet' }, { label: 'Capsule', value: 'Capsule' }, { label: 'Syrup', value: 'Syrup' }] },
-                { key: 'stock', label: 'Stock', options: [{ label: 'All', value: '' }, { label: 'Low Stock (<20)', value: 'low' }, { label: 'In Stock', value: 'ok' }] }
-              ]}
-              filterValues={invFilters} onFilterChange={(k, v) => setInvFilters(prev => ({ ...prev, [k]: v }))}
-              sortValue={invSort} sortOptions={[{ label: 'Name A-Z', value: 'name_asc' }, { label: 'Stock Low-High', value: 'stock_asc' }]}
-              onSortChange={setInvSort} totalCount={drugs.length} filteredCount={filteredDrugs.length}
-            />
+
+            {/* Filter bar */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'minmax(220px, 1.5fr) repeat(5, minmax(140px, 1fr))',
+              gap: '0.6rem', marginBottom: '1rem'
+            }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name / brand / ingredient..." style={{ ...inputStyle, paddingLeft: '2rem' }} />
+              </div>
+              <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={inputStyle}>
+                <option value="">All Categories</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={filterForm} onChange={e => setFilterForm(e.target.value)} style={inputStyle}>
+                <option value="">All Forms</option>
+                {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={inputStyle}>
+                <option value="">All Statuses</option>
+                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+              <select value={filterStock} onChange={e => setFilterStock(e.target.value)} style={inputStyle}>
+                <option value="">All Stock Levels</option>
+                <option value="low">Low Stock</option>
+                <option value="critical">Critical (&lt;10)</option>
+                <option value="in_stock">In Stock</option>
+              </select>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as 'name' | 'stock' | 'expiry')} style={inputStyle}>
+                <option value="name">Sort: Name A→Z</option>
+                <option value="stock">Sort: Stock low→high</option>
+                <option value="expiry">Sort: Expiry soonest</option>
+              </select>
+            </div>
+
+            <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: '0.6rem' }}>
+              Showing {filteredDrugs.length} of {drugs.length} drugs
+            </div>
+
+            {/* Drug table */}
             <div className="data-table-container">
               <table className="data-table">
-                <thead><tr><th>Drug Name</th><th>Form</th><th>Strength</th><th>Stock</th><th>Price</th><th>Action</th></tr></thead>
+                <thead>
+                  <tr>
+                    <th>Drug</th>
+                    <th>Category</th>
+                    <th>Form / Route</th>
+                    <th>Strength</th>
+                    <th>Stock</th>
+                    <th>Expiry</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
                 <tbody>
-                  {filteredDrugs.map(d => (
-                    <tr key={d.id}>
-                      <td><strong>{d.name}</strong></td>
-                      <td>{d.form}</td>
-                      <td>{d.strength}</td>
-                      <td>
-                        <span style={{ color: d.stock < 20 ? '#ef4444' : 'inherit', fontWeight: '700' }}>{d.stock}</span>
-                      </td>
-                      <td>{d.price}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => { setModal({ type: 'updateStock', data: d }); setStockValue(d.stock.toString()); }}>Update</button>
-                          {role === 'Admin' && (
-                            <button 
-                              style={{ background: '#f59e0b', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '0.375rem', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}
-                              onClick={() => {
-                                setModal({ type: 'editDrug', data: d });
-                                setNewDrug({
-                                  name: d.name,
-                                  form: d.form,
-                                  strength: d.strength,
-                                  stock: d.stock.toString(),
-                                  price: d.price
-                                });
-                              }}
+                  {filteredDrugs.map(d => {
+                    const cat = d.category || '';
+                    const colors = CATEGORY_COLORS[cat] || { bg: '#f1f5f9', fg: '#1e293b' };
+                    const days = daysUntil(d.expiryDate);
+                    const exColor = expiryColor(d.expiryDate);
+                    return (
+                      <tr key={d.id}>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <strong style={{ color: '#1e293b' }}>{d.name}</strong>
+                            {d.brandName && <span style={{ fontSize: '0.72rem', color: '#64748b' }}>{d.brandName}</span>}
+                            {d.controlledSubstance && (
+                              <span style={{ marginTop: 4 }}>
+                                <Pill_Badge bg="#1e293b" color="#fbbf24"><ShieldAlert size={11} /> Controlled</Pill_Badge>
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td>
+                          {cat ? <Pill_Badge bg={colors.bg} color={colors.fg}>{cat}</Pill_Badge> : <span style={{ color: '#94a3b8' }}>—</span>}
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '0.82rem' }}>{d.form || '—'}</div>
+                          <div style={{ fontSize: '0.72rem', color: '#64748b' }}>{d.route || ''}</div>
+                        </td>
+                        <td>{d.strength || '—'}</td>
+                        <td>
+                          <span style={{ color: stockColor(d), fontWeight: 700 }}>{d.stock}</span>
+                          <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>reorder@{d.reorderLevel ?? 20}</div>
+                        </td>
+                        <td>
+                          {d.expiryDate ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ color: exColor || '#64748b', fontWeight: exColor ? 600 : 400 }}>{d.expiryDate}</span>
+                              {days !== null && (
+                                <span style={{ fontSize: '0.7rem', color: exColor || '#94a3b8' }}>
+                                  {days < 0 ? 'EXPIRED' : `${days}d left`}
+                                </span>
+                              )}
+                            </div>
+                          ) : <span style={{ color: '#94a3b8' }}>—</span>}
+                        </td>
+                        <td>{d.price || '—'}</td>
+                        <td>
+                          <span className={`status-badge ${(d.status || 'Active') === 'Active' ? 'status-active' : 'status-pending'}`}>
+                            {d.status || 'Active'}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => setDetailDrug(d)}
+                              style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', color: '#1e293b', padding: '0.35rem 0.65rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
                             >
-                              Edit
+                              <Eye size={13} /> Details
                             </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                            <button
+                              onClick={() => { setStockModalDrug(d); setStockValue(String(d.stock)); }}
+                              style={{ background: '#dbeafe', border: 'none', color: '#1d4ed8', padding: '0.35rem 0.65rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                            >
+                              <RefreshCw size={13} /> Update Stock
+                            </button>
+                            {role === 'Admin' && (
+                              <button
+                                onClick={() => openEditDrug(d)}
+                                style={{ background: '#fef3c7', border: 'none', color: '#92400e', padding: '0.35rem 0.65rem', borderRadius: '0.375rem', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                              >
+                                <Edit2 size={13} /> Edit
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredDrugs.length === 0 && (
+                    <tr><td colSpan={9} style={{ textAlign: 'center', color: '#64748b', padding: '2rem' }}>No drugs match the current filters.</td></tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -243,5 +852,24 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
     </div>
   );
 };
+
+// --- Small layout helpers used inside the detail modal -----------------
+const Section: React.FC<{ title: string; icon?: React.ReactNode; children: React.ReactNode }> = ({ title, icon, children }) => (
+  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.6rem', padding: '0.9rem 1rem' }}>
+    <div style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#475569', display: 'flex', alignItems: 'center', gap: 6, marginBottom: '0.6rem' }}>
+      {icon}{title}
+    </div>
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem 1rem' }}>
+      {children}
+    </div>
+  </div>
+);
+
+const KV: React.FC<{ k: string; v: string; full?: boolean }> = ({ k, v, full }) => (
+  <div style={{ gridColumn: full ? '1 / -1' : undefined }}>
+    <div style={{ fontSize: '0.7rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>{k}</div>
+    <div style={{ fontSize: '0.85rem', color: '#1e293b', whiteSpace: 'pre-wrap' }}>{v}</div>
+  </div>
+);
 
 export default PharmacyManagement;

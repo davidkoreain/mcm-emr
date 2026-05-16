@@ -1,4 +1,4 @@
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder } from '../context/EMRContext';
 
 /**
  * Database service interface.
@@ -38,6 +38,15 @@ export interface IDBService {
   fetchPrescriptions(): Promise<Prescription[]>;
   insertPrescription(p: Omit<Prescription, 'id' | 'createdAt'>): Promise<void>;
   updatePrescriptionStatus(id: number, status: string): Promise<void>;
+  // pharmacy phase 1
+  fetchDrugSuppliers?(): Promise<DrugSupplier[]>;
+  insertDrugSupplier?(s: Omit<DrugSupplier, 'id' | 'createdAt'>): Promise<void>;
+  fetchMedicationSchedules?(patientMrn?: string): Promise<MedicationSchedule[]>;
+  insertMedicationSchedule?(s: Omit<MedicationSchedule, 'id' | 'createdAt'>): Promise<void>;
+  updateMedicationSchedule?(id: number, changes: Partial<MedicationSchedule>): Promise<void>;
+  fetchDrugOrders?(): Promise<DrugOrder[]>;
+  insertDrugOrder?(o: Omit<DrugOrder, 'id' | 'createdAt'>): Promise<void>;
+  updateDrugOrder?(id: number, changes: Partial<DrugOrder>): Promise<void>;
   // lab
   fetchLabOrders(): Promise<LabOrder[]>;
   fetchLabResults(): Promise<LabResult[]>;
