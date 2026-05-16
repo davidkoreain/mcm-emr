@@ -185,9 +185,9 @@ const App: React.FC = () => {
                 <AnimatePresence>
                   {isHrmOpen && (
                     <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                      <li className={`sub-nav-item ${view === 'staff' && staffTab === 'portfolio'   ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('portfolio');   setMobileMenuOpen(false); }}><span>Members</span></li>
-                      <li className={`sub-nav-item ${view === 'staff' && staffTab === 'leave'       ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('leave');       setMobileMenuOpen(false); }}><span>Leave Mgmt</span></li>
-                      <li className={`sub-nav-item ${view === 'staff' && staffTab === 'performance' ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('performance'); setMobileMenuOpen(false); }}><span>Performance</span></li>
+                      {canSee('staff.portfolio')   && <li className={`sub-nav-item ${view === 'staff' && staffTab === 'portfolio'   ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('portfolio');   setMobileMenuOpen(false); }}><span>Members</span></li>}
+                      {canSee('staff.leave')       && <li className={`sub-nav-item ${view === 'staff' && staffTab === 'leave'       ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('leave');       setMobileMenuOpen(false); }}><span>Leave Mgmt</span></li>}
+                      {canSee('staff.performance') && <li className={`sub-nav-item ${view === 'staff' && staffTab === 'performance' ? 'active' : ''}`} onClick={() => { setView('staff'); setStaffTab('performance'); setMobileMenuOpen(false); }}><span>Performance</span></li>}
                     </motion.ul>
                   )}
                 </AnimatePresence>
@@ -204,8 +204,8 @@ const App: React.FC = () => {
                 <AnimatePresence>
                   {isLabOpen && (
                     <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                      <li className={`sub-nav-item ${view === 'lab' && labTab === 'orders'  ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('orders');  setMobileMenuOpen(false); }}><span>Pending Orders</span></li>
-                      <li className={`sub-nav-item ${view === 'lab' && labTab === 'results' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('results'); setMobileMenuOpen(false); }}><span>Results</span></li>
+                      {canSee('lab.orders')  && <li className={`sub-nav-item ${view === 'lab' && labTab === 'orders'  ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('orders');  setMobileMenuOpen(false); }}><span>Pending Orders</span></li>}
+                      {canSee('lab.results') && <li className={`sub-nav-item ${view === 'lab' && labTab === 'results' ? 'active' : ''}`} onClick={() => { setView('lab'); setLabTab('results'); setMobileMenuOpen(false); }}><span>Results</span></li>}
                     </motion.ul>
                   )}
                 </AnimatePresence>
@@ -222,9 +222,9 @@ const App: React.FC = () => {
                 <AnimatePresence>
                   {isOperationOpen && (
                     <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                      <li className={`sub-nav-item ${view === 'operation' && operationTab === 'schedule'  ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('schedule');  setMobileMenuOpen(false); }}><span>OT Schedule</span></li>
-                      <li className={`sub-nav-item ${view === 'operation' && operationTab === 'resources' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('resources'); setMobileMenuOpen(false); }}><span>Resources</span></li>
-                      <li className={`sub-nav-item ${view === 'operation' && operationTab === 'supplies'  ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('supplies');  setMobileMenuOpen(false); }}><span>Supply Tracking</span></li>
+                      {canSee('operation.schedule')  && <li className={`sub-nav-item ${view === 'operation' && operationTab === 'schedule'  ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('schedule');  setMobileMenuOpen(false); }}><span>OT Schedule</span></li>}
+                      {canSee('operation.resources') && <li className={`sub-nav-item ${view === 'operation' && operationTab === 'resources' ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('resources'); setMobileMenuOpen(false); }}><span>Resources</span></li>}
+                      {canSee('operation.supplies')  && <li className={`sub-nav-item ${view === 'operation' && operationTab === 'supplies'  ? 'active' : ''}`} onClick={() => { setView('operation'); setOperationTab('supplies');  setMobileMenuOpen(false); }}><span>Supply Tracking</span></li>}
                     </motion.ul>
                   )}
                 </AnimatePresence>
@@ -241,8 +241,8 @@ const App: React.FC = () => {
                 <AnimatePresence>
                   {isPharmacyOpen && (
                     <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                      <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'prescriptions' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('prescriptions'); setMobileMenuOpen(false); }}><span>Prescriptions</span></li>
-                      <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'inventory'     ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('inventory');     setMobileMenuOpen(false); }}><span>Drug Inventory</span></li>
+                      {canSee('pharmacy.prescriptions') && <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'prescriptions' ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('prescriptions'); setMobileMenuOpen(false); }}><span>Prescriptions</span></li>}
+                      {canSee('pharmacy.inventory')     && <li className={`sub-nav-item ${view === 'pharmacy' && pharmacyTab === 'inventory'     ? 'active' : ''}`} onClick={() => { setView('pharmacy'); setPharmacyTab('inventory');     setMobileMenuOpen(false); }}><span>Drug Inventory</span></li>}
                     </motion.ul>
                   )}
                 </AnimatePresence>
@@ -259,9 +259,9 @@ const App: React.FC = () => {
                 <AnimatePresence>
                   {isAssetsOpen && (
                     <motion.ul initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3, ease: 'easeInOut' }} style={{ listStyle: 'none', padding: '0 0 0 1.5rem', overflow: 'hidden' }}>
-                      <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'inventory'    ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('inventory');    setMobileMenuOpen(false); }}><span>Inventory</span></li>
-                      <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'maintenance'  ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('maintenance');  setMobileMenuOpen(false); }}><span>Maintenance</span></li>
-                      <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'loss'         ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('loss');         setMobileMenuOpen(false); }}><span>Loss & Damage</span></li>
+                      {canSee('assets.inventory')   && <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'inventory'   ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('inventory');   setMobileMenuOpen(false); }}><span>Inventory</span></li>}
+                      {canSee('assets.maintenance') && <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'maintenance' ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('maintenance'); setMobileMenuOpen(false); }}><span>Maintenance</span></li>}
+                      {canSee('assets.loss')        && <li className={`sub-nav-item ${view === 'assets' && assetsTab === 'loss'        ? 'active' : ''}`} onClick={() => { setView('assets'); setAssetsTab('loss');        setMobileMenuOpen(false); }}><span>Loss & Damage</span></li>}
                     </motion.ul>
                   )}
                 </AnimatePresence>
