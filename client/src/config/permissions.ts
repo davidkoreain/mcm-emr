@@ -40,9 +40,9 @@ export const MENU_STRUCTURE: MenuItem[] = [
   ]},
   { key: 'billing',   label: 'Billing', icon: 'CreditCard' },
   { key: 'settings',  label: 'Settings', icon: 'Settings', children: [
-    { key: 'permissions', label: 'Permissions' },
-    { key: 'menu_config', label: '메뉴구성' },
-    { key: 'adjustment',  label: 'Adjustment' },
+    { key: 'settings.permissions', label: 'Permissions' },
+    { key: 'settings.menu_config', label: '메뉴구성' },
+    { key: 'settings.adjustment',  label: 'Adjustment' },
   ]}
 ];
 
@@ -54,7 +54,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: true, 'operation.schedule': true, 'operation.resources': true, 'operation.supplies': true,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': true,
     assets: true, 'assets.inventory': true, 'assets.maintenance': true, 'assets.loss': true,
-    settings: true, permissions: true, menu_config: true, adjustment: true,
+    settings: true, 'settings.permissions': true, 'settings.menu_config': true, 'settings.adjustment': true,
   },
   Doctor: {
     dashboard: true, patients: true, calendar: true, inpatient: true, billing: true,
@@ -63,7 +63,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: true, 'operation.schedule': true, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
-    settings: false, permissions: false, menu_config: false, adjustment: false,
+    settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Nurse: {
     dashboard: true, patients: true, calendar: true, inpatient: true, billing: false,
@@ -72,7 +72,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
-    settings: false, permissions: false, menu_config: false, adjustment: false,
+    settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Pharmacist: {
     dashboard: true, patients: true, calendar: false, inpatient: false, billing: false,
@@ -81,7 +81,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': true,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
-    settings: false, permissions: false, menu_config: false, adjustment: false,
+    settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   LabTech: {
     dashboard: true, patients: true, calendar: false, inpatient: false, billing: false,
@@ -90,7 +90,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: false, 'pharmacy.prescriptions': false, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
-    settings: false, permissions: false, menu_config: false, adjustment: false,
+    settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Cashier: {
     dashboard: true, patients: true, calendar: true, inpatient: false, billing: true,
@@ -99,7 +99,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
     pharmacy: false, 'pharmacy.prescriptions': false, 'pharmacy.inventory': false,
     assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
-    settings: false, permissions: false, menu_config: false, adjustment: false,
+    settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
 };
 

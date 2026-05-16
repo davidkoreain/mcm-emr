@@ -94,6 +94,36 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [autoOpenId, setAutoOpenId] = useState<string | null>(null);
 
+  // Centralized Navigation Handler
+  const handleNavigation = (menuKey: string) => {
+    const tabbedModules = ['staff', 'lab', 'operation', 'pharmacy', 'assets'];
+    
+    // Check if it's a top-level menu with children
+    const menu = menuStructure.find(m => m.key === menuKey);
+    if (menu?.children && menu.children.length > 0) {
+      toggleMenu(menuKey);
+      return; 
+    }
+
+    if (menuKey.includes('.')) {
+      const [module, tab] = menuKey.split('.');
+      
+      if (tabbedModules.includes(module)) {
+        setView(module);
+        if (module === 'staff') setStaffTab(tab as any);
+        if (module === 'lab') setLabTab(tab as any);
+        if (module === 'operation') setOperationTab(tab as any);
+        if (module === 'pharmacy') setPharmacyTab(tab as any);
+        if (module === 'assets') setAssetsTab(tab as any);
+      } else {
+        setView(menuKey);
+      }
+    } else {
+      setView(menuKey);
+    }
+    setMobileMenuOpen(false);
+  };
+
   const [menuStructure] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem('emr_custom_menu_structure');
     if (saved) {
@@ -205,14 +235,7 @@ const App: React.FC = () => {
                 <React.Fragment key={menu.key}>
                   <li 
                     className={`nav-item ${isActive && !hasChildren ? 'active' : ''}`} 
-                    onClick={() => {
-                      if (hasChildren) {
-                        toggleMenu(menu.key);
-                      } else {
-                        setView(menu.key);
-                        setMobileMenuOpen(false);
-                      }
-                    }}
+                    onClick={() => handleNavigation(menu.key)}
                     style={{ justifyContent: hasChildren ? 'space-between' : 'flex-start' }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -247,26 +270,11 @@ const App: React.FC = () => {
                             return (
                               <li 
                                 key={child.key}
-                                className={`sub-nav-item ${isChildActive ? 'active' : ''}`} 
-                                onClick={() => { 
-                                  const isModuleWithTabs = ['staff', 'lab', 'operation', 'pharmacy', 'assets'].includes(menu.key);
-                                  
-                                  if (isModuleWithTabs) {
-                                    setView(menu.key);
-                                    const tab = child.key.includes('.') ? child.key.split('.')[1] : child.key;
-                                    if (menu.key === 'staff') setStaffTab(tab as any);
-                                    if (menu.key === 'lab') setLabTab(tab as any);
-                                    if (menu.key === 'operation') setOperationTab(tab as any);
-                                    if (menu.key === 'pharmacy') setPharmacyTab(tab as any);
-                                    if (menu.key === 'assets') setAssetsTab(tab as any);
-                                  } else {
-                                    setView(child.key);
-                                  }
-                                  setMobileMenuOpen(false); 
-                                }}
-                              >
-                                <span>{child.label}</span>
-                              </li>
+                               className={`sub-nav-item ${isChildActive ? 'active' : ''}`} 
+                               onClick={() => handleNavigation(child.key)}
+                             >
+                               <span>{child.label}</span>
+                             </li>
                             );
                           })}
                         </motion.ul>
@@ -358,9 +366,9 @@ const App: React.FC = () => {
             {view === 'pharmacy' && <PharmacyManagement activeTab={pharmacyTab} />}
             {view === 'assets' && <AssetManagement activeTab={assetsTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'billing' && <BillingManagement />}
-            {view === 'permissions' && role === 'Admin' && <RolePermissions permissions={permissions} onUpdate={savePermissions} />}
-            {view === 'menu_config' && role === 'Admin' && <MenuConfiguration />}
-            {view === 'adjustment' && role === 'Admin' && <AdjustmentSettings />}
+            {view === 'settings.permissions' && role === 'Admin' && <RolePermissions permissions={permissions} onUpdate={savePermissions} />}
+            {view === 'settings.menu_config' && role === 'Admin' && <MenuConfiguration />}
+            {view === 'settings.adjustment' && role === 'Admin' && <AdjustmentSettings />}
           </ErrorBoundary>
         </div>
       </main>
