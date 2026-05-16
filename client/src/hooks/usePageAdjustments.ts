@@ -18,18 +18,22 @@ const DEFAULT_ADJUSTMENTS: Record<string, PageAdjustment> = {
 
 export const usePageAdjustments = (pageKey: string) => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [adjustments, setAdjustments] = useState<PageAdjustment>(() => {
+  
+  const getAdjustments = () => {
+    const defaultVal = DEFAULT_ADJUSTMENTS[pageKey] || DEFAULT_ADJUSTMENTS.patients;
     const saved = localStorage.getItem(ADJUSTMENT_STORAGE_KEY);
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        return parsed[pageKey] || DEFAULT_ADJUSTMENTS[pageKey] || DEFAULT_ADJUSTMENTS.patients;
-      } catch {
-        return DEFAULT_ADJUSTMENTS[pageKey] || DEFAULT_ADJUSTMENTS.patients;
-      }
+        if (parsed[pageKey]) {
+          return { ...defaultVal, ...parsed[pageKey] };
+        }
+      } catch {}
     }
-    return DEFAULT_ADJUSTMENTS[pageKey] || DEFAULT_ADJUSTMENTS.patients;
-  });
+    return defaultVal;
+  };
+
+  const [adjustments, setAdjustments] = useState<PageAdjustment>(getAdjustments);
 
   useEffect(() => {
     const handleResize = () => {
@@ -38,13 +42,9 @@ export const usePageAdjustments = (pageKey: string) => {
 
     window.addEventListener('resize', handleResize);
     
-    // Also listen for storage changes in case settings are updated in another tab
     const handleStorage = (e: StorageEvent) => {
-      if (e.key === ADJUSTMENT_STORAGE_KEY && e.newValue) {
-        try {
-          const parsed = JSON.parse(e.newValue);
-          if (parsed[pageKey]) setAdjustments(parsed[pageKey]);
-        } catch {}
+      if (e.key === ADJUSTMENT_STORAGE_KEY) {
+        setAdjustments(getAdjustments());
       }
     };
     window.addEventListener('storage', handleStorage);
@@ -55,16 +55,8 @@ export const usePageAdjustments = (pageKey: string) => {
     };
   }, [pageKey]);
 
-  // Re-read from localStorage when the component using this hook might need fresh data
-  // (e.g. after the user saves settings in AdjustmentSettings.tsx)
   useEffect(() => {
-    const saved = localStorage.getItem(ADJUSTMENT_STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (parsed[pageKey]) setAdjustments(parsed[pageKey]);
-      } catch {}
-    }
+    setAdjustments(getAdjustments());
   }, [pageKey]);
 
   return {
@@ -73,3 +65,4 @@ export const usePageAdjustments = (pageKey: string) => {
     isMobile
   };
 };
+
