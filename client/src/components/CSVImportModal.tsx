@@ -4,7 +4,7 @@ import { X, Upload, FileText, CheckCircle, AlertCircle, Download } from 'lucide-
 interface CSVImportModalProps {
   title: string;
   onClose: () => void;
-  onImport: (data: Record<string, string>[]) => Promise<{ imported: number; errors: string[] }>;
+  onImport: (data: Record<string, string>[]) => void | Promise<{ imported: number; errors: string[] }>;
   templateHeaders?: string[];
 }
 
@@ -56,8 +56,9 @@ const CSVImportModal: React.FC<CSVImportModalProps> = ({ title, onClose, onImpor
       const rows = parseCSV(text);
       if (rows.length === 0) throw new Error('No data rows found in CSV');
       const res = await onImport(rows);
-      setResult(res);
-      setStatus(res.errors.length > 0 && res.imported === 0 ? 'error' : 'success');
+      const result = res ?? { imported: rows.length, errors: [] };
+      setResult(result);
+      setStatus(result.errors.length > 0 && result.imported === 0 ? 'error' : 'success');
     } catch (err: any) {
       setResult({ imported: 0, errors: [err.message] });
       setStatus('error');
