@@ -32,6 +32,11 @@ const OperationManagement: React.FC<{ activeTab?: 'schedule' | 'resources' | 'su
   const { staff, assets, updateAsset, surgeries, addSurgery, updateSurgery, loading } = useEMR();
 
   const [activeTab, setActiveTab] = useState<'schedule' | 'resources' | 'supplies'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
   const [supplyUsage, setSupplyUsage] = useState<SupplyItem[]>(initialSupply);
   const [otTeam, setOtTeam] = useState<OTStaff[]>(initialOTStaff);
   const [otEquipment, setOtEquipment] = useState<OTEquipment[]>(initialOTEquipment);

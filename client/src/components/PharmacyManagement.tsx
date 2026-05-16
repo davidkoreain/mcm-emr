@@ -219,6 +219,11 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
   } = useEMR();
 
   const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
   const [showCSVModal, setShowCSVModal] = useState(false);
 
   const CSV_DRUG_HEADERS = [

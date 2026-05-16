@@ -43,6 +43,10 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   const activeTab = propTab || internalTab;
   const setActiveTab = setInternalTab;
 
+  React.useEffect(() => {
+    if (propTab) setInternalTab(propTab);
+  }, [propTab]);
+
   // Adjustment Settings
   const [adjustments] = useState(() => {
     const saved = localStorage.getItem('emr_page_adjustments');

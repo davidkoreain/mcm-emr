@@ -8,6 +8,11 @@ const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m)
 const LabManagement: React.FC<{ activeTab?: 'orders' | 'results' }> = ({ activeTab: initialTab = 'orders' }) => {
   const { labOrders, labResults, submitLabResult, loading } = useEMR();
   const [activeTab, setActiveTab] = useState<'orders' | 'results'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
+
   const [enterModal, setEnterModal] = useState<{ order: LabOrder; testName: string; value: string; unit: string; range: string } | null>(null);
   const [reportModal, setReportModal] = useState<LabResult | null>(null);
 

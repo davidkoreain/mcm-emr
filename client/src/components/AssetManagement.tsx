@@ -32,6 +32,10 @@ interface AssetManagementProps {
 const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalClose, activeTab: initialTab = 'inventory' }) => {
   const { assets, addAsset, updateAsset, role } = useEMR();
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab) setActiveTab(initialTab);
+  }, [initialTab]);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [maintLogs, setMaintLogs] = useState<MaintenanceLog[]>(initialMaint);
   const [detailModal, setDetailModal] = useState<Asset | null>(null);
