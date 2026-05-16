@@ -712,3 +712,11 @@ body {
 .mobile-only-flex {
   display: none;
 }
+
+/* ── Calendar header mobile layout ─────────────────────────── */
+@media (max-width: 640px) {
+  .view-selector {
+    order: 99;
+    width: 100%;
+  }
+}
