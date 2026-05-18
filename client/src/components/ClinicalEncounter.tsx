@@ -466,19 +466,30 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
         <button onClick={onClose} className="btn-close"><X size={24} /></button>
       </div>
 
-      <div className="pharmacy-tabs" style={{ background: '#f8fafc', padding: '0.5rem 1rem 0', borderBottom: '1px solid #e2e8f0' }}>
-        <button className={`tab-btn ${activeTab === 'soap' ? 'active' : ''}`} onClick={() => setActiveTab('soap')}>
-          <FileText size={18} /> Consultation (SOAP)
+      <div className="pharmacy-tabs" style={{ 
+        background: '#f8fafc', 
+        padding: isMobile ? '0.5rem 0.25rem 0' : '0.5rem 1rem 0', 
+        borderBottom: '1px solid #e2e8f0',
+        display: 'flex',
+        gap: isMobile ? '0.25rem' : '1rem',
+        justifyContent: isMobile ? 'space-between' : 'flex-start'
+      }}>
+        <button className={`tab-btn ${activeTab === 'soap' ? 'active' : ''}`} onClick={() => setActiveTab('soap')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.75rem 1.5rem', fontSize: isMobile ? '0.8rem' : 'inherit', gap: isMobile ? '0.25rem' : '0.75rem', whiteSpace: 'nowrap' }}>
+          <FileText size={isMobile ? 14 : 18} /> {isMobile ? (
+            <span>SOAP <span style={{ fontSize: '11px', fontWeight: 'normal' }}>(Consulting)</span></span>
+          ) : (
+            'Consultation (SOAP)'
+          )}
         </button>
-        <button className={`tab-btn ${activeTab === 'imaging' ? 'active' : ''}`} onClick={() => setActiveTab('imaging')}>
-          <ImageIcon size={18} /> {isMobile ? 'PACS' : 'Imaging & PACS'}
+        <button className={`tab-btn ${activeTab === 'imaging' ? 'active' : ''}`} onClick={() => setActiveTab('imaging')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.75rem 1.5rem', fontSize: isMobile ? '0.8rem' : 'inherit', gap: isMobile ? '0.25rem' : '0.75rem', whiteSpace: 'nowrap' }}>
+          <ImageIcon size={isMobile ? 14 : 18} /> {isMobile ? 'PACS' : 'Imaging & PACS'}
         </button>
-        <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
-          <History size={18} /> Medical History
+        <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.75rem 1.5rem', fontSize: isMobile ? '0.8rem' : 'inherit', gap: isMobile ? '0.25rem' : '0.75rem', whiteSpace: 'nowrap' }}>
+          <History size={isMobile ? 14 : 18} /> {isMobile ? 'History' : 'Medical History'}
         </button>
       </div>
 
-      <div className="encounter-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
+      <div className="encounter-body" style={{ padding: isMobile ? '0.75rem' : '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
         {activeTab === 'soap' ? (
           <form onSubmit={handleSubmit} className="encounter-form">
             <div className="soap-layout-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: isMobile ? '1rem' : '2rem', alignItems: 'start' }}>
@@ -487,40 +498,40 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 
                 {/* Subjective & Objective */}
-                <div className="stat-card" style={{ padding: '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white' }}>
+                <div className="stat-card" style={{ padding: isMobile ? '0.85rem' : '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--primary-color)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <BookOpen size={18} /> Clinical Findings
                   </h3>
                   <div className="form-group" style={{ marginBottom: '1rem' }}>
                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '0.4rem', display: 'block' }}>Subjective (Chief Complaint & History)</label>
-                    <textarea rows={3} value={soap.subjective} onChange={e => setSoap({ ...soap, subjective: e.target.value })} placeholder="Patient symptoms, pain level, history..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
+                    <textarea rows={3} value={soap.subjective} onChange={e => setSoap({ ...soap, subjective: e.target.value })} placeholder="Patient symptoms, pain level, history..." style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
                   </div>
                   <div className="form-group">
                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '0.4rem', display: 'block' }}>Objective (Physical Exam & Vitals)</label>
-                    <textarea rows={3} value={soap.objective} onChange={e => setSoap({ ...soap, objective: e.target.value })} placeholder="Physical examination, lung sounds, heart rhythm..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
+                    <textarea rows={3} value={soap.objective} onChange={e => setSoap({ ...soap, objective: e.target.value })} placeholder="Physical examination, lung sounds, heart rhythm..." style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
                   </div>
                 </div>
 
                 {/* Assessment (Diagnosis) & Lab Request */}
-                <div className="stat-card" style={{ padding: '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white' }}>
+                <div className="stat-card" style={{ padding: isMobile ? '0.85rem' : '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white' }}>
                   <h3 style={{ fontSize: '1rem', fontWeight: '800', color: '#8b5cf6', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <CheckCircle size={18} /> Assessment & Lab Requests
                   </h3>
                   
                   <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <div style={{ flex: '0 0 100px' }}>
+                    <div style={{ flex: isMobile ? '0 0 70px' : '0 0 100px' }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>ICD-10</label>
-                      <input type="text" placeholder="I10" value={soap.icd10_code} onChange={e => setSoap({ ...soap, icd10_code: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }} />
+                      <input type="text" placeholder="I10" value={soap.icd10_code} onChange={e => setSoap({ ...soap, icd10_code: e.target.value })} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Primary Diagnosis Description</label>
-                      <input type="text" placeholder="Essential Hypertension" value={soap.diagnosis_description} onChange={e => setSoap({ ...soap, diagnosis_description: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }} />
+                      <input type="text" placeholder="Essential Hypertension" value={soap.diagnosis_description} onChange={e => setSoap({ ...soap, diagnosis_description: e.target.value })} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }} />
                     </div>
                   </div>
 
                   <div className="form-group" style={{ marginBottom: '1.5rem' }}>
                     <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '0.4rem', display: 'block' }}>Assessment Notes</label>
-                    <textarea rows={2} value={soap.assessment} onChange={e => setSoap({ ...soap, assessment: e.target.value })} placeholder="Attending clinician assessment/reasoning..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
+                    <textarea rows={2} value={soap.assessment} onChange={e => setSoap({ ...soap, assessment: e.target.value })} placeholder="Attending clinician assessment/reasoning..." style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
                   </div>
 
                   {/* LAB TESTS GATED ORDER & RESULTS VIEW */}
@@ -530,10 +541,20 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                     </h4>
 
                     {/* Order Request Mini Form */}
-                    <div style={{ display: 'flex', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', marginBottom: '1rem', alignItems: 'flex-end' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexDirection: isMobile ? 'column' : 'row', 
+                      gap: '0.5rem', 
+                      background: '#f8fafc', 
+                      padding: '0.75rem', 
+                      borderRadius: '0.75rem', 
+                      border: '1px solid #e2e8f0', 
+                      marginBottom: '1rem', 
+                      alignItems: isMobile ? 'stretch' : 'flex-end' 
+                    }}>
                       <div style={{ flex: 1 }}>
                         <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>Select Lab/Imaging Test</label>
-                        <select value={selectedLabTest} onChange={e => setSelectedLabTest(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                        <select value={selectedLabTest} onChange={e => setSelectedLabTest(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
                           <option>Complete Blood Count (CBC)</option>
                           <option>Basic Metabolic Panel (BMP)</option>
                           <option>Liver Function Test (LFT)</option>
@@ -617,27 +638,27 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
               </div>
 
               {/* Right Column: Advanced Plan & Treatment (Tabbed Interface) */}
-              <div className="stat-card" style={{ padding: '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div className="stat-card" style={{ padding: isMobile ? '0.85rem' : '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <PenTool size={18} /> Attending Treatment Plan
                 </h3>
 
                 {/* Sub-tabs inside Plan */}
-                <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
-                  <button type="button" onClick={() => setPlanSubTab('prescription')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'prescription' ? '3px solid #3b82f6' : '3px solid transparent', color: planSubTab === 'prescription' ? '#3b82f6' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <PillIcon size={14} /> Prescribe
+                <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', gap: isMobile ? '0.2rem' : '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+                  <button type="button" onClick={() => setPlanSubTab('prescription')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'prescription' ? '3px solid #3b82f6' : '3px solid transparent', color: planSubTab === 'prescription' ? '#3b82f6' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <PillIcon size={12} /> {isMobile ? 'Rx' : 'Prescribe'}
                   </button>
-                  <button type="button" onClick={() => setPlanSubTab('surgery')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'surgery' ? '3px solid #8b5cf6' : '3px solid transparent', color: planSubTab === 'surgery' ? '#8b5cf6' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Activity size={14} /> Surgery
+                  <button type="button" onClick={() => setPlanSubTab('surgery')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'surgery' ? '3px solid #8b5cf6' : '3px solid transparent', color: planSubTab === 'surgery' ? '#8b5cf6' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Activity size={12} /> {isMobile ? 'Surg' : 'Surgery'}
                   </button>
-                  <button type="button" onClick={() => setPlanSubTab('admission')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'admission' ? '3px solid #eab308' : '3px solid transparent', color: planSubTab === 'admission' ? '#a16207' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Clock size={14} /> Admit
+                  <button type="button" onClick={() => setPlanSubTab('admission')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'admission' ? '3px solid #eab308' : '3px solid transparent', color: planSubTab === 'admission' ? '#a16207' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={12} /> {isMobile ? 'Admit' : 'Admit'}
                   </button>
-                  <button type="button" onClick={() => setPlanSubTab('followup')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'followup' ? '3px solid #22c55e' : '3px solid transparent', color: planSubTab === 'followup' ? '#166534' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Calendar size={14} /> Visit
+                  <button type="button" onClick={() => setPlanSubTab('followup')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'followup' ? '3px solid #22c55e' : '3px solid transparent', color: planSubTab === 'followup' ? '#166534' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Calendar size={12} /> {isMobile ? 'Visit' : 'Visit'}
                   </button>
-                  <button type="button" onClick={() => setPlanSubTab('general')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'general' ? '3px solid #64748b' : '3px solid transparent', color: planSubTab === 'general' ? '#1e293b' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <FileText size={14} /> Notes
+                  <button type="button" onClick={() => setPlanSubTab('general')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'general' ? '3px solid #64748b' : '3px solid transparent', color: planSubTab === 'general' ? '#1e293b' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <FileText size={12} /> {isMobile ? 'Notes' : 'Notes'}
                   </button>
                 </div>
 
@@ -657,24 +678,24 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                           ))}
                         </select>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Dosage</label>
-                          <input type="text" value={rxDosage} onChange={e => setRxDosage(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          <input type="text" value={rxDosage} onChange={e => setRxDosage(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                         </div>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Frequency</label>
-                          <input type="text" value={rxFrequency} onChange={e => setRxFrequency(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          <input type="text" value={rxFrequency} onChange={e => setRxFrequency(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                         </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '80px 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Duration</label>
-                          <input type="text" value={rxDuration} onChange={e => setRxDuration(e.target.value)} placeholder="5 days" style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          <input type="text" value={rxDuration} onChange={e => setRxDuration(e.target.value)} placeholder="5 days" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                         </div>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Attending Instructions</label>
-                          <input type="text" value={rxInstructions} onChange={e => setRxInstructions(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          <input type="text" value={rxInstructions} onChange={e => setRxInstructions(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                         </div>
                       </div>
                       <button type="button" onClick={handleAddPrescription} className="btn-primary" style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
@@ -702,10 +723,10 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                         <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Operation Name</label>
                         <input type="text" value={surgName} onChange={e => setSurgName(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Surgeon</label>
-                          <select value={surgSurgeonId} onChange={e => setSurgSurgeonId(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                          <select value={surgSurgeonId} onChange={e => setSurgSurgeonId(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
                             <option value="">-- Choose Surgeon --</option>
                             {staff.filter(s => s.role.includes('Doctor')).map(s => (
                               <option key={s.id} value={s.id}>{s.name} ({s.specialization})</option>
@@ -714,21 +735,21 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                         </div>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Anesthesia</label>
-                          <input type="text" value={surgAnesthesia} onChange={e => setSurgAnesthesia(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          <input type="text" value={surgAnesthesia} onChange={e => setSurgAnesthesia(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                         </div>
                       </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1.2fr', gap: '0.4rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1.2fr 1.2fr', gap: '0.4rem', marginBottom: '0.5rem', alignItems: 'center' }}>
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>OR Room</label>
-                          <input type="text" value={surgRoom} onChange={e => setSurgRoom(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                          <input type="text" value={surgRoom} onChange={e => setSurgRoom(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                         </div>
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>Start Time</label>
-                          <input type="datetime-local" value={surgStart} onChange={e => setSurgStart(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                          <input type="datetime-local" value={surgStart} onChange={e => setSurgStart(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                         </div>
                         <div>
                           <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>End Time</label>
-                          <input type="datetime-local" value={surgEnd} onChange={e => setSurgEnd(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                          <input type="datetime-local" value={surgEnd} onChange={e => setSurgEnd(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                         </div>
                       </div>
                       <button type="button" onClick={handleScheduleSurgery} className="btn-primary" style={{ width: '100%', padding: '0.5rem', background: '#8b5cf6', borderColor: '#8b5cf6', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', marginTop: '0.5rem' }}>
@@ -752,14 +773,14 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                             <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Assigned Ward / Room Number</label>
                             <input type="text" value={admitWard} onChange={e => setAdmitWard(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
                           </div>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.5rem' }}>
                             <div>
                               <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Admission Date</label>
-                              <input type="datetime-local" value={admitDate} onChange={e => setAdmitDate(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                              <input type="datetime-local" value={admitDate} onChange={e => setAdmitDate(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                             </div>
                             <div>
                               <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Est. Discharge Date</label>
-                              <input type="datetime-local" value={dischargeDate} onChange={e => setDischargeDate(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                              <input type="datetime-local" value={dischargeDate} onChange={e => setDischargeDate(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                             </div>
                           </div>
                         </div>
@@ -778,10 +799,10 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
 
                       {requiresFollowUp && (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem' }}>
+                           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: '0.5rem' }}>
                             <div>
                               <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Attending Physician</label>
-                              <select value={followUpDocId} onChange={e => setFollowUpDocId(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                              <select value={followUpDocId} onChange={e => setFollowUpDocId(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
                                 <option value="">-- Choose Doctor --</option>
                                 {staff.filter(s => s.role.includes('Doctor')).map(s => (
                                   <option key={s.id} value={s.id}>{s.name} ({s.specialization})</option>
@@ -790,7 +811,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                             </div>
                             <div>
                               <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Date & Time</label>
-                              <input type="datetime-local" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                              <input type="datetime-local" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                             </div>
                           </div>
                           <div>
