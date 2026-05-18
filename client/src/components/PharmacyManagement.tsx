@@ -1539,7 +1539,10 @@ const InventoryHistoryTab: React.FC<{
   const [histSearch, setHistSearch] = React.useState('');
   const [histCategory, setHistCategory] = React.useState('');
   const [histForm, setHistForm] = React.useState('');
+  const [histDoctor, setHistDoctor] = React.useState('');
+  const [histStockLevel, setHistStockLevel] = React.useState('');
   const [histSort, setHistSort] = React.useState<'drug' | 'patient' | 'qty_desc' | 'stock_asc'>('drug');
+  const [showHistExtraFilters, setShowHistExtraFilters] = React.useState(false);
 
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
@@ -1572,6 +1575,12 @@ const InventoryHistoryTab: React.FC<{
           const drug = drugMap.get(h.drugId ?? -1);
           if ((drug?.form ?? '') !== histForm) return false;
         }
+        if (histDoctor && !h.prescribedBy.toLowerCase().includes(histDoctor.toLowerCase())) return false;
+        if (histStockLevel) {
+          if (histStockLevel === 'critical' && h.stockAfter > 10) return false;
+          if (histStockLevel === 'low' && (h.stockAfter <= 10 || h.stockAfter > 20)) return false;
+          if (histStockLevel === 'ok' && h.stockAfter <= 20) return false;
+        }
         return true;
       })
       .sort((a, b) => {
@@ -1581,7 +1590,7 @@ const InventoryHistoryTab: React.FC<{
         if (histSort === 'stock_asc') return a.stockAfter - b.stockAfter;
         return 0;
       });
-  }, [inventoryHistory, selectedDate, histSearch, histCategory, histForm, histSort, drugs]);
+  }, [inventoryHistory, selectedDate, histSearch, histCategory, histForm, histDoctor, histStockLevel, histSort, drugs]);
 
   const monthLabel = new Date(calYear, calMonth, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
@@ -1674,36 +1683,88 @@ const InventoryHistoryTab: React.FC<{
           </div>
 
           {/* Search + Filter + Sort */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.75rem' }}>
-            {/* Search */}
-            <div style={{ position: 'relative' }}>
-              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-              <input
-                value={histSearch}
-                onChange={e => setHistSearch(e.target.value)}
-                placeholder="Search drug, patient, doctor..."
-                style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '2rem', height: 38, borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.85rem', color: '#1e293b', outline: 'none' }}
-              />
+          {isMobile ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.75rem' }}>
+              {/* Search (always) */}
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input value={histSearch} onChange={e => setHistSearch(e.target.value)} placeholder="Search drug, patient, doctor..."
+                  style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '2rem', height: 38, borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.85rem', color: '#1e293b', outline: 'none' }} />
+              </div>
+              {/* Category + Form + Add filters button (always) */}
+              <div style={{ display: 'flex', gap: '0.45rem', alignItems: 'center' }}>
+                <select value={histCategory} onChange={e => setHistCategory(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                  <option value="">All Categories</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={histForm} onChange={e => setHistForm(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                  <option value="">All Forms</option>
+                  {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+                <button onClick={() => setShowHistExtraFilters(v => !v)} style={{
+                  flexShrink: 0, whiteSpace: 'nowrap', padding: '0 0.75rem', height: 38, borderRadius: '0.5rem',
+                  border: showHistExtraFilters ? '1.5px solid #6366f1' : '1.5px solid #cbd5e1',
+                  background: showHistExtraFilters ? '#eef2ff' : 'white',
+                  color: showHistExtraFilters ? '#4f46e5' : '#475569',
+                  fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                  display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                }}>
+                  <SlidersHorizontal size={13} />
+                  {showHistExtraFilters ? 'Hide filters' : 'Add filters'}
+                </button>
+              </div>
+              {/* Extra filters (Prescribed By + Stock Level) */}
+              {showHistExtraFilters && (
+                <div style={{ display: 'flex', gap: '0.45rem' }}>
+                  <input value={histDoctor} onChange={e => setHistDoctor(e.target.value)} placeholder="Prescribed by..."
+                    style={{ ...inputStyle, flex: 1 }} />
+                  <select value={histStockLevel} onChange={e => setHistStockLevel(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                    <option value="">All Stock Levels</option>
+                    <option value="critical">Critical (≤10)</option>
+                    <option value="low">Low (11–20)</option>
+                    <option value="ok">OK (&gt;20)</option>
+                  </select>
+                </div>
+              )}
+              {/* Sort (always) */}
+              <select value={histSort} onChange={e => setHistSort(e.target.value as typeof histSort)} style={{ ...inputStyle, width: '100%' }}>
+                <option value="drug">Sort: Drug A→Z</option>
+                <option value="patient">Sort: Patient A→Z</option>
+                <option value="qty_desc">Sort: Qty dispensed (high→low)</option>
+                <option value="stock_asc">Sort: Remaining stock (low→high)</option>
+              </select>
             </div>
-            {/* Filters */}
-            <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
-              <select value={histCategory} onChange={e => setHistCategory(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 120 }}>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(180px, 1.5fr) repeat(4, minmax(130px, 1fr)) minmax(180px, 1.5fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
+              <div style={{ position: 'relative' }}>
+                <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                <input value={histSearch} onChange={e => setHistSearch(e.target.value)} placeholder="Search drug, patient, doctor..."
+                  style={{ ...inputStyle, paddingLeft: '2rem', width: '100%', boxSizing: 'border-box' }} />
+              </div>
+              <select value={histCategory} onChange={e => setHistCategory(e.target.value)} style={inputStyle}>
                 <option value="">All Categories</option>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <select value={histForm} onChange={e => setHistForm(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 120 }}>
+              <select value={histForm} onChange={e => setHistForm(e.target.value)} style={inputStyle}>
                 <option value="">All Forms</option>
                 {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
               </select>
+              <input value={histDoctor} onChange={e => setHistDoctor(e.target.value)} placeholder="Prescribed by..."
+                style={inputStyle} />
+              <select value={histStockLevel} onChange={e => setHistStockLevel(e.target.value)} style={inputStyle}>
+                <option value="">All Stock Levels</option>
+                <option value="critical">Critical (≤10)</option>
+                <option value="low">Low (11–20)</option>
+                <option value="ok">OK (&gt;20)</option>
+              </select>
+              <select value={histSort} onChange={e => setHistSort(e.target.value as typeof histSort)} style={inputStyle}>
+                <option value="drug">Sort: Drug A→Z</option>
+                <option value="patient">Sort: Patient A→Z</option>
+                <option value="qty_desc">Sort: Qty dispensed (high→low)</option>
+                <option value="stock_asc">Sort: Remaining stock (low→high)</option>
+              </select>
             </div>
-            {/* Sort */}
-            <select value={histSort} onChange={e => setHistSort(e.target.value as typeof histSort)} style={{ ...inputStyle, width: '100%' }}>
-              <option value="drug">Sort: Drug A→Z</option>
-              <option value="patient">Sort: Patient A→Z</option>
-              <option value="qty_desc">Sort: Qty dispensed (high→low)</option>
-              <option value="stock_asc">Sort: Remaining stock (low→high)</option>
-            </select>
-          </div>
+          )}
 
           {selectedEvents.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0', color: '#94a3b8' }}>
