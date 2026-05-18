@@ -239,9 +239,9 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
   const renderWeekView = () => (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
-      <div style={{ minWidth: '850px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)', borderBottom: '1px solid #e2e8f0', background: 'white' }}>
-          <div style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#64748b', borderRight: '1px solid #f1f5f9' }}>Time</div>
+      <div className="week-view-container" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+        <div className="week-grid" style={{ borderBottom: '1px solid #e2e8f0', background: 'white' }}>
+          <div className="time-header" style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#64748b', borderRight: '1px solid #f1f5f9' }}>Time</div>
           {weekDays.map((date, i) => {
             const isSunday = date.getDay() === 0;
             const isToday = date.toDateString() === new Date().toDateString();
@@ -261,10 +261,10 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
           })}
         </div>
         <div ref={scrollRef} className="calendar-body-scroll" style={{ position: 'relative', overflowY: 'auto', flex: 1, scrollbarWidth: 'none' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)', height: `${HOURS.length * 80}px` }}>
+          <div className="week-grid" style={{ height: `${HOURS.length * 80}px` }}>
             <div style={{ borderRight: '1px solid #f1f5f9', background: '#f8fafc' }}>
               {HOURS.map(h => (
-                <div key={h} style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>{h}:00</div>
+                <div key={h} className="time-label" style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>{h}:00</div>
               ))}
             </div>
             {weekDays.map((date, i) => (
@@ -291,16 +291,18 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             ))}
 
             {/* Global Red Current Time Line across all days */}
-            <div style={{
-              position: 'absolute',
-              top: `${getPosition(currentTime)}px`,
-              left: '80px',
-              right: 0,
-              height: 0,
-              borderTop: '2px dashed #ef4444',
-              zIndex: 9,
-              pointerEvents: 'none'
-            }}>
+            <div 
+              className="current-time-line"
+              style={{
+                position: 'absolute',
+                top: `${getPosition(currentTime)}px`,
+                right: 0,
+                height: 0,
+                borderTop: '2px dashed #ef4444',
+                zIndex: 9,
+                pointerEvents: 'none'
+              }}
+            >
               <div style={{ position: 'absolute', left: '-5px', top: '-6px', width: '10px', height: '10px', background: '#ef4444', borderRadius: '50%' }} />
             </div>
           </div>
@@ -823,9 +825,45 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         .calendar-body-scroll::-webkit-scrollbar {
           display: none;
         }
+        .week-view-container {
+          min-width: 850px;
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+          overflow: hidden;
+        }
+        .week-grid {
+          display: grid;
+          grid-template-columns: 80px repeat(7, 1fr);
+        }
+        .current-time-line {
+          left: 80px;
+        }
         @media (max-width: 640px) {
           .desktop-day { display: none; }
           .mobile-day { display: inline; }
+          .week-view-container {
+            min-width: 100%;
+          }
+          .week-grid {
+            grid-template-columns: 50px repeat(7, 1fr);
+          }
+          .time-header {
+            padding: 1rem 0.25rem !important;
+            font-size: 0.75rem !important;
+          }
+          .time-label {
+            font-size: 0.65rem !important;
+          }
+          .current-time-line {
+            left: 50px;
+          }
+          .appointment-card {
+            padding: 0.2rem 0.1rem !important;
+            font-size: 0.6rem !important;
+            text-align: center;
+            line-height: 1.1;
+          }
         }
         @media (min-width: 641px) {
           .desktop-day { display: inline; }
