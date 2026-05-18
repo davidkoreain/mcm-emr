@@ -471,7 +471,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
           <FileText size={18} /> Consultation (SOAP)
         </button>
         <button className={`tab-btn ${activeTab === 'imaging' ? 'active' : ''}`} onClick={() => setActiveTab('imaging')}>
-          <ImageIcon size={18} /> Imaging & PACS
+          <ImageIcon size={18} /> {isMobile ? 'PACS' : 'Imaging & PACS'}
         </button>
         <button className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>
           <History size={18} /> Medical History
