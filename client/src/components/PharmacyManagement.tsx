@@ -1070,7 +1070,6 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                 {(role === 'Admin' || role === 'Doctor' || role === 'Pharmacist') && (
                   <button className="btn-primary" onClick={openNewRx}><Plus size={16} /> New Prescription</button>
                 )}
-                <button className="btn-secondary" onClick={() => setActiveTab('inventory')}><Pill size={16} /> Drug Inventory</button>
               </div>
             </div>
 
@@ -1241,7 +1240,6 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                 }}>
                   <button className="btn-primary" style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', justifyContent: 'center' }} onClick={openAddDrug}><Plus size={16} /> Add Drug</button>
                   <button className="btn-secondary" style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', justifyContent: 'center' }} onClick={() => setShowCSVModal(true)}><ClipboardList size={16} /> Import CSV</button>
-                  <button className="btn-secondary" style={{ flex: isMobile ? '100%' : 'none', display: 'inline-flex', justifyContent: 'center' }} onClick={() => setActiveTab('prescriptions')}><FileText size={16} /> Prescriptions</button>
                 </div>
               </div>
 
