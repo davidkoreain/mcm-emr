@@ -1492,15 +1492,15 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                             });
                             setSelectedScheduleEvent(null);
                           }}
-                          style={{ flex: 1, padding: '1rem', borderRadius: '1.25rem', background: '#22c55e', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
+                          style={{ flex: 1, padding: '1rem', borderRadius: '1.25rem', background: doneEvents.has(String(selectedScheduleEvent.id)) ? '#6b7280' : '#22c55e', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
                         >
-                          Done
+                          {doneEvents.has(String(selectedScheduleEvent.id)) ? 'Undo' : 'Done'}
                         </button>
                         <button
                           onClick={() => setSelectedScheduleEvent(null)}
                           style={{ flex: 1, padding: '1rem', borderRadius: '1.25rem', background: '#1e293b', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
                         >
-                          Dismiss
+                          Close
                         </button>
                       </div>
                     </motion.div>
