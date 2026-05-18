@@ -507,18 +507,19 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>Reason for Visit</h4>
               <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '0.75rem', fontSize: '0.95rem', color: '#334155', borderLeft: '4px solid #3b82f6', lineHeight: 1.6 }}>
                 {(() => {
-                  if (!selectedPatient.diagnosisSummary) {
-                    return 'Patient reports persistent headache and fatigue for 3 days. History of hypertension. Requires review of current medication plan.';
-                  }
+                  const raw = selectedPatient.diagnosisSummary;
+                  if (!raw) return <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No visit reason recorded yet.</span>;
                   try {
-                    const parsed = JSON.parse(selectedPatient.diagnosisSummary);
-                    if (parsed && typeof parsed === 'object') {
-                      return parsed.subjective || parsed.diagnosis || parsed.notes || 'Routine check-up / Regular follow-up visit.';
-                    }
+                    const parsed = JSON.parse(raw);
+                    // JSON 형태로 저장된 경우: diagnosis 또는 subjective 필드를 사용
+                    const display = parsed.diagnosis || parsed.subjective || parsed.notes || '';
+                    return display
+                      ? display
+                      : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No visit reason recorded yet.</span>;
                   } catch {
-                    return selectedPatient.diagnosisSummary;
+                    // 일반 텍스트인 경우 그대로 표시
+                    return raw;
                   }
-                  return selectedPatient.diagnosisSummary;
                 })()}
               </div>
             </div>
