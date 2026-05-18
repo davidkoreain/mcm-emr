@@ -264,7 +264,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                     <span className="desktop-day">{DAYS[i]}</span>
                     <span className="mobile-day">{DAYS[i][0]}</span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: isSunday ? '#ef4444' : '#94a3b8' }}>{date.getDate()}.{date.getMonth() + 1}</div>
+                  <div style={{ fontSize: '0.75rem', color: isSunday ? '#ef4444' : '#94a3b8' }}>{date.getMonth() + 1}.{date.getDate()}</div>
                 </div>
               );
             })}
