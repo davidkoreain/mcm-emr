@@ -1537,6 +1537,9 @@ const InventoryHistoryTab: React.FC<{
   const [calMonth, setCalMonth] = React.useState(today.getMonth()); // 0-indexed
   const [selectedDate, setSelectedDate] = React.useState<string>(today.toISOString().slice(0, 10));
   const [histSearch, setHistSearch] = React.useState('');
+  const [histCategory, setHistCategory] = React.useState('');
+  const [histForm, setHistForm] = React.useState('');
+  const [histSort, setHistSort] = React.useState<'drug' | 'patient' | 'qty_desc' | 'stock_asc'>('drug');
 
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
   const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
@@ -1551,16 +1554,34 @@ const InventoryHistoryTab: React.FC<{
   }, [inventoryHistory]);
 
   const selectedEvents = React.useMemo(() => {
+    const drugMap = new Map(drugs.map(d => [d.id, d]));
     return inventoryHistory
       .filter(h => h.dispensedDate === selectedDate)
       .filter(h => {
-        if (!histSearch) return true;
-        const q = histSearch.toLowerCase();
-        return h.drugName.toLowerCase().includes(q) ||
-          h.patientName.toLowerCase().includes(q) ||
-          h.prescribedBy.toLowerCase().includes(q);
+        if (histSearch) {
+          const q = histSearch.toLowerCase();
+          if (!h.drugName.toLowerCase().includes(q) &&
+              !h.patientName.toLowerCase().includes(q) &&
+              !h.prescribedBy.toLowerCase().includes(q)) return false;
+        }
+        if (histCategory) {
+          const drug = drugMap.get(h.drugId ?? -1);
+          if ((drug?.category ?? '') !== histCategory) return false;
+        }
+        if (histForm) {
+          const drug = drugMap.get(h.drugId ?? -1);
+          if ((drug?.form ?? '') !== histForm) return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        if (histSort === 'drug') return a.drugName.localeCompare(b.drugName);
+        if (histSort === 'patient') return a.patientName.localeCompare(b.patientName);
+        if (histSort === 'qty_desc') return b.quantityDispensed - a.quantityDispensed;
+        if (histSort === 'stock_asc') return a.stockAfter - b.stockAfter;
+        return 0;
       });
-  }, [inventoryHistory, selectedDate, histSearch]);
+  }, [inventoryHistory, selectedDate, histSearch, histCategory, histForm, histSort, drugs]);
 
   const monthLabel = new Date(calYear, calMonth, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
 
@@ -1652,15 +1673,36 @@ const InventoryHistoryTab: React.FC<{
             </span>
           </div>
 
-          {/* Search */}
-          <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
-            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-            <input
-              value={histSearch}
-              onChange={e => setHistSearch(e.target.value)}
-              placeholder="Search drug, patient, doctor..."
-              style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '2rem', height: 38, borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.85rem', color: '#1e293b', outline: 'none' }}
-            />
+          {/* Search + Filter + Sort */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', marginBottom: '0.75rem' }}>
+            {/* Search */}
+            <div style={{ position: 'relative' }}>
+              <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                value={histSearch}
+                onChange={e => setHistSearch(e.target.value)}
+                placeholder="Search drug, patient, doctor..."
+                style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '2rem', height: 38, borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.85rem', color: '#1e293b', outline: 'none' }}
+              />
+            </div>
+            {/* Filters */}
+            <div style={{ display: 'flex', gap: '0.45rem', flexWrap: 'wrap' }}>
+              <select value={histCategory} onChange={e => setHistCategory(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 120 }}>
+                <option value="">All Categories</option>
+                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+              <select value={histForm} onChange={e => setHistForm(e.target.value)} style={{ ...inputStyle, flex: 1, minWidth: 120 }}>
+                <option value="">All Forms</option>
+                {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            {/* Sort */}
+            <select value={histSort} onChange={e => setHistSort(e.target.value as typeof histSort)} style={{ ...inputStyle, width: '100%' }}>
+              <option value="drug">Sort: Drug A→Z</option>
+              <option value="patient">Sort: Patient A→Z</option>
+              <option value="qty_desc">Sort: Qty dispensed (high→low)</option>
+              <option value="stock_asc">Sort: Remaining stock (low→high)</option>
+            </select>
           </div>
 
           {selectedEvents.length === 0 ? (
