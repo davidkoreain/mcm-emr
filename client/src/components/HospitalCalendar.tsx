@@ -186,7 +186,7 @@ const HospitalCalendar: React.FC = () => {
 
       <div className="calendar-grid-wrapper" style={{ flex: 1, background: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
         {viewMode === 'month' ? (
-          <div className="calendar-month-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', height: '100%', gridAutoRows: 'minmax(120px, 1fr)' }}>
+          <div className="calendar-month-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', height: '100%', gridAutoRows: 'minmax(120px, 1fr)' }}>
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => {
               const isSunday = idx === 0;
               return (

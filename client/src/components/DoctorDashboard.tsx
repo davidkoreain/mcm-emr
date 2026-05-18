@@ -240,28 +240,38 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const renderWeekView = () => (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflowX: 'auto', overflowY: 'hidden' }}>
       <div className="week-view-container" style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
-        <div className="week-grid" style={{ borderBottom: '1px solid #e2e8f0', background: 'white' }}>
-          <div className="time-header" style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#64748b', borderRight: '1px solid #f1f5f9' }}>Time</div>
-          {weekDays.map((date, i) => {
-            const isSunday = date.getDay() === 0;
-            const isToday = date.toDateString() === new Date().toDateString();
-            return (
-              <div key={i} style={{ padding: '1rem', textAlign: 'center', borderRight: i < 6 ? '1px solid #f1f5f9' : 'none', background: isToday ? '#f0f9ff' : 'transparent' }}>
-                <div style={{ 
-                  fontSize: '0.85rem', 
-                  fontWeight: '700', 
-                  color: isSunday ? '#ef4444' : (isToday ? '#2563eb' : '#1e293b') 
-                }}>
-                  <span className="desktop-day">{DAYS[i]}</span>
-                  <span className="mobile-day">{DAYS[i][0]}</span>
-                </div>
-                <div style={{ fontSize: '0.75rem', color: isSunday ? '#ef4444' : '#94a3b8' }}>{date.getDate()}.{date.getMonth() + 1}</div>
-              </div>
-            );
-          })}
-        </div>
         <div ref={scrollRef} className="calendar-body-scroll" style={{ position: 'relative', overflowY: 'auto', flex: 1, scrollbarWidth: 'none' }}>
-          <div className="week-grid" style={{ height: `${HOURS.length * 80}px` }}>
+          
+          {/* Header Grid (Sticky at the top) */}
+          <div className="week-grid" style={{ 
+            position: 'sticky', 
+            top: 0, 
+            zIndex: 20, 
+            borderBottom: '1px solid #e2e8f0', 
+            background: 'white' 
+          }}>
+            <div className="time-header" style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#64748b', borderRight: '1px solid #f1f5f9' }}>Time</div>
+            {weekDays.map((date, i) => {
+              const isSunday = date.getDay() === 0;
+              const isToday = date.toDateString() === new Date().toDateString();
+              return (
+                <div key={i} style={{ padding: '1rem', textAlign: 'center', borderRight: i < 6 ? '1px solid #f1f5f9' : 'none', background: isToday ? '#f0f9ff' : 'transparent' }}>
+                  <div style={{ 
+                    fontSize: '0.85rem', 
+                    fontWeight: '700', 
+                    color: isSunday ? '#ef4444' : (isToday ? '#2563eb' : '#1e293b') 
+                  }}>
+                    <span className="desktop-day">{DAYS[i]}</span>
+                    <span className="mobile-day">{DAYS[i][0]}</span>
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: isSunday ? '#ef4444' : '#94a3b8' }}>{date.getDate()}.{date.getMonth() + 1}</div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Body Grid */}
+          <div className="week-grid" style={{ height: `${HOURS.length * 80}px`, position: 'relative' }}>
             <div style={{ borderRight: '1px solid #f1f5f9', background: '#f8fafc' }}>
               {HOURS.map(h => (
                 <div key={h} className="time-label" style={{ height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', color: '#94a3b8', borderBottom: '1px solid #f1f5f9' }}>{h}:00</div>
@@ -834,7 +844,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         }
         .week-grid {
           display: grid;
-          grid-template-columns: 80px repeat(7, 1fr);
+          grid-template-columns: 80px repeat(7, minmax(0, 1fr));
         }
         .current-time-line {
           left: 80px;
@@ -846,7 +856,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             min-width: 100%;
           }
           .week-grid {
-            grid-template-columns: 50px repeat(7, 1fr);
+            grid-template-columns: 50px repeat(7, minmax(0, 1fr));
           }
           .time-header {
             padding: 1rem 0.25rem !important;

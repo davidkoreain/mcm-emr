@@ -444,7 +444,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                             <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={{ background: 'white', border: '1px solid #e2e8f0', padding: '0.5rem', borderRadius: '0.75rem', cursor: 'pointer' }}><ChevronRight size={18}/></button>
                           </div>
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.75rem' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: '0.75rem' }}>
                           {['SUN','MON','TUE','WED','THU','FRI','SAT'].map((d, idx) => {
                             const isSunday = idx === 0;
                             return (
