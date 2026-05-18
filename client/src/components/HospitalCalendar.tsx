@@ -187,17 +187,41 @@ const HospitalCalendar: React.FC = () => {
       <div className="calendar-grid-wrapper" style={{ flex: 1, background: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
         {viewMode === 'month' ? (
           <div className="calendar-month-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', height: '100%', gridAutoRows: 'minmax(120px, 1fr)' }}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-              <div key={day} style={{ padding: '0.75rem', textAlign: 'center', fontWeight: '700', fontSize: '0.85rem', color: '#64748b', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>{day}</div>
-            ))}
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => {
+              const isSunday = idx === 0;
+              return (
+                <div key={day} style={{ 
+                  padding: '0.75rem', 
+                  textAlign: 'center', 
+                  fontWeight: '700', 
+                  fontSize: '0.85rem', 
+                  color: isSunday ? '#ef4444' : '#64748b', 
+                  borderBottom: '1px solid #e2e8f0', 
+                  background: '#f8fafc' 
+                }}>
+                  <span className="desktop-day">{day}</span>
+                  <span className="mobile-day">{day[0]}</span>
+                </div>
+              );
+            })}
             {Array.from({ length: firstDay }).map((_, i) => (
               <div key={`empty-${i}`} style={{ borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', background: '#fafafa' }} />
             ))}
             {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
               const dayEvents = getEventsForDay(day);
+              const isSunday = new Date(year, month, day).getDay() === 0;
               return (
                 <div key={day} style={{ borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '0.5rem', minHeight: '120px' }}>
-                  <span style={{ fontSize: '0.85rem', fontWeight: '600', color: isToday(day) ? 'white' : '#1e293b', background: isToday(day) ? 'var(--primary-color)' : 'transparent', borderRadius: '50%', padding: '0.15rem 0.45rem' }}>{day}</span>
+                  <span style={{ 
+                    fontSize: '0.85rem', 
+                    fontWeight: '600', 
+                    color: isToday(day) 
+                      ? 'white' 
+                      : (isSunday ? '#ef4444' : '#1e293b'), 
+                    background: isToday(day) ? 'var(--primary-color)' : 'transparent', 
+                    borderRadius: '50%', 
+                    padding: '0.15rem 0.45rem' 
+                  }}>{day}</span>
                   <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                     {dayEvents.slice(0, 3).map(e => (
                       <div key={e.id} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', background: `${e.color}18`, color: e.color, borderLeft: `3px solid ${e.color}`, display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: e.isKey ? '700' : '500' }}>
@@ -232,6 +256,16 @@ const HospitalCalendar: React.FC = () => {
           <input type="checkbox" checked={keyOnly} onChange={e => setKeyOnly(e.target.checked)} style={{ width: '16px', height: '16px' }} />
         </div>
       </div>
+      <style>{`
+        @media (max-width: 640px) {
+          .desktop-day { display: none; }
+          .mobile-day { display: inline; }
+        }
+        @media (min-width: 641px) {
+          .desktop-day { display: inline; }
+          .mobile-day { display: none; }
+        }
+      `}</style>
     </div>
   );
 };

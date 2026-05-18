@@ -445,10 +445,48 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           </div>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.75rem' }}>
-                          {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: '900', color: '#94a3b8', paddingBottom: '0.5rem' }}>{d}</div>)}
-                          {days.map((d, i) => d ? (
-                            <button key={i} onClick={() => setSelDate(d)} style={{ aspectRatio: '1', borderRadius: '1.25rem', border: 'none', cursor: 'pointer', background: selDate?.toDateString() === d.toDateString() ? '#2563eb' : 'white', color: selDate?.toDateString() === d.toDateString() ? 'white' : '#1e293b', fontWeight: '800', fontSize: '1rem', transition: 'all 0.2s', boxShadow: '0 4px 8px rgba(0,0,0,0.04)' }}>{d.getDate()}</button>
-                          ) : <div key={i} />)}
+                          {['SUN','MON','TUE','WED','THU','FRI','SAT'].map((d, idx) => {
+                            const isSunday = idx === 0;
+                            return (
+                              <div key={d} style={{ 
+                                textAlign: 'center', 
+                                fontSize: '0.7rem', 
+                                fontWeight: '900', 
+                                color: isSunday ? '#ef4444' : '#94a3b8', 
+                                paddingBottom: '0.5rem' 
+                              }}>
+                                <span className="desktop-day">{d}</span>
+                                <span className="mobile-day">{d[0]}</span>
+                              </div>
+                            );
+                          })}
+                          {days.map((d, i) => {
+                            if (!d) return <div key={i} />;
+                            const isSunday = d.getDay() === 0;
+                            const isSelected = selDate?.toDateString() === d.toDateString();
+                            return (
+                              <button 
+                                key={i} 
+                                onClick={() => setSelDate(d)} 
+                                style={{ 
+                                  aspectRatio: '1', 
+                                  borderRadius: '1.25rem', 
+                                  border: 'none', 
+                                  cursor: 'pointer', 
+                                  background: isSelected ? '#2563eb' : 'white', 
+                                  color: isSelected 
+                                    ? 'white' 
+                                    : (isSunday ? '#ef4444' : '#1e293b'), 
+                                  fontWeight: '800', 
+                                  fontSize: '1rem', 
+                                  transition: 'all 0.2s', 
+                                  boxShadow: '0 4px 8px rgba(0,0,0,0.04)' 
+                                }}
+                              >
+                                {d.getDate()}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
@@ -555,6 +593,16 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           )}
         </div>
       </main>
+      <style>{`
+        @media (max-width: 640px) {
+          .desktop-day { display: none; }
+          .mobile-day { display: inline; }
+        }
+        @media (min-width: 641px) {
+          .desktop-day { display: inline; }
+          .mobile-day { display: none; }
+        }
+      `}</style>
     </div>
   );
 };
