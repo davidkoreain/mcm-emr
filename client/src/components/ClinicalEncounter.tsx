@@ -125,6 +125,32 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
   const [rxDuration, setRxDuration] = useState('5 days');
   const [rxInstructions, setRxInstructions] = useState('Take after meals');
 
+  // --- Drug search / filter / sort states ---
+  const [drugSearch, setDrugSearch] = useState('');
+  const [drugCategory, setDrugCategory] = useState('All');
+  const [drugSort, setDrugSort] = useState<'name' | 'stock' | 'category'>('name');
+  const [showDrugList, setShowDrugList] = useState(false);
+
+  // Derived: unique categories
+  const drugCategories = ['All', ...Array.from(new Set(drugs.map(d => d.category).filter(Boolean)))];
+
+  // Derived: filtered + sorted drug list
+  const filteredDrugs = drugs
+    .filter(d => {
+      const q = drugSearch.toLowerCase();
+      const matchSearch = !q ||
+        d.name.toLowerCase().includes(q) ||
+        (d.category || '').toLowerCase().includes(q) ||
+        (d.activeIngredient || '').toLowerCase().includes(q);
+      const matchCat = drugCategory === 'All' || d.category === drugCategory;
+      return matchSearch && matchCat;
+    })
+    .sort((a, b) => {
+      if (drugSort === 'stock') return (b.stock ?? 0) - (a.stock ?? 0);
+      if (drugSort === 'category') return (a.category || '').localeCompare(b.category || '');
+      return a.name.localeCompare(b.name);
+    });
+
   // --- Plan (Surgery) inputs ---
   const [surgName, setSurgName] = useState('Laparoscopic Cholecystectomy');
   const [surgSurgeonId, setSurgSurgeonId] = useState<string>(staff?.find(s => s.role.includes('Doctor')) ? String(staff.find(s => s.role.includes('Doctor'))?.id) : '');
@@ -666,15 +692,113 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                   {planSubTab === 'prescription' && (
                     <div>
                       <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>Medication Outpatient Order</h4>
-                      <div className="form-group" style={{ marginBottom: '0.75rem' }}>
-                        <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Select Drug (Pharmacy Stock)</label>
-                        <select value={rxDrugId} onChange={e => setRxDrugId(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
-                          <option value="">-- Choose Drug --</option>
-                          {drugs.map(d => (
-                            <option key={d.id} value={d.id}>{d.name} ({d.stock} in stock) - {d.category}</option>
-                          ))}
-                        </select>
+
+                      {/* ── Drug Search / Filter / Sort ── */}
+                      <div style={{ marginBottom: '0.6rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.3rem' }}>Select Drug (Pharmacy Stock)</label>
+
+                        {/* Search bar */}
+                        <div style={{ position: 'relative', marginBottom: '0.4rem' }}>
+                          <span style={{ position: 'absolute', left: '0.5rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>🔍</span>
+                          <input
+                            type="text"
+                            placeholder="Search by name, ingredient, or category..."
+                            value={drugSearch}
+                            onChange={e => { setDrugSearch(e.target.value); setShowDrugList(true); }}
+                            onFocus={() => setShowDrugList(true)}
+                            style={{ width: '100%', boxSizing: 'border-box', padding: '0.45rem 0.5rem 0.45rem 1.8rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.82rem' }}
+                          />
+                          {drugSearch && (
+                            <button type="button" onClick={() => { setDrugSearch(''); setShowDrugList(false); }} style={{ position: 'absolute', right: '0.4rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', fontSize: '0.85rem' }}>✕</button>
+                          )}
+                        </div>
+
+                        {/* Filter + Sort row */}
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.4rem' }}>
+                          {/* Category filter */}
+                          <select
+                            value={drugCategory}
+                            onChange={e => { setDrugCategory(e.target.value); setShowDrugList(true); }}
+                            style={{ flex: '1 1 120px', padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.78rem', fontWeight: '600', color: '#334155' }}
+                          >
+                            {drugCategories.map(c => <option key={c} value={c}>{c === 'All' ? '📂 All Categories' : c}</option>)}
+                          </select>
+
+                          {/* Sort */}
+                          <select
+                            value={drugSort}
+                            onChange={e => setDrugSort(e.target.value as 'name' | 'stock' | 'category')}
+                            style={{ flex: '1 1 100px', padding: '0.35rem 0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.78rem', fontWeight: '600', color: '#334155' }}
+                          >
+                            <option value="name">↑ Name A–Z</option>
+                            <option value="stock">↓ Stock (High)</option>
+                            <option value="category">📁 Category</option>
+                          </select>
+
+                          {/* Toggle list */}
+                          <button
+                            type="button"
+                            onClick={() => setShowDrugList(v => !v)}
+                            style={{ padding: '0.35rem 0.65rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: showDrugList ? '#3b82f6' : 'white', color: showDrugList ? 'white' : '#334155', fontSize: '0.78rem', fontWeight: '700', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                          >
+                            {showDrugList ? '▲ Hide' : '▼ Browse'}
+                          </button>
+                        </div>
+
+                        {/* Currently selected drug badge */}
+                        {rxDrugId && (() => {
+                          const sel = drugs.find(d => String(d.id) === rxDrugId);
+                          return sel ? (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '0.5rem', padding: '0.4rem 0.6rem', fontSize: '0.8rem', fontWeight: '700', color: '#1d4ed8', marginBottom: '0.4rem' }}>
+                              <span>💊</span>
+                              <span style={{ flex: 1 }}>{sel.name} — {sel.stock} in stock ({sel.category})</span>
+                              <button type="button" onClick={() => setRxDrugId('')} style={{ background: 'none', border: 'none', color: '#93c5fd', cursor: 'pointer', fontSize: '0.9rem' }}>✕</button>
+                            </div>
+                          ) : null;
+                        })()}
+
+                        {/* Drug result list */}
+                        {showDrugList && (
+                          <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '0.5rem', background: 'white', boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
+                            {filteredDrugs.length === 0 ? (
+                              <div style={{ padding: '0.75rem', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>No drugs found matching your search.</div>
+                            ) : filteredDrugs.map(d => {
+                              const isSelected = String(d.id) === rxDrugId;
+                              const lowStock = (d.stock ?? 0) <= 20;
+                              return (
+                                <div
+                                  key={d.id}
+                                  onClick={() => { setRxDrugId(String(d.id)); setShowDrugList(false); setDrugSearch(''); }}
+                                  style={{
+                                    padding: '0.5rem 0.75rem',
+                                    cursor: 'pointer',
+                                    borderBottom: '1px solid #f1f5f9',
+                                    background: isSelected ? '#eff6ff' : 'white',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    transition: 'background 0.15s'
+                                  }}
+                                  onMouseEnter={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = '#f8fafc'; }}
+                                  onMouseLeave={e => { if (!isSelected) (e.currentTarget as HTMLDivElement).style.background = 'white'; }}
+                                >
+                                  <div style={{ flex: 1, minWidth: 0 }}>
+                                    <div style={{ fontWeight: '700', fontSize: '0.82rem', color: isSelected ? '#1d4ed8' : '#1e293b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                      {isSelected && '✓ '}{d.name}
+                                    </div>
+                                    <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '1px' }}>{d.category}{d.form ? ` · ${d.form}` : ''}{d.strength ? ` · ${d.strength}` : ''}</div>
+                                  </div>
+                                  <span style={{ fontSize: '0.72rem', fontWeight: '700', padding: '0.1rem 0.4rem', borderRadius: '0.25rem', background: lowStock ? '#fef2f2' : '#f0fdf4', color: lowStock ? '#dc2626' : '#16a34a', whiteSpace: 'nowrap' }}>
+                                    {d.stock} left
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
+
                       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
                         <div>
                           <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Dosage</label>
