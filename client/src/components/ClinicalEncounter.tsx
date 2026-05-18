@@ -646,7 +646,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                 {/* Sub-tabs inside Plan */}
                 <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', gap: isMobile ? '0.2rem' : '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
                   <button type="button" onClick={() => setPlanSubTab('prescription')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'prescription' ? '3px solid #3b82f6' : '3px solid transparent', color: planSubTab === 'prescription' ? '#3b82f6' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <PillIcon size={12} /> {isMobile ? 'Rx' : 'Prescribe'}
+                    <PillIcon size={12} /> {isMobile ? 'Presc' : 'Prescribe'}
                   </button>
                   <button type="button" onClick={() => setPlanSubTab('surgery')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'surgery' ? '3px solid #8b5cf6' : '3px solid transparent', color: planSubTab === 'surgery' ? '#8b5cf6' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Activity size={12} /> {isMobile ? 'Surg' : 'Surgery'}
