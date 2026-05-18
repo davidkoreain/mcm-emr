@@ -30,12 +30,13 @@ const JOURNEY_STEPS = [
 ];
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
-  const { currentUser, currentGuardian, patients, staff, staffLeave, addAppointment, labResults, guardians, updatePatient } = useEMR();
+  const { currentUser, currentGuardian, patients, staff, staffLeave, addAppointment, labResults, guardians, updatePatient, medicalHistory } = useEMR();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Navigation
   const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'settings'>('appointments');
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
   const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
   const [currentJourneyStep, setCurrentJourneyStep] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -98,6 +99,13 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       };
     } catch { return null; }
   })();
+
+  const userHistory = useMemo(() => {
+    if (!activeUser?.mrn) return [];
+    return medicalHistory
+      .filter(h => h.patientMrn === activeUser.mrn)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  }, [medicalHistory, activeUser?.mrn]);
 
   const specs = useMemo(() => Array.from(new Set(staff.filter(s => s.role.includes('Doctor')).map(s => s.specialization))), [staff]);
   
@@ -322,93 +330,157 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             <section>
               <h2 style={{ fontSize: '2rem', fontWeight: '900', marginBottom: '2rem' }}>Medical Records</h2>
 
-              {/* Latest Consultation Card */}
-              {(parsedEncounter || activeUser.diagnosisSummary || (activeUser.treatmentPlan && activeUser.treatmentPlan.length > 0)) && (
-                <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <ShieldAlert size={20} color="#ef4444" /> Latest Consultation
-                  </h3>
+              {/* Longitudinal Medical History Timeline */}
+              <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0', marginBottom: '2rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Activity size={20} color="#2563eb" /> Longitudinal Medical History
+                </h3>
 
-                  {parsedEncounter ? (
-                    <div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', marginBottom: '1.5rem', padding: '1rem 1.25rem', background: '#f8fafc', borderRadius: '1rem', alignItems: 'center' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <User size={15} color="#64748b" />
-                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>DOCTOR</span>
-                          <span style={{ fontWeight: '800', color: '#1e293b' }}>{parsedEncounter.doctor}</span>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <CalendarIcon size={15} color="#64748b" />
-                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>DATE</span>
-                          <span style={{ fontWeight: '800', color: '#1e293b' }}>{parsedEncounter.date}</span>
-                        </div>
-                        {parsedEncounter.icd && (
-                          <span style={{ background: '#fef2f2', color: '#dc2626', padding: '0.25rem 0.75rem', borderRadius: '99px', fontWeight: '700', fontSize: '0.78rem' }}>
-                            ICD: {parsedEncounter.icd}
-                          </span>
-                        )}
-                      </div>
-
-                      {parsedEncounter.diagnosis && (
-                        <div style={{ marginBottom: '1.25rem' }}>
-                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.35rem' }}>DIAGNOSIS</div>
-                          <div style={{ fontWeight: '800', fontSize: '1.15rem', color: '#1e293b' }}>{parsedEncounter.diagnosis}</div>
-                        </div>
-                      )}
-
-                      {(parsedEncounter.subjective || parsedEncounter.objective) && (
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-                          {parsedEncounter.subjective && (
-                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
-                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>SUBJECTIVE</div>
-                              <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', margin: 0 }}>{parsedEncounter.subjective}</p>
+                {userHistory.length > 0 ? (
+                  <div style={{ position: 'relative', paddingLeft: '2rem' }}>
+                    {/* Vertical line connector */}
+                    <div style={{ position: 'absolute', left: '0.5rem', top: '0', bottom: '0', width: '2px', background: '#e2e8f0' }}></div>
+                    
+                    {userHistory.map((hist, idx) => (
+                      <div key={hist.id} style={{ position: 'relative', marginBottom: '2.5rem' }}>
+                        {/* Timeline Node/Dot */}
+                        <div style={{ 
+                          position: 'absolute', 
+                          left: '-2.1rem', 
+                          top: '0.25rem', 
+                          width: '1.1rem', 
+                          height: '1.1rem', 
+                          borderRadius: '50%', 
+                          background: idx === 0 ? '#2563eb' : '#94a3b8', 
+                          border: '2px solid white', 
+                          boxShadow: '0 0 0 4px #f8fafc' 
+                        }}></div>
+                        
+                        {/* Card Container */}
+                        <div 
+                          onClick={() => setSelectedHistoryItem(hist)}
+                          style={{ 
+                            padding: '1.5rem', 
+                            background: '#f8fafc', 
+                            borderRadius: '1.25rem', 
+                            border: '1px solid #e2e8f0', 
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.transform = 'translateY(-2px)';
+                            e.currentTarget.style.boxShadow = '0 8px 16px rgba(0,0,0,0.04)';
+                            e.currentTarget.style.borderColor = '#cbd5e1';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.transform = 'translateY(0)';
+                            e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.02)';
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                          }}
+                        >
+                          {/* Card Header: Date & Doctor */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>
+                              <CalendarIcon size={14} />
+                              <span>{hist.date}</span>
                             </div>
-                          )}
-                          {parsedEncounter.objective && (
-                            <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
-                              <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>OBJECTIVE</div>
-                              <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', margin: 0 }}>{parsedEncounter.objective}</p>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#64748b', fontSize: '0.85rem', fontWeight: '700' }}>
+                              <User size={14} />
+                              <span>{hist.doctor}</span>
                             </div>
-                          )}
-                        </div>
-                      )}
+                          </div>
 
-                      {parsedEncounter.notes && (
-                        <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', marginBottom: '1rem' }}>
-                          <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>CLINICAL NOTES</div>
-                          <p style={{ fontSize: '0.9rem', color: '#334155', lineHeight: '1.6', margin: 0 }}>{parsedEncounter.notes}</p>
-                        </div>
-                      )}
-                    </div>
-                  ) : activeUser.diagnosisSummary ? (
-                    <div style={{ marginBottom: '1rem' }}>
-                      <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8', marginBottom: '0.4rem' }}>DIAGNOSIS</div>
-                      <p style={{ fontSize: '1rem', fontWeight: '700', color: '#1e293b' }}>{activeUser.diagnosisSummary}</p>
-                    </div>
-                  ) : null}
+                          {/* Title / Diagnosis */}
+                          <h4 style={{ 
+                            fontSize: '1.15rem', 
+                            fontWeight: '800', 
+                            color: '#1e293b', 
+                            margin: '0 0 0.5rem 0',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem'
+                          }}>
+                            {hist.diagnosis}
+                            {hist.icd10Code && (
+                              <span style={{ 
+                                background: '#eff6ff', 
+                                color: '#2563eb', 
+                                padding: '0.15rem 0.5rem', 
+                                borderRadius: '99px', 
+                                fontWeight: '700', 
+                                fontSize: '0.7rem' 
+                              }}>
+                                {hist.icd10Code}
+                              </span>
+                            )}
+                          </h4>
 
-                  {activeUser.treatmentPlan && activeUser.treatmentPlan.length > 0 && (
-                    <div style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid #f1f5f9' }}>
-                      <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#475569', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Activity size={15} /> TREATMENT PLAN
+                          {/* Preview Summary */}
+                          <p style={{ 
+                            fontSize: '0.9rem', 
+                            color: '#475569', 
+                            margin: 0, 
+                            lineHeight: '1.5',
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}>
+                            {(() => {
+                              if (!hist.summary) return 'No notes recorded.';
+                              try {
+                                const parsed = JSON.parse(hist.summary);
+                                return parsed.subjective || parsed.notes || hist.summary;
+                              } catch {
+                                return hist.summary;
+                              }
+                            })()}
+                          </p>
+                          
+                          <div style={{ 
+                            marginTop: '0.75rem', 
+                            display: 'flex', 
+                            justifyContent: 'flex-end', 
+                            fontSize: '0.8rem', 
+                            fontWeight: '800', 
+                            color: '#2563eb',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}>
+                            View Details <ChevronRight size={14} />
+                          </div>
+                        </div>
                       </div>
-                      <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {activeUser.treatmentPlan.map((item, i) => (
-                          <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.92rem', color: '#334155' }}>
-                            <CheckCircle2 size={16} color="#10b981" style={{ marginTop: '2px', flexShrink: 0 }} />
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
-              )}
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
+                    <Info size={40} style={{ marginBottom: '1rem', color: '#cbd5e1' }} />
+                    <p style={{ fontSize: '0.95rem', fontWeight: '700', margin: 0 }}>No medical records found.</p>
+                    <p style={{ fontSize: '0.85rem', margin: '0.25rem 0 0 0' }}>Consultations and diagnoses will appear here.</p>
+                  </div>
+                )}
+              </div>
 
               {/* Laboratory Results */}
               <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}><Beaker size={20} color="#2563eb" /> Laboratory Results</h3>
-                {filteredLabs.length > 0 ? <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>{filteredLabs.map((l, i) => <div key={i} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem' }}><div style={{ fontWeight: '800' }}>{l.test}</div><div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2563eb' }}>{l.value} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{l.unit}</span></div></div>)}</div> : <p>No results.</p>}
+                {filteredLabs.length > 0 ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                    {filteredLabs.map((l, i) => (
+                      <div key={i} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem' }}>
+                        <div style={{ fontWeight: '800' }}>{l.test}</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2563eb' }}>
+                          {l.value} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{l.unit}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p>No results.</p>
+                )}
               </div>
             </section>
           )}
@@ -594,6 +666,10 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         </div>
       </main>
       <style>{`
+        @keyframes modalSlideUp {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
         @media (max-width: 640px) {
           .desktop-day { display: none; }
           .mobile-day { display: inline; }
@@ -603,6 +679,259 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           .mobile-day { display: none; }
         }
       `}</style>
+
+      {/* Medical History Detail Popup Modal */}
+      {selectedHistoryItem && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(15, 23, 42, 0.6)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '1.5rem',
+        }}>
+          <div style={{
+            background: 'white',
+            width: '100%',
+            maxWidth: '650px',
+            borderRadius: '2rem',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            overflow: 'hidden',
+            border: '1px solid #e2e8f0',
+            display: 'flex',
+            flexDirection: 'column',
+            maxHeight: '90vh',
+            animation: 'modalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+            {/* Modal Header */}
+            <div style={{
+              padding: '1.75rem 2rem',
+              borderBottom: '1px solid #f1f5f9',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              background: '#f8fafc'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  background: '#eff6ff',
+                  color: '#2563eb',
+                  width: '2.5rem',
+                  height: '2.5rem',
+                  borderRadius: '0.75rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <FileText size={20} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>Consultation Record</h3>
+                  <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '600' }}>MRN: {selectedHistoryItem.patientMrn}</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setSelectedHistoryItem(null)}
+                style={{
+                  background: '#f1f5f9',
+                  border: 'none',
+                  padding: '0.5rem',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  color: '#64748b',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#e2e8f0'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#f1f5f9'}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{
+              padding: '2rem',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1.5rem'
+            }}>
+              {/* Info Grid */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '1rem',
+                background: '#f8fafc',
+                padding: '1.25rem',
+                borderRadius: '1rem',
+                border: '1px solid #e2e8f0'
+              }}>
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Attending Doctor</span>
+                  <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <User size={14} color="#64748b" /> {selectedHistoryItem.doctor}
+                  </span>
+                </div>
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Date of Visit</span>
+                  <span style={{ fontSize: '0.95rem', fontWeight: '800', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <CalendarIcon size={14} color="#64748b" /> {selectedHistoryItem.date}
+                  </span>
+                </div>
+              </div>
+
+              {/* Diagnosis block */}
+              <div>
+                <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Diagnosis</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <h4 style={{ fontSize: '1.3rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>
+                    {selectedHistoryItem.diagnosis}
+                  </h4>
+                  {selectedHistoryItem.icd10Code && (
+                    <span style={{
+                      background: '#fef2f2',
+                      color: '#dc2626',
+                      padding: '0.25rem 0.75rem',
+                      borderRadius: '99px',
+                      fontWeight: '700',
+                      fontSize: '0.8rem',
+                      border: '1px solid #fee2e2'
+                    }}>
+                      ICD-10: {selectedHistoryItem.icd10Code}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Encounter Details (SOAP or raw Summary) */}
+              {(() => {
+                const parsed = (() => {
+                  if (!selectedHistoryItem.summary) return null;
+                  try {
+                    return JSON.parse(selectedHistoryItem.summary);
+                  } catch {
+                    return null;
+                  }
+                })();
+
+                if (parsed) {
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                      {parsed.subjective && (
+                        <div>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                            <BookOpen size={13} /> Subjective (Symptoms & History)
+                          </span>
+                          <p style={{ margin: 0, padding: '1rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #f1f5f9', fontSize: '0.92rem', color: '#334155', lineHeight: '1.6' }}>
+                            {parsed.subjective}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {parsed.objective && (
+                        <div>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                            <Activity size={13} /> Objective (Vitals & Exams)
+                          </span>
+                          <p style={{ margin: 0, padding: '1rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #f1f5f9', fontSize: '0.92rem', color: '#334155', lineHeight: '1.6' }}>
+                            {parsed.objective}
+                          </p>
+                        </div>
+                      )}
+
+                      {parsed.notes && (
+                        <div>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.4rem' }}>
+                            <FileText size={13} /> Clinical Notes
+                          </span>
+                          <p style={{ margin: 0, padding: '1rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #f1f5f9', fontSize: '0.92rem', color: '#334155', lineHeight: '1.6' }}>
+                            {parsed.notes}
+                          </p>
+                        </div>
+                      )}
+
+                      {parsed.treatmentPlan && parsed.treatmentPlan.length > 0 && (
+                        <div>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.5rem' }}>
+                            <CheckCircle2 size={13} /> Recommended Treatment Plan
+                          </span>
+                          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            {parsed.treatmentPlan.map((item: string, i: number) => (
+                              <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.6rem', fontSize: '0.92rem', color: '#334155' }}>
+                                <CheckCircle2 size={16} color="#10b981" style={{ marginTop: '2px', flexShrink: 0 }} />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div>
+                    <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Clinical Summary</span>
+                    <div style={{ padding: '1.25rem', background: '#f8fafc', borderRadius: '0.75rem', border: '1px solid #e2e8f0', fontSize: '0.95rem', color: '#334155', lineHeight: '1.6' }}>
+                      {selectedHistoryItem.summary || 'No detailed clinical notes recorded.'}
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Risk factors and lifestyle if present */}
+              {selectedHistoryItem.riskFactors && selectedHistoryItem.riskFactors.length > 0 && (
+                <div>
+                  <span style={{ display: 'block', fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Risk Factors</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    {selectedHistoryItem.riskFactors.map((rf: string, i: number) => (
+                      <span key={i} style={{ background: '#fff1f2', color: '#e11d48', padding: '0.2rem 0.6rem', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '700' }}>
+                        {rf}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div style={{
+              padding: '1.25rem 2rem',
+              borderTop: '1px solid #f1f5f9',
+              display: 'flex',
+              justifyContent: 'flex-end',
+              background: '#f8fafc'
+            }}>
+              <button 
+                onClick={() => setSelectedHistoryItem(null)}
+                style={{
+                  background: '#2563eb',
+                  color: 'white',
+                  border: 'none',
+                  padding: '0.75rem 2rem',
+                  borderRadius: '1rem',
+                  fontWeight: '800',
+                  cursor: 'pointer',
+                  transition: 'background 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = '#1d4ed8'}
+                onMouseLeave={(e) => e.currentTarget.style.background = '#2563eb'}
+              >
+                Close Record
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
