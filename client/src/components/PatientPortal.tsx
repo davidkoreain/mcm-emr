@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
   ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search as SearchIcon, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star, BookOpen, Briefcase, Medal,
@@ -59,7 +59,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     appointments,
     surgeries,
     medicationSchedules,
-    labOrders
+    labOrders,
+    fetchAppSetting
   } = useEMR();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,16 +68,19 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   // Navigation
   const [activeMenu, setActiveMenu] = useState<string>('appointments');
 
-  const portalMenuStructure = useMemo<MenuItem[]>(() => {
+  const [portalMenuStructure, setPortalMenuStructure] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem('emr_patient_portal_menu_structure');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return PATIENT_PORTAL_MENU_STRUCTURE;
-      }
-    }
+    if (saved) { try { return JSON.parse(saved); } catch { /* fall through */ } }
     return PATIENT_PORTAL_MENU_STRUCTURE;
+  });
+
+  useEffect(() => {
+    fetchAppSetting('emr_patient_portal_menu_structure').then((remote) => {
+      if (remote) {
+        setPortalMenuStructure(remote);
+        localStorage.setItem('emr_patient_portal_menu_structure', JSON.stringify(remote));
+      }
+    }).catch(() => {/* keep local value on error */});
   }, []);
 
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);

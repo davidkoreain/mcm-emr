@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   LayoutDashboard, Users, UserPlus, Package,
   Menu, X, Pill, Scissors, Beaker, LogOut,
@@ -43,7 +43,7 @@ const ICON_COMPONENTS: Record<string, any> = {
 };
 
 const App: React.FC = () => {
-  const { role, setRole, loading, currentStaff, patients } = useEMR();
+  const { role, setRole, loading, currentStaff, patients, fetchAppSetting } = useEMR();
   const [view, setView] = useState('dashboard');
 
   const [permissions, setPermissions] = useState<AllPerms>(() => {
@@ -124,13 +124,22 @@ const App: React.FC = () => {
     setMobileMenuOpen(false);
   };
 
-  const [menuStructure] = useState<MenuItem[]>(() => {
+  const [menuStructure, setMenuStructure] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem('emr_custom_menu_structure');
     if (saved) {
       try { return JSON.parse(saved); } catch { return MENU_STRUCTURE; }
     }
     return MENU_STRUCTURE;
   });
+
+  useEffect(() => {
+    fetchAppSetting('emr_custom_menu_structure').then((remote) => {
+      if (remote) {
+        setMenuStructure(remote);
+        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(remote));
+      }
+    }).catch(() => {});
+  }, []);
 
   const [openMenus, setOpenMenus] = useState<Record<string, boolean>>({});
 

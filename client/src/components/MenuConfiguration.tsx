@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ArrowUp, ArrowDown, Plus, Trash2, Save, RotateCcw, 
-  LayoutDashboard, Users, CalendarDays, Bed, Beaker, 
+import {
+  ArrowUp, ArrowDown, Plus, Trash2, Save, RotateCcw,
+  LayoutDashboard, Users, CalendarDays, Bed, Beaker,
   Scissors, Pill, Package, CreditCard, Shield, Settings, HelpCircle,
   Info, FileText, Heart, Activity
 } from 'lucide-react';
 import { MENU_STRUCTURE, PATIENT_PORTAL_MENU_STRUCTURE, type MenuItem } from '../config/permissions';
+import { useEMR } from '../context/EMRContext';
+
+const tryParse = <T,>(json: string, fallback: T): T => {
+  try { return JSON.parse(json); } catch { return fallback; }
+};
 
 const ICON_MAP: Record<string, any> = {
   LayoutDashboard, Users, CalendarDays, Bed, Beaker, 
@@ -14,35 +19,28 @@ const ICON_MAP: Record<string, any> = {
 };
 
 const MenuConfiguration: React.FC = () => {
+  const { fetchAppSetting, saveAppSetting } = useEMR();
   const [activeTab, setActiveTab] = useState<'main' | 'patient'>('main');
   const [mainMenus, setMainMenus] = useState<MenuItem[]>([]);
   const [patientMenus, setPatientMenus] = useState<MenuItem[]>([]);
   const [icons] = useState(Object.keys(ICON_MAP));
 
   useEffect(() => {
-    // Load main app menu structure
-    const savedMain = localStorage.getItem('emr_custom_menu_structure');
-    if (savedMain) {
-      try {
-        setMainMenus(JSON.parse(savedMain));
-      } catch {
-        setMainMenus(MENU_STRUCTURE);
-      }
-    } else {
-      setMainMenus(MENU_STRUCTURE);
-    }
+    const loadMenus = async () => {
+      // Load from localStorage first (instant), then override with Supabase (authoritative)
+      const localMain = localStorage.getItem('emr_custom_menu_structure');
+      setMainMenus(localMain ? tryParse(localMain, MENU_STRUCTURE) : MENU_STRUCTURE);
+      const localPatient = localStorage.getItem('emr_patient_portal_menu_structure');
+      setPatientMenus(localPatient ? tryParse(localPatient, PATIENT_PORTAL_MENU_STRUCTURE) : PATIENT_PORTAL_MENU_STRUCTURE);
 
-    // Load patient portal menu structure
-    const savedPatient = localStorage.getItem('emr_patient_portal_menu_structure');
-    if (savedPatient) {
-      try {
-        setPatientMenus(JSON.parse(savedPatient));
-      } catch {
-        setPatientMenus(PATIENT_PORTAL_MENU_STRUCTURE);
-      }
-    } else {
-      setPatientMenus(PATIENT_PORTAL_MENU_STRUCTURE);
-    }
+      const [remoteMain, remotePatient] = await Promise.all([
+        fetchAppSetting('emr_custom_menu_structure'),
+        fetchAppSetting('emr_patient_portal_menu_structure'),
+      ]);
+      if (remoteMain) { setMainMenus(remoteMain); localStorage.setItem('emr_custom_menu_structure', JSON.stringify(remoteMain)); }
+      if (remotePatient) { setPatientMenus(remotePatient); localStorage.setItem('emr_patient_portal_menu_structure', JSON.stringify(remotePatient)); }
+    };
+    loadMenus();
   }, []);
 
   const currentMenus = activeTab === 'main' ? mainMenus : patientMenus;
@@ -50,8 +48,13 @@ const MenuConfiguration: React.FC = () => {
   const storageKey = activeTab === 'main' ? 'emr_custom_menu_structure' : 'emr_patient_portal_menu_structure';
   const defaultStructure = activeTab === 'main' ? MENU_STRUCTURE : PATIENT_PORTAL_MENU_STRUCTURE;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     localStorage.setItem(storageKey, JSON.stringify(currentMenus));
+    try {
+      await saveAppSetting(storageKey, currentMenus);
+    } catch {
+      // Supabase save failed — local save still succeeded
+    }
     alert(`${activeTab === 'main' ? 'Main App' : 'Patient Portal'} menu settings saved successfully! Please refresh the page to apply.`);
     window.location.reload();
   };

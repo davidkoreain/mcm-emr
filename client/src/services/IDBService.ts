@@ -73,4 +73,7 @@ export interface IDBService {
   loginStaff(name: string, passwordHash: string): Promise<StaffMember | null>;
   // staff leave
   fetchStaffLeave(): Promise<StaffLeave[]>;
+  // app-wide settings (persisted to server so all devices share the same config)
+  fetchAppSetting?(key: string): Promise<any | null>;
+  saveAppSetting?(key: string, value: any): Promise<void>;
 }

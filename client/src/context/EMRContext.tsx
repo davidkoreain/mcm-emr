@@ -382,6 +382,8 @@ type EMRContextType = {
   isPortalUserRegistered: (mrn: string) => Promise<boolean>;
   loginStaff: (name: string, passwordHash: string) => Promise<StaffMember | null>;
   loginGuardian: (name: string, passwordHash: string) => Promise<GuardianUser | null>;
+  fetchAppSetting: (key: string) => Promise<any | null>;
+  saveAppSetting: (key: string, value: any) => Promise<void>;
   updateStaff: (id: number, changes: Partial<StaffMember>) => Promise<void>;
   addDrug: (d: Omit<Drug, 'id' | 'addedAt'>) => Promise<void>;
   updateDrug: (id: number, changes: Partial<Drug>) => Promise<void>;
@@ -696,6 +698,14 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return await db.loginGuardian(name, passwordHash);
   };
 
+  const fetchAppSetting = async (key: string): Promise<any | null> => {
+    return db.fetchAppSetting ? await db.fetchAppSetting(key) : null;
+  };
+
+  const saveAppSetting = async (key: string, value: any): Promise<void> => {
+    if (db.saveAppSetting) await db.saveAppSetting(key, value);
+  };
+
   const dispenseMedication = async (prescriptionId: number, drugId: number, qty: number) => {
     const drug = drugs.find(d => d.id === drugId);
     if (drug) {
@@ -846,7 +856,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
-      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
+      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian, fetchAppSetting, saveAppSetting,
       dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
       submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, updateLabOrderResultStatus, addMedicalHistory
     }}>

@@ -662,15 +662,23 @@ export class SupabaseService implements IDBService {
         ward: '',
       };
     }
-    const { data, error } = await this.client
-      .from('patient_users')
-      .select('*, patients!inner(*)')
-      .eq('patients.name', name)
-      .eq('password_hash', passwordHash)
-      .single();
-    
-    if (error || !data || !data.patients) return null;
-    return rowToPatient(data.patients);
+    // Step 1: find all patients with this name
+    const { data: patientRows } = await this.client
+      .from('patients')
+      .select('*')
+      .eq('name', name);
+    if (!patientRows?.length) return null;
+    // Step 2: find which one has a matching password (handles duplicate names)
+    for (const pd of patientRows) {
+      const { data: userRow } = await this.client
+        .from('patient_users')
+        .select('patient_mrn')
+        .eq('patient_mrn', pd.mrn)
+        .eq('password_hash', passwordHash)
+        .maybeSingle();
+      if (userRow) return rowToPatient(pd);
+    }
+    return null;
   }
 
   async isPortalUserRegistered(mrn: string): Promise<boolean> {
@@ -1109,5 +1117,21 @@ export class SupabaseService implements IDBService {
     const { data, error } = await this.client.from('staff_leave').select('*');
     if (error) throw error;
     return (data || []).map(rowToStaffLeave);
+  }
+
+  async fetchAppSetting(key: string): Promise<any | null> {
+    const { data } = await this.client
+      .from('app_settings')
+      .select('value')
+      .eq('key', key)
+      .maybeSingle();
+    return data?.value ?? null;
+  }
+
+  async saveAppSetting(key: string, value: any): Promise<void> {
+    const { error } = await this.client
+      .from('app_settings')
+      .upsert({ key, value }, { onConflict: 'key' });
+    if (error) throw new Error(error.message);
   }
 }
