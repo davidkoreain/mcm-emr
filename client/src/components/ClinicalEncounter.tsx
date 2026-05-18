@@ -652,13 +652,10 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                     <Activity size={12} /> {isMobile ? 'Surg' : 'Surgery'}
                   </button>
                   <button type="button" onClick={() => setPlanSubTab('admission')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'admission' ? '3px solid #eab308' : '3px solid transparent', color: planSubTab === 'admission' ? '#a16207' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <Clock size={12} /> {isMobile ? 'Admit' : 'Admit'}
+                    <Clock size={12} /> {isMobile ? 'Audit' : 'Audit'}
                   </button>
                   <button type="button" onClick={() => setPlanSubTab('followup')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'followup' ? '3px solid #22c55e' : '3px solid transparent', color: planSubTab === 'followup' ? '#166534' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                     <Calendar size={12} /> {isMobile ? 'Visit' : 'Visit'}
-                  </button>
-                  <button type="button" onClick={() => setPlanSubTab('general')} style={{ padding: isMobile ? '0.5rem 0.4rem' : '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'general' ? '3px solid #64748b' : '3px solid transparent', color: planSubTab === 'general' ? '#1e293b' : '#64748b', fontWeight: '700', fontSize: isMobile ? '0.75rem' : '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <FileText size={12} /> {isMobile ? 'Notes' : 'Notes'}
                   </button>
                 </div>
 
@@ -823,14 +820,22 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                     </div>
                   )}
 
-                  {/* Tab 5: General Plan Notes */}
-                  {planSubTab === 'general' && (
-                    <div>
-                      <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>General Clinical Treatment Notes</h4>
-                      <textarea rows={8} value={soap.plan} onChange={e => setSoap({ ...soap, plan: e.target.value })} placeholder="General nursing care instructions, dietary adjustments, physiotherapy planning, follow-up parameters..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}></textarea>
-                    </div>
-                  )}
+                  {/* Tab 5: General Plan Notes removed and placed permanently below */}
 
+                </div>
+
+                {/* Permanent Notes Section */}
+                <div style={{ borderTop: '1px dashed #cbd5e1', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <FileText size={14} /> General Clinical Notes
+                  </h4>
+                  <textarea 
+                    rows={isMobile ? 3 : 5} 
+                    value={soap.plan} 
+                    onChange={e => setSoap({ ...soap, plan: e.target.value })} 
+                    placeholder="General nursing care instructions, dietary adjustments, physiotherapy planning, follow-up parameters..." 
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '0.85rem', background: '#ffffff', resize: 'vertical' }}
+                  ></textarea>
                 </div>
               </div>
 
