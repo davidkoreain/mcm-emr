@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -892,6 +892,47 @@ export class SupabaseService implements IDBService {
     if (changes.unitPrice !== undefined) row.unit_price = changes.unitPrice;
     if (changes.totalAmount !== undefined) row.total_amount = changes.totalAmount;
     const { error } = await this.client.from('drug_orders').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // Inventory History
+  async fetchInventoryHistory(): Promise<InventoryHistory[]> {
+    const { data, error } = await this.client
+      .from('inventory_history')
+      .select('*')
+      .order('dispensed_date', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: any): InventoryHistory => ({
+      id: r.id,
+      dispensedDate: r.dispensed_date,
+      drugId: r.drug_id ?? null,
+      drugName: r.drug_name ?? '',
+      prescriptionId: r.prescription_id ?? null,
+      patientMrn: r.patient_mrn ?? '',
+      patientName: r.patient_name ?? '',
+      prescribedBy: r.prescribed_by ?? '',
+      quantityDispensed: r.quantity_dispensed ?? 1,
+      stockBefore: r.stock_before ?? 0,
+      stockAfter: r.stock_after ?? 0,
+      notes: r.notes ?? '',
+      createdAt: r.created_at ?? '',
+    }));
+  }
+
+  async insertInventoryHistory(h: Omit<InventoryHistory, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('inventory_history').insert({
+      dispensed_date: h.dispensedDate,
+      drug_id: h.drugId,
+      drug_name: h.drugName,
+      prescription_id: h.prescriptionId,
+      patient_mrn: h.patientMrn,
+      patient_name: h.patientName,
+      prescribed_by: h.prescribedBy,
+      quantity_dispensed: h.quantityDispensed,
+      stock_before: h.stockBefore,
+      stock_after: h.stockAfter,
+      notes: h.notes,
+    });
     if (error) throw new Error(error.message);
   }
 

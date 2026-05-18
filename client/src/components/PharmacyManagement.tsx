@@ -251,7 +251,7 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: number |
 );
 
 // --- Main component -----------------------------------------------------
-const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'inventory' }) => {
+const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' | 'history' }> = ({ activeTab: initialTab = 'inventory' }) => {
   // Adjustment Settings
   const { columns, itemsPerPage, isMobile } = usePageAdjustments('pharmacy');
   const [currentPage, setCurrentPage] = useState(1);
@@ -260,9 +260,10 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
     drugs, prescriptions, drugSuppliers, patients,
     dispenseMedication, cancelPrescription, addPrescription,
     addDrug, updateDrug, role, loading, currentStaff,
+    inventoryHistory,
   } = useEMR();
 
-  const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'inventory' | 'prescriptions' | 'history'>(initialTab);
 
   React.useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -1193,7 +1194,7 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
               </div>
             )}
           </>
-        ) : (
+        ) : activeTab === 'inventory' ? (
           <>
             {/* Header: title + stat cards + actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
@@ -1517,9 +1518,199 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
               </div>
             )}
           </>
+        ) : (
+          <InventoryHistoryTab inventoryHistory={inventoryHistory} drugs={drugs} isMobile={isMobile} />
         )}
       </div>
     </div>
+  );
+};
+
+// --- Inventory History Tab ---------------------------------------------------
+const InventoryHistoryTab: React.FC<{
+  inventoryHistory: import('../context/EMRContext').InventoryHistory[];
+  drugs: import('../context/EMRContext').Drug[];
+  isMobile: boolean;
+}> = ({ inventoryHistory, drugs, isMobile }) => {
+  const today = new Date();
+  const [calYear, setCalYear] = React.useState(today.getFullYear());
+  const [calMonth, setCalMonth] = React.useState(today.getMonth()); // 0-indexed
+  const [selectedDate, setSelectedDate] = React.useState<string>(today.toISOString().slice(0, 10));
+  const [histSearch, setHistSearch] = React.useState('');
+
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const firstDow = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+
+  // Map date string → count of dispense events
+  const eventsByDate = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    inventoryHistory.forEach(h => {
+      map[h.dispensedDate] = (map[h.dispensedDate] ?? 0) + 1;
+    });
+    return map;
+  }, [inventoryHistory]);
+
+  const selectedEvents = React.useMemo(() => {
+    return inventoryHistory
+      .filter(h => h.dispensedDate === selectedDate)
+      .filter(h => {
+        if (!histSearch) return true;
+        const q = histSearch.toLowerCase();
+        return h.drugName.toLowerCase().includes(q) ||
+          h.patientName.toLowerCase().includes(q) ||
+          h.prescribedBy.toLowerCase().includes(q);
+      });
+  }, [inventoryHistory, selectedDate, histSearch]);
+
+  const monthLabel = new Date(calYear, calMonth, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+
+  const prevMonth = () => {
+    if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
+    else setCalMonth(m => m - 1);
+  };
+  const nextMonth = () => {
+    if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
+    else setCalMonth(m => m + 1);
+  };
+
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const todayStr = today.toISOString().slice(0, 10);
+
+  const cellSize = isMobile ? 36 : 44;
+
+  return (
+    <>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+        <Calendar size={24} color="#6366f1" />
+        <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Inventory History</div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '1.25rem', alignItems: 'flex-start' }}>
+        {/* Calendar card */}
+        <div style={{ background: 'white', borderRadius: '1rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.06)', padding: '1rem', flexShrink: 0, width: isMobile ? '100%' : 320 }}>
+          {/* Month nav */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <button onClick={prevMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.375rem', color: '#475569' }}>
+              <ChevronLeft size={18} />
+            </button>
+            <span style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>{monthLabel}</span>
+            <button onClick={nextMonth} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.375rem', color: '#475569' }}>
+              <ChevronRight size={18} />
+            </button>
+          </div>
+          {/* DOW headers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', marginBottom: '0.25rem' }}>
+            {DOW.map(d => (
+              <div key={d} style={{ textAlign: 'center', fontSize: '0.68rem', fontWeight: 700, color: '#94a3b8', paddingBottom: '0.3rem' }}>{d}</div>
+            ))}
+          </div>
+          {/* Day cells */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+            {Array.from({ length: firstDow }).map((_, i) => <div key={`e${i}`} />)}
+            {Array.from({ length: daysInMonth }).map((_, i) => {
+              const day = i + 1;
+              const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+              const count = eventsByDate[dateStr] ?? 0;
+              const isSelected = dateStr === selectedDate;
+              const isToday = dateStr === todayStr;
+              return (
+                <button
+                  key={dateStr}
+                  onClick={() => setSelectedDate(dateStr)}
+                  style={{
+                    height: cellSize, borderRadius: '0.5rem', border: 'none', cursor: 'pointer',
+                    background: isSelected ? '#6366f1' : isToday ? '#eef2ff' : 'transparent',
+                    color: isSelected ? 'white' : isToday ? '#4f46e5' : '#1e293b',
+                    fontWeight: isSelected || isToday ? 700 : 400,
+                    fontSize: '0.82rem', position: 'relative',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1,
+                  }}
+                >
+                  {day}
+                  {count > 0 && (
+                    <span style={{
+                      width: 6, height: 6, borderRadius: '50%',
+                      background: isSelected ? 'rgba(255,255,255,0.8)' : '#6366f1',
+                      display: 'block',
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Right panel: dispense list for selected date */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+            <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>
+              {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </div>
+            <span style={{ background: '#eef2ff', color: '#4f46e5', borderRadius: '1rem', padding: '0.2rem 0.75rem', fontSize: '0.78rem', fontWeight: 700 }}>
+              {selectedEvents.length} dispense{selectedEvents.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+
+          {/* Search */}
+          <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+            <Search size={14} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              value={histSearch}
+              onChange={e => setHistSearch(e.target.value)}
+              placeholder="Search drug, patient, doctor..."
+              style={{ width: '100%', boxSizing: 'border-box', paddingLeft: '2rem', height: 38, borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.85rem', color: '#1e293b', outline: 'none' }}
+            />
+          </div>
+
+          {selectedEvents.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0', color: '#94a3b8' }}>
+              <Package size={36} style={{ marginBottom: '0.5rem', opacity: 0.35 }} />
+              <p style={{ fontWeight: 600, margin: 0 }}>No dispenses recorded for this date.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              {selectedEvents.map(h => {
+                const drug = drugs.find(d => d.id === h.drugId);
+                const cat = drug?.category || '';
+                const colors = CATEGORY_COLORS[cat] || { bg: '#f1f5f9', fg: '#1e293b' };
+                return (
+                  <div key={h.id} style={{ background: 'white', borderRadius: '0.875rem', border: '1px solid #e2e8f0', boxShadow: '0 1px 4px rgba(0,0,0,0.04)', padding: '0.875rem 1rem', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '0.75rem', alignItems: isMobile ? 'flex-start' : 'center' }}>
+                    {/* Drug info */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '0.25rem' }}>
+                        <span style={{ fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>{h.drugName}</span>
+                        {cat && <Pill_Badge bg={colors.bg} color={colors.fg}>{cat}</Pill_Badge>}
+                      </div>
+                      <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><User size={12} /> {h.patientName || h.patientMrn}</span>
+                        {h.prescribedBy && <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><BadgeCheck size={12} /> Dr. {h.prescribedBy}</span>}
+                      </div>
+                    </div>
+                    {/* Qty + stock */}
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexShrink: 0 }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Dispensed</div>
+                        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: '#dc2626' }}>−{h.quantityDispensed}</div>
+                      </div>
+                      <div style={{ width: 1, height: 32, background: '#e2e8f0' }} />
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Before</div>
+                        <div style={{ fontWeight: 600, fontSize: '0.95rem', color: '#475569' }}>{h.stockBefore}</div>
+                      </div>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.68rem', color: '#94a3b8', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>After</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.95rem', color: h.stockAfter <= 10 ? '#dc2626' : h.stockAfter <= 20 ? '#f59e0b' : '#16a34a' }}>{h.stockAfter}</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </>
   );
 };
 

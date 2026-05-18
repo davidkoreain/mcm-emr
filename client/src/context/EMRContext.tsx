@@ -274,6 +274,22 @@ export type DrugOrder = {
   createdAt: string;
 };
 
+export type InventoryHistory = {
+  id: number;
+  dispensedDate: string;
+  drugId: number | null;
+  drugName: string;
+  prescriptionId: number | null;
+  patientMrn: string;
+  patientName: string;
+  prescribedBy: string;
+  quantityDispensed: number;
+  stockBefore: number;
+  stockAfter: number;
+  notes: string;
+  createdAt: string;
+};
+
 export type LabOrder = {
   id: number;
   patientMrn: string;
@@ -308,6 +324,7 @@ type EMRContextType = {
   drugSuppliers: DrugSupplier[];
   medicationSchedules: MedicationSchedule[];
   drugOrders: DrugOrder[];
+  inventoryHistory: InventoryHistory[];
   labOrders: LabOrder[];
   labResults: LabResult[];
   medicalHistory: MedicalHistoryItem[];
@@ -414,6 +431,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [drugSuppliers, setDrugSuppliers] = useState<DrugSupplier[]>([]);
   const [medicationSchedules, setMedicationSchedules] = useState<MedicationSchedule[]>([]);
   const [drugOrders, setDrugOrders] = useState<DrugOrder[]>([]);
+  const [inventoryHistory, setInventoryHistory] = useState<InventoryHistory[]>([]);
   const [labOrders, setLabOrders] = useState<LabOrder[]>([]);
   const [labResults, setLabResults] = useState<LabResult[]>([]);
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
@@ -504,7 +522,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -520,6 +538,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchDrugSuppliers ? db.fetchDrugSuppliers() : Promise.resolve([] as DrugSupplier[]), [] as DrugSupplier[]),
         safeFetch(db.fetchMedicationSchedules ? db.fetchMedicationSchedules() : Promise.resolve([] as MedicationSchedule[]), [] as MedicationSchedule[]),
         safeFetch(db.fetchDrugOrders ? db.fetchDrugOrders() : Promise.resolve([] as DrugOrder[]), [] as DrugOrder[]),
+        safeFetch(db.fetchInventoryHistory ? db.fetchInventoryHistory() : Promise.resolve([] as InventoryHistory[]), [] as InventoryHistory[]),
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -545,6 +564,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDrugSuppliers(dsup);
       setMedicationSchedules(msch);
       setDrugOrders(dord);
+      setInventoryHistory(invh);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -652,8 +672,26 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const dispenseMedication = async (prescriptionId: number, drugId: number, qty: number) => {
     const drug = drugs.find(d => d.id === drugId);
     if (drug) {
-      await db.updateDrugStock(drugId, drug.stock - qty);
+      const stockBefore = drug.stock;
+      const stockAfter = drug.stock - qty;
+      await db.updateDrugStock(drugId, stockAfter);
       await db.updatePrescriptionStatus(prescriptionId, 'Dispensed');
+      const rx = prescriptions.find(p => p.id === prescriptionId);
+      if (db.insertInventoryHistory) {
+        await db.insertInventoryHistory({
+          dispensedDate: new Date().toISOString().slice(0, 10),
+          drugId,
+          drugName: drug.name,
+          prescriptionId,
+          patientMrn: rx?.patientMrn ?? '',
+          patientName: rx?.patientName ?? '',
+          prescribedBy: rx?.prescribedBy ?? '',
+          quantityDispensed: qty,
+          stockBefore,
+          stockAfter,
+          notes: '',
+        });
+      }
       await refreshData();
     }
   };
@@ -764,7 +802,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <EMRContext.Provider value={{
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions,
-      drugSuppliers, medicationSchedules, drugOrders,
+      drugSuppliers, medicationSchedules, drugOrders, inventoryHistory,
       labOrders, labResults, medicalHistory, staffLeave,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,

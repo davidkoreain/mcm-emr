@@ -88,7 +88,7 @@ const App: React.FC = () => {
   const [isOperationOpen, setIsOperationOpen] = useState(false);
   const [operationTab, setOperationTab] = useState<'schedule' | 'resources' | 'supplies'>('schedule');
   const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
-  const [pharmacyTab, setPharmacyTab] = useState<'prescriptions' | 'inventory'>('prescriptions');
+  const [pharmacyTab, setPharmacyTab] = useState<'prescriptions' | 'inventory' | 'history'>('prescriptions');
   const [isAssetsOpen, setIsAssetsOpen] = useState(false);
   const [assetsTab, setAssetsTab] = useState<'inventory' | 'maintenance' | 'loss'>('inventory');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
