@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import {
   Pill, ClipboardList, AlertTriangle, Plus, X, CheckCircle2, Eye, Edit2, RefreshCw,
   Search, Calendar, Package, ShieldAlert, BadgeCheck, FileText, Beaker,
-  Users, Clock, XCircle, User, Hash, ChevronLeft, ChevronRight, LayoutGrid, List
+  Users, Clock, XCircle, User, Hash, ChevronLeft, ChevronRight, LayoutGrid, List, SlidersHorizontal
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import { useEMR, type Drug, type Prescription } from '../context/EMRContext';
@@ -328,6 +328,7 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
   const [filterStatus, setFilterStatus] = useState('');
   const [filterStock, setFilterStock] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'stock' | 'expiry'>('name');
+  const [showMobileExtraFilters, setShowMobileExtraFilters] = useState(false);
 
   // Modal state
   const [drugModal, setDrugModal] = useState<{ mode: 'add' | 'edit'; data?: Drug } | null>(null);
@@ -1252,38 +1253,95 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
             </div>
 
             {/* Filter bar */}
-            <div style={{
-              display: 'grid', gridTemplateColumns: 'minmax(220px, 1.5fr) repeat(5, minmax(140px, 1fr))',
-              gap: '0.6rem', marginBottom: '1rem'
-            }}>
-              <div style={{ position: 'relative' }}>
-                <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name / brand / ingredient..." style={{ ...inputStyle, paddingLeft: '2rem' }} />
+            {isMobile ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
+                {/* Mobile row 1: Category + Form + Add Filters button */}
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                    <option value="">All Categories</option>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={filterForm} onChange={e => setFilterForm(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                    <option value="">All Forms</option>
+                    {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                  <button
+                    onClick={() => setShowMobileExtraFilters(v => !v)}
+                    style={{
+                      flexShrink: 0, whiteSpace: 'nowrap',
+                      padding: '0 0.75rem', height: '38px', borderRadius: '0.5rem',
+                      border: showMobileExtraFilters ? '1.5px solid #6366f1' : '1.5px solid #cbd5e1',
+                      background: showMobileExtraFilters ? '#eef2ff' : 'white',
+                      color: showMobileExtraFilters ? '#4f46e5' : '#475569',
+                      fontSize: '0.78rem', fontWeight: 600, cursor: 'pointer',
+                      display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                    }}
+                  >
+                    <SlidersHorizontal size={13} />
+                    {showMobileExtraFilters ? 'Hide filters' : 'Add filters'}
+                  </button>
+                </div>
+                {/* Mobile extra filters (search, status, stock, sort) */}
+                {showMobileExtraFilters && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <div style={{ position: 'relative' }}>
+                      <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name / brand / ingredient..." style={{ ...inputStyle, paddingLeft: '2rem', width: '100%', boxSizing: 'border-box' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                        <option value="">All Statuses</option>
+                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                      <select value={filterStock} onChange={e => setFilterStock(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                        <option value="">All Stock Levels</option>
+                        <option value="low">Low Stock</option>
+                        <option value="critical">Critical (&lt;10)</option>
+                        <option value="in_stock">In Stock</option>
+                      </select>
+                    </div>
+                    <select value={sortBy} onChange={e => setSortBy(e.target.value as 'name' | 'stock' | 'expiry')} style={{ ...inputStyle, width: '100%' }}>
+                      <option value="name">Sort: Name A→Z</option>
+                      <option value="stock">Sort: Stock low→high</option>
+                      <option value="expiry">Sort: Expiry soonest</option>
+                    </select>
+                  </div>
+                )}
               </div>
-              <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={inputStyle}>
-                <option value="">All Categories</option>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-              <select value={filterForm} onChange={e => setFilterForm(e.target.value)} style={inputStyle}>
-                <option value="">All Forms</option>
-                {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
-              </select>
-              <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={inputStyle}>
-                <option value="">All Statuses</option>
-                {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <select value={filterStock} onChange={e => setFilterStock(e.target.value)} style={inputStyle}>
-                <option value="">All Stock Levels</option>
-                <option value="low">Low Stock</option>
-                <option value="critical">Critical (&lt;10)</option>
-                <option value="in_stock">In Stock</option>
-              </select>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value as 'name' | 'stock' | 'expiry')} style={inputStyle}>
-                <option value="name">Sort: Name A→Z</option>
-                <option value="stock">Sort: Stock low→high</option>
-                <option value="expiry">Sort: Expiry soonest</option>
-              </select>
-            </div>
+            ) : (
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'minmax(220px, 1.5fr) repeat(5, minmax(140px, 1fr))',
+                gap: '0.6rem', marginBottom: '1rem'
+              }}>
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name / brand / ingredient..." style={{ ...inputStyle, paddingLeft: '2rem' }} />
+                </div>
+                <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={inputStyle}>
+                  <option value="">All Categories</option>
+                  {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <select value={filterForm} onChange={e => setFilterForm(e.target.value)} style={inputStyle}>
+                  <option value="">All Forms</option>
+                  {FORMS.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+                <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={inputStyle}>
+                  <option value="">All Statuses</option>
+                  {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <select value={filterStock} onChange={e => setFilterStock(e.target.value)} style={inputStyle}>
+                  <option value="">All Stock Levels</option>
+                  <option value="low">Low Stock</option>
+                  <option value="critical">Critical (&lt;10)</option>
+                  <option value="in_stock">In Stock</option>
+                </select>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value as 'name' | 'stock' | 'expiry')} style={inputStyle}>
+                  <option value="name">Sort: Name A→Z</option>
+                  <option value="stock">Sort: Stock low→high</option>
+                  <option value="expiry">Sort: Expiry soonest</option>
+                </select>
+              </div>
+            )}
 
             <div style={{ fontSize: '0.78rem', color: '#64748b', marginBottom: '0.6rem' }}>
               Showing {filteredDrugs.length} of {drugs.length} drugs
