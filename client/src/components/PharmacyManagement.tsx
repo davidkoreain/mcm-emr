@@ -253,7 +253,7 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: number |
 // --- Main component -----------------------------------------------------
 const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }> = ({ activeTab: initialTab = 'inventory' }) => {
   // Adjustment Settings
-  const { columns, itemsPerPage } = usePageAdjustments('pharmacy');
+  const { columns, itemsPerPage, isMobile } = usePageAdjustments('pharmacy');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useViewMode('pharmacy', 'grid');
   const {
@@ -1197,11 +1197,25 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
           <>
             {/* Header: title + stat cards + actions */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                  <Pill size={24} color="#3b82f6" />
-                  <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Drug Inventory</div>
-                  <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row',
+                justifyContent: 'space-between', 
+                alignItems: isMobile ? 'stretch' : 'center', 
+                gap: '1rem' 
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: isMobile ? 'space-between' : 'flex-start',
+                  width: isMobile ? '100%' : 'auto',
+                  gap: '0.75rem' 
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <Pill size={24} color="#3b82f6" />
+                    <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Drug Inventory</div>
+                  </div>
+                  <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden' }}>
                     <button 
                       onClick={() => setViewMode('grid')}
                       style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
@@ -1218,10 +1232,15 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                     </button>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
-                  <button className="btn-primary" onClick={openAddDrug}><Plus size={16} /> Add Drug</button>
-                  <button className="btn-secondary" onClick={() => setShowCSVModal(true)}><ClipboardList size={16} /> Import CSV</button>
-                  <button className="btn-secondary" onClick={() => setActiveTab('prescriptions')}><FileText size={16} /> Prescriptions</button>
+                <div style={{ 
+                  display: 'flex', 
+                  gap: '0.6rem', 
+                  flexWrap: 'wrap',
+                  width: isMobile ? '100%' : 'auto'
+                }}>
+                  <button className="btn-primary" style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', justifyContent: 'center' }} onClick={openAddDrug}><Plus size={16} /> Add Drug</button>
+                  <button className="btn-secondary" style={{ flex: isMobile ? 1 : 'none', display: 'inline-flex', justifyContent: 'center' }} onClick={() => setShowCSVModal(true)}><ClipboardList size={16} /> Import CSV</button>
+                  <button className="btn-secondary" style={{ flex: isMobile ? '100%' : 'none', display: 'inline-flex', justifyContent: 'center' }} onClick={() => setActiveTab('prescriptions')}><FileText size={16} /> Prescriptions</button>
                 </div>
               </div>
 

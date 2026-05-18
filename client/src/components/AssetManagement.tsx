@@ -36,7 +36,7 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
   const [activeTab, setActiveTab] = useState<'inventory' | 'maintenance' | 'loss'>(initialTab);
 
   // Adjustment Settings
-  const { columns, itemsPerPage } = usePageAdjustments('assets');
+  const { columns, itemsPerPage, isMobile } = usePageAdjustments('assets');
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
     return (localStorage.getItem('emr_view_mode_assets') as 'grid' | 'list') || 'grid';
@@ -363,10 +363,23 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
       <div className="asset-content" style={{ marginTop: '1.5rem' }}>
         {activeTab === 'inventory' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between', 
+              alignItems: isMobile ? 'stretch' : 'center', 
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: '1rem' 
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: isMobile ? 'space-between' : 'flex-start',
+                width: isMobile ? '100%' : 'auto',
+                gap: '0.5rem' 
+              }}>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Asset Inventory</h3>
-                <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+                <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden' }}>
                   <button 
                     onClick={() => { setViewMode('grid'); localStorage.setItem('emr_view_mode_assets', 'grid'); }}
                     style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
@@ -383,9 +396,14 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                   </button>
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem' }}>
-                <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}><FileText size={18} /> CSV Import</button>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddAssetModal(true)}><Plus size={18} /> Add Asset</button>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                width: isMobile ? '100%' : 'auto',
+                gap: '0.75rem' 
+              }}>
+                <button className="btn-secondary" style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}><FileText size={18} /> CSV Import</button>
+                <button className="btn-primary" style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={() => setAddAssetModal(true)}><Plus size={18} /> Add Asset</button>
               </div>
             </div>
             

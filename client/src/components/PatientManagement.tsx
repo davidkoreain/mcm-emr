@@ -28,7 +28,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const csvInputRef = useRef<HTMLInputElement>(null);
 
   // Adjustment Settings
-  const { columns, itemsPerPage } = usePageAdjustments('patients');
+  const { columns, itemsPerPage, isMobile } = usePageAdjustments('patients');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -270,11 +270,26 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Users size={24} color="var(--primary-color)" />
-          <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Patient List</h2>
-          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+      <div style={{ 
+        display: 'flex', 
+        flexDirection: isMobile ? 'column' : 'row',
+        justifyContent: 'space-between', 
+        alignItems: isMobile ? 'stretch' : 'center', 
+        gap: isMobile ? '0.75rem' : '1rem',
+        marginBottom: '1.5rem' 
+      }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: isMobile ? 'space-between' : 'flex-start',
+          width: isMobile ? '100%' : 'auto',
+          gap: '0.75rem' 
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <Users size={24} color="var(--primary-color)" />
+            <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Patient List</h2>
+          </div>
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden' }}>
             <button 
               onClick={() => { setViewMode('grid'); localStorage.setItem('emr_view_mode_patients', 'grid'); }}
               style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
@@ -291,12 +306,17 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
             </button>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          width: isMobile ? '100%' : 'auto',
+          gap: '0.75rem' 
+        }}>
           <input ref={csvInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleCsvImport} />
-          <button className="btn-secondary" onClick={() => csvInputRef.current?.click()} disabled={csvImporting} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn-secondary" onClick={() => csvInputRef.current?.click()} disabled={csvImporting} style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
             <Upload size={16} /> {csvImporting ? 'Importing…' : 'CSV Import'}
           </button>
-          <button className="btn-primary" onClick={onRegister} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button className="btn-primary" onClick={onRegister} style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
             <PlusCircle size={18} /> New Patient
           </button>
         </div>

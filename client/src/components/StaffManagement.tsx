@@ -50,7 +50,7 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   }, [propTab]);
 
   // Adjustment Settings
-  const { columns, itemsPerPage } = usePageAdjustments('staff');
+  const { columns, itemsPerPage, isMobile } = usePageAdjustments('staff');
 
   const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
@@ -485,11 +485,24 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
           renderProfile(activeStaff)
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div style={{ 
+              display: 'flex', 
+              flexDirection: isMobile ? 'column' : 'row',
+              justifyContent: 'space-between', 
+              alignItems: isMobile ? 'stretch' : 'center', 
+              gap: isMobile ? '0.75rem' : '1rem',
+              marginBottom: '1rem' 
+            }}>
               {activeTab === 'portfolio' ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: isMobile ? 'space-between' : 'flex-start',
+                  width: isMobile ? '100%' : 'auto',
+                  gap: '0.5rem' 
+                }}>
                   <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Staff Roster</h3>
-                  <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+                  <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden' }}>
                     <button 
                       onClick={() => { setViewMode('grid'); localStorage.setItem('emr_view_mode_staff', 'grid'); }}
                       style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
@@ -507,11 +520,16 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                   </div>
                 </div>
               ) : <div></div>}
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                width: isMobile ? '100%' : 'auto',
+                gap: '0.75rem' 
+              }}>
+                <button className="btn-secondary" style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
                   <FileText size={18} /> CSV Bulk Upload
                 </button>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddStaffModal(true)}>
+                <button className="btn-primary" style={{ flex: isMobile ? 1 : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }} onClick={() => setAddStaffModal(true)}>
                   <UserPlus size={18} /> Add Staff
                 </button>
               </div>
