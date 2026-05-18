@@ -1255,7 +1255,12 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
             {/* Filter bar */}
             {isMobile ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem' }}>
-                {/* Mobile row 1: Category + Form + Add Filters button */}
+                {/* Mobile row 1: Search (always visible) */}
+                <div style={{ position: 'relative' }}>
+                  <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+                  <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name / brand / ingredient..." style={{ ...inputStyle, paddingLeft: '2rem', width: '100%', boxSizing: 'border-box' }} />
+                </div>
+                {/* Mobile row 2: Category + Form + Add Filters button (always visible) */}
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
                     <option value="">All Categories</option>
@@ -1281,32 +1286,27 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                     {showMobileExtraFilters ? 'Hide filters' : 'Add filters'}
                   </button>
                 </div>
-                {/* Mobile extra filters (search, status, stock, sort) */}
+                {/* Mobile extra filters (status, stock only) */}
                 {showMobileExtraFilters && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    <div style={{ position: 'relative' }}>
-                      <Search size={16} style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
-                      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search name / brand / ingredient..." style={{ ...inputStyle, paddingLeft: '2rem', width: '100%', boxSizing: 'border-box' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
-                        <option value="">All Statuses</option>
-                        {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
-                      </select>
-                      <select value={filterStock} onChange={e => setFilterStock(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
-                        <option value="">All Stock Levels</option>
-                        <option value="low">Low Stock</option>
-                        <option value="critical">Critical (&lt;10)</option>
-                        <option value="in_stock">In Stock</option>
-                      </select>
-                    </div>
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value as 'name' | 'stock' | 'expiry')} style={{ ...inputStyle, width: '100%' }}>
-                      <option value="name">Sort: Name A→Z</option>
-                      <option value="stock">Sort: Stock low→high</option>
-                      <option value="expiry">Sort: Expiry soonest</option>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                      <option value="">All Statuses</option>
+                      {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <select value={filterStock} onChange={e => setFilterStock(e.target.value)} style={{ ...inputStyle, flex: 1 }}>
+                      <option value="">All Stock Levels</option>
+                      <option value="low">Low Stock</option>
+                      <option value="critical">Critical (&lt;10)</option>
+                      <option value="in_stock">In Stock</option>
                     </select>
                   </div>
                 )}
+                {/* Mobile row last: Sort (always visible) */}
+                <select value={sortBy} onChange={e => setSortBy(e.target.value as 'name' | 'stock' | 'expiry')} style={{ ...inputStyle, width: '100%' }}>
+                  <option value="name">Sort: Name A→Z</option>
+                  <option value="stock">Sort: Stock low→high</option>
+                  <option value="expiry">Sort: Expiry soonest</option>
+                </select>
               </div>
             ) : (
               <div style={{
