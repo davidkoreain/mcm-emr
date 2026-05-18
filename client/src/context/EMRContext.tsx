@@ -348,13 +348,16 @@ type EMRContextType = {
   updateDrug: (id: number, changes: Partial<Drug>) => Promise<void>;
   dispenseMedication: (prescriptionId: number, drugId: number, qty: number) => Promise<void>;
   cancelPrescription: (id: number) => Promise<void>;
-  addPrescription: (rx: Omit<Prescription, 'id' | 'createdAt'>) => Promise<void>;
+  addPrescription: (rx: Omit<Prescription, 'id' | 'createdAt'>) => Promise<Prescription>;
   addDrugSupplier: (s: Omit<DrugSupplier, 'id' | 'createdAt'>) => Promise<void>;
   createDrugOrder: (o: Omit<DrugOrder, 'id' | 'createdAt'>) => Promise<void>;
   markMedicationTaken: (scheduleId: number, taken: boolean) => Promise<void>;
   createMedicationSchedule: (rx: Prescription, drug: Drug) => Promise<void>;
   // Lab
   submitLabResult: (orderId: number, result: Omit<LabResult, 'id' | 'createdAt'>) => Promise<void>;
+  addLabOrder: (o: Omit<LabOrder, 'id' | 'createdAt'>) => Promise<void>;
+  updateLabOrderStatus: (id: number, status: 'Pending' | 'Completed') => Promise<void>;
+  addMedicalHistory: (item: Omit<MedicalHistoryItem, 'id' | 'createdAt'>) => Promise<void>;
 };
 
 const EMRContext = createContext<EMRContextType | null>(null);
@@ -659,6 +662,21 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await db.insertLabResult(result);
     await refreshData();
   };
+
+  const addLabOrder = async (o: Omit<LabOrder, 'id' | 'createdAt'>) => {
+    await db.insertLabOrder(o);
+    await refreshData();
+  };
+
+  const updateLabOrderStatus = async (id: number, status: 'Pending' | 'Completed') => {
+    await db.updateLabOrderStatus(id, status);
+    await refreshData();
+  };
+
+  const addMedicalHistory = async (item: Omit<MedicalHistoryItem, 'id' | 'createdAt'>) => {
+    await db.insertMedicalHistory(item);
+    await refreshData();
+  };
   const addDrug = async (d: Omit<Drug, 'id' | 'addedAt'>) => {
     await db.insertDrug(d);
     await refreshData();
@@ -668,9 +686,12 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await refreshData();
   };
 
-  const addPrescription = async (rx: Omit<Prescription, 'id' | 'createdAt'>) => {
+  const addPrescription = async (rx: Omit<Prescription, 'id' | 'createdAt'>): Promise<Prescription> => {
     await db.insertPrescription(rx);
+    const updated = await db.fetchPrescriptions();
+    const newRx = updated[0];
     await refreshData();
+    return newRx;
   };
 
   const cancelPrescription = async (id: number) => {
@@ -750,7 +771,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
       addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
       dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
-      submitLabResult, deleteMedicalHistory
+      submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, addMedicalHistory
     }}>
       {children}
     </EMRContext.Provider>

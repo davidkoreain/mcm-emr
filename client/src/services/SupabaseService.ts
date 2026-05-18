@@ -508,6 +508,17 @@ export class SupabaseService implements IDBService {
     if (error) throw new Error(error.message);
   }
 
+  async insertMedicalHistory(item: Omit<MedicalHistoryItem, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('medical_history').insert({
+      patient_mrn: item.patientMrn,
+      date: item.date,
+      doctor: item.doctor,
+      diagnosis: item.diagnosis,
+      summary: item.summary,
+    });
+    if (error) throw new Error(error.message);
+  }
+
   async fetchStaff(): Promise<StaffMember[]> {
     await this.seedIfEmpty();
     const { data, error } = await this.client.from('staff').select('*').order('id');
@@ -907,6 +918,22 @@ export class SupabaseService implements IDBService {
       range: r.range,
       status: r.status,
     });
+    if (error) throw new Error(error.message);
+  }
+
+  async insertLabOrder(o: Omit<LabOrder, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('lab_orders').insert({
+      patient_mrn: o.patientMrn,
+      patient_name: o.patientName,
+      tests: o.tests,
+      priority: o.priority,
+      status: o.status,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async updateLabOrderStatus(id: number, status: 'Pending' | 'Completed'): Promise<void> {
+    const { error } = await this.client.from('lab_orders').update({ status }).eq('id', id);
     if (error) throw new Error(error.message);
   }
 

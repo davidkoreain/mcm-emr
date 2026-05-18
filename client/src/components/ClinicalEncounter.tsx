@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import {
   Clipboard, BookOpen, PenTool, CheckCircle, Save, X, Activity,
   Image as ImageIcon, Video, History, FileText, Plus, Maximize2,
-  Calendar, ChevronRight, Download, Eye, Trash2
+  Calendar, ChevronRight, Download, Eye, Trash2, PlusCircle, Clock, Check
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
+import type { Patient } from '../context/EMRContext';
 
 interface ClinicalEncounterProps {
   onClose: () => void;
@@ -65,7 +66,13 @@ const initialImaging: ImagingItem[] = [
 ];
 
 const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientName, patientMrn, defaultTab = 'soap' }) => {
-  const { patients, updatePatient, role, currentStaff } = useEMR();
+  const {
+    patients, updatePatient, role, currentStaff,
+    drugs, prescriptions, labOrders, labResults, surgeries, staff,
+    addPrescription, addSurgery, addLabOrder, submitLabResult, addAppointment,
+    createMedicationSchedule, addMedicalHistory, updateLabOrderStatus
+  } = useEMR();
+
   const currentPatient = patientMrn
     ? patients.find(p => p.mrn === patientMrn)
     : patients.find(p => p.name === patientName);
@@ -89,12 +96,177 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
 
   const canDeleteHistory = role === 'Admin' || role === 'Doctor';
 
+  // --- Assessment (Lab Tests) local states ---
+  const [selectedLabTest, setSelectedLabTest] = useState('Complete Blood Count (CBC)');
+  const [labPriority, setLabPriority] = useState<'Normal' | 'Urgent'>('Normal');
+  const [editingOrderId, setEditingOrderId] = useState<number | null>(null);
+  const [resultInput, setResultInput] = useState({
+    test: '',
+    value: '',
+    unit: '',
+    range: '',
+    status: 'Normal' as 'Normal' | 'Abnormal'
+  });
+
+  // --- Plan sub-tabs state ---
+  const [planSubTab, setPlanSubTab] = useState<'prescription' | 'surgery' | 'admission' | 'followup' | 'general'>('prescription');
+
+  // --- Plan (Prescription) inputs ---
+  const [rxDrugId, setRxDrugId] = useState<string>(drugs && drugs[0] ? String(drugs[0].id) : '');
+  const [rxDosage, setRxDosage] = useState('1 tablet');
+  const [rxFrequency, setRxFrequency] = useState('BID (Twice daily)');
+  const [rxDuration, setRxDuration] = useState('5 days');
+  const [rxInstructions, setRxInstructions] = useState('Take after meals');
+
+  // --- Plan (Surgery) inputs ---
+  const [surgName, setSurgName] = useState('Laparoscopic Cholecystectomy');
+  const [surgSurgeonId, setSurgSurgeonId] = useState<string>(staff?.find(s => s.role.includes('Doctor')) ? String(staff.find(s => s.role.includes('Doctor'))?.id) : '');
+  const [surgAnesthesia, setSurgAnesthesia] = useState('General');
+  const [surgRoom, setSurgRoom] = useState('OR-1');
+  const [surgStart, setSurgStart] = useState('');
+  const [surgEnd, setSurgEnd] = useState('');
+
+  // --- Plan (Admission) inputs ---
+  const [requiresAdmission, setRequiresAdmission] = useState(false);
+  const [admitWard, setAdmitWard] = useState('General Ward 3B');
+  const [admitDate, setAdmitDate] = useState('');
+  const [dischargeDate, setDischargeDate] = useState('');
+
+  // --- Plan (Follow-up) inputs ---
+  const [requiresFollowUp, setRequiresFollowUp] = useState(false);
+  const [followUpDate, setFollowUpDate] = useState('');
+  const [followUpDocId, setFollowUpDocId] = useState<string>(staff?.find(s => s.role.includes('Doctor')) ? String(staff.find(s => s.role.includes('Doctor'))?.id) : '');
+  const [followUpNotes, setFollowUpNotes] = useState('Routine follow-up');
+
+  // --- Lab Actions ---
+  const handleRequestLab = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!currentPatient) return;
+    try {
+      await addLabOrder({
+        patientMrn: currentPatient.mrn,
+        patientName: currentPatient.name,
+        tests: [selectedLabTest],
+        priority: labPriority,
+        status: 'Pending'
+      });
+      alert(`Requested ${selectedLabTest} successfully.`);
+    } catch (err) {
+      alert('Failed to request lab test.');
+    }
+  };
+
+  const handleSaveLabResult = async (orderId: number) => {
+    if (!currentPatient) return;
+    try {
+      await submitLabResult(orderId, {
+        patientMrn: currentPatient.mrn,
+        patientName: currentPatient.name,
+        test: resultInput.test,
+        value: resultInput.value,
+        unit: resultInput.unit,
+        range: resultInput.range,
+        status: resultInput.status
+      });
+      await updateLabOrderStatus(orderId, 'Completed');
+      alert('Result recorded successfully.');
+      setEditingOrderId(null);
+      setResultInput({ test: '', value: '', unit: '', range: '', status: 'Normal' });
+    } catch (err) {
+      alert('Failed to record result.');
+    }
+  };
+
+  // --- Prescription Actions ---
+  const handleAddPrescription = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!currentPatient) return;
+    const selectedDrug = drugs.find(d => d.id === Number(rxDrugId)) || drugs[0];
+    if (!selectedDrug) {
+      alert('No drugs available in stock.');
+      return;
+    }
+    try {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const daysCount = parseInt(rxDuration) || 5;
+      const end = new Date();
+      end.setDate(end.getDate() + daysCount);
+      const endStr = end.toISOString().slice(0, 10);
+
+      const newRx = await addPrescription({
+        patientMrn: currentPatient.mrn,
+        patientName: currentPatient.name,
+        drug: selectedDrug.name,
+        drugId: selectedDrug.id,
+        dosage: rxDosage,
+        frequency: rxFrequency,
+        duration: rxDuration,
+        instructions: rxInstructions,
+        status: 'Pending',
+        startDate: todayStr,
+        endDate: endStr,
+        prescribedBy: currentStaff?.name || 'Dr. Solomon'
+      });
+
+      if (createMedicationSchedule) {
+        await createMedicationSchedule(newRx, selectedDrug);
+      }
+      alert(`Prescribed ${selectedDrug.name} successfully.`);
+    } catch (err) {
+      alert('Failed to add prescription.');
+    }
+  };
+
+  // --- Surgery Actions ---
+  const handleScheduleSurgery = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!currentPatient) return;
+    try {
+      await addSurgery({
+        patientMrn: currentPatient.mrn,
+        patientName: currentPatient.name,
+        operationName: surgName,
+        surgeonId: Number(surgSurgeonId),
+        anesthesiaType: surgAnesthesia,
+        roomNumber: surgRoom,
+        startTime: surgStart,
+        endTime: surgEnd,
+        status: 'Scheduled'
+      });
+      alert('Surgery scheduled successfully.');
+    } catch (err) {
+      alert('Failed to schedule surgery.');
+    }
+  };
+
+  // --- Final Submit SOAP ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (currentPatient) {
-      const planArray = soap.plan.split('\n').filter(line => line.trim() !== '');
+      let compiledPlan = soap.plan;
+      
+      const pList = prescriptions.filter(p => p.patientMrn === currentPatient.mrn && p.status === 'Pending');
+      if (pList.length > 0) {
+        compiledPlan += (compiledPlan ? '\n\n' : '') + '[Prescriptions]:\n' + pList.map(p => `- ${p.drug} ${p.dosage} ${p.frequency} for ${p.duration}`).join('\n');
+      }
+
+      const sList = surgeries.filter(s => s.patientMrn === currentPatient.mrn && s.status === 'Scheduled');
+      if (sList.length > 0) {
+        compiledPlan += (compiledPlan ? '\n\n' : '') + '[Surgeries Scheduled]:\n' + sList.map(s => `- ${s.operationName} with Dr. ${staff.find(st => st.id === s.surgeonId)?.name || s.surgeonId} on ${s.startTime}`).join('\n');
+      }
+
+      if (requiresAdmission) {
+        compiledPlan += (compiledPlan ? '\n\n' : '') + `[Admission Planned]:\n- Ward: ${admitWard}\n- Admission: ${admitDate}\n- Est. Discharge: ${dischargeDate}`;
+      }
+
+      if (requiresFollowUp && followUpDate) {
+        compiledPlan += (compiledPlan ? '\n\n' : '') + `[Follow-up Outpatient Visit]:\n- Date: ${followUpDate}\n- Doctor: ${staff.find(st => st.id === Number(followUpDocId))?.name || followUpDocId}`;
+      }
+
+      const planArray = compiledPlan.split('\n').filter(line => line.trim() !== '');
       const today = new Date().toISOString().slice(0, 10);
       const docName = currentStaff?.name || role || 'Doctor';
+      
       const encounterJson = JSON.stringify({
         date: today,
         doctor: docName,
@@ -104,10 +276,44 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
         objective: soap.objective,
         notes: soap.assessment,
       });
-      await updatePatient(currentPatient.mrn, {
+
+      const updateData: Partial<Patient> = {
         diagnosisSummary: encounterJson,
         treatmentPlan: soap.publishToPortal ? planArray : (currentPatient.treatmentPlan ?? []),
-      });
+      };
+
+      if (requiresAdmission) {
+        updateData.ward = admitWard;
+        updateData.admissionDate = admitDate;
+        updateData.dischargeDate = dischargeDate;
+        updateData.status = 'Admitted';
+      }
+
+      await updatePatient(currentPatient.mrn, updateData);
+
+      if (soap.publishToPortal) {
+        await addMedicalHistory({
+          patientMrn: currentPatient.mrn,
+          date: today,
+          doctor: docName,
+          diagnosis: soap.diagnosis_description || 'Clinical Encounter',
+          summary: `Clinical SOAP note finalized.\nSubjective: ${soap.subjective}\nObjective: ${soap.objective}\nAssessment: ${soap.assessment}\nPlan details: ${compiledPlan}`
+        });
+      }
+
+      if (requiresFollowUp && followUpDate) {
+        const start = new Date(followUpDate);
+        const end = new Date(start);
+        end.setMinutes(start.getMinutes() + 15);
+        await addAppointment({
+          patientMrn: currentPatient.mrn,
+          doctorId: Number(followUpDocId),
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          status: 'Scheduled',
+          notes: 'Follow-up outpatient visit scheduled by attending physician'
+        });
+      }
     }
     onClose();
   };
@@ -268,39 +474,352 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
       <div className="encounter-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
         {activeTab === 'soap' ? (
           <form onSubmit={handleSubmit} className="encounter-form">
-            <div className="soap-section">
-              <div className="form-group full-width">
-                <label><BookOpen size={16} /> Subjective (Chief Complaint & History)</label>
-                <textarea rows={3} value={soap.subjective} onChange={e => setSoap({ ...soap, subjective: e.target.value })} placeholder="Enter patient symptoms and history..."></textarea>
-              </div>
-              <div className="form-group full-width">
-                <label><Activity size={16} /> Objective (Physical Examination)</label>
-                <textarea rows={3} value={soap.objective} onChange={e => setSoap({ ...soap, objective: e.target.value })} placeholder="Enter physical examination findings..."></textarea>
-              </div>
-              <div className="assessment-plan-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                <div className="form-group">
-                  <label><CheckCircle size={16} /> Assessment (Diagnosis)</label>
-                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                    <input type="text" placeholder="ICD-10" style={{ width: '100px' }} value={soap.icd10_code} onChange={e => setSoap({ ...soap, icd10_code: e.target.value })} />
-                    <input type="text" placeholder="Diagnosis" style={{ flex: 1 }} value={soap.diagnosis_description} onChange={e => setSoap({ ...soap, diagnosis_description: e.target.value })} />
+            <div className="soap-layout-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem', alignItems: 'start' }}>
+              
+              {/* Left Column: Diagnostics, SOAP details, Assessment */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                
+                {/* Subjective & Objective */}
+                <div className="stat-card" style={{ padding: '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--primary-color)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <BookOpen size={18} /> Clinical Findings
+                  </h3>
+                  <div className="form-group" style={{ marginBottom: '1rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '0.4rem', display: 'block' }}>Subjective (Chief Complaint & History)</label>
+                    <textarea rows={3} value={soap.subjective} onChange={e => setSoap({ ...soap, subjective: e.target.value })} placeholder="Patient symptoms, pain level, history..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
                   </div>
-                  <textarea rows={4} value={soap.assessment} onChange={e => setSoap({ ...soap, assessment: e.target.value })} placeholder="Additional notes..."></textarea>
+                  <div className="form-group">
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '0.4rem', display: 'block' }}>Objective (Physical Exam & Vitals)</label>
+                    <textarea rows={3} value={soap.objective} onChange={e => setSoap({ ...soap, objective: e.target.value })} placeholder="Physical examination, lung sounds, heart rhythm..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
+                  </div>
                 </div>
-                <div className="form-group">
-                  <label><PenTool size={16} /> Plan (Treatment & Follow-up)</label>
-                  <textarea rows={6} value={soap.plan} onChange={e => setSoap({ ...soap, plan: e.target.value })} placeholder="Enter treatment plan, prescriptions, and follow-up..."></textarea>
+
+                {/* Assessment (Diagnosis) & Lab Request */}
+                <div className="stat-card" style={{ padding: '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white' }}>
+                  <h3 style={{ fontSize: '1rem', fontWeight: '800', color: '#8b5cf6', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CheckCircle size={18} /> Assessment & Lab Requests
+                  </h3>
+                  
+                  <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+                    <div style={{ flex: '0 0 100px' }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>ICD-10</label>
+                      <input type="text" placeholder="I10" value={soap.icd10_code} onChange={e => setSoap({ ...soap, icd10_code: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Primary Diagnosis Description</label>
+                      <input type="text" placeholder="Essential Hypertension" value={soap.diagnosis_description} onChange={e => setSoap({ ...soap, diagnosis_description: e.target.value })} style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }} />
+                    </div>
+                  </div>
+
+                  <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                    <label style={{ fontSize: '0.85rem', fontWeight: '700', color: '#475569', marginBottom: '0.4rem', display: 'block' }}>Assessment Notes</label>
+                    <textarea rows={2} value={soap.assessment} onChange={e => setSoap({ ...soap, assessment: e.target.value })} placeholder="Attending clinician assessment/reasoning..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1' }}></textarea>
+                  </div>
+
+                  {/* LAB TESTS GATED ORDER & RESULTS VIEW */}
+                  <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+                    <h4 style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Beaker size={16} /> Lab Orders & Diagnostic PACS
+                    </h4>
+
+                    {/* Order Request Mini Form */}
+                    <div style={{ display: 'flex', gap: '0.5rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', marginBottom: '1rem', alignItems: 'flex-end' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>Select Lab/Imaging Test</label>
+                        <select value={selectedLabTest} onChange={e => setSelectedLabTest(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                          <option>Complete Blood Count (CBC)</option>
+                          <option>Basic Metabolic Panel (BMP)</option>
+                          <option>Liver Function Test (LFT)</option>
+                          <option>Thyroid Panel (TSH)</option>
+                          <option>Chest X-Ray PA View</option>
+                          <option>Electrocardiogram (ECG)</option>
+                          <option>Urinalysis</option>
+                          <option>H. pylori Stool Antigen</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', display: 'block', marginBottom: '0.25rem' }}>Priority</label>
+                        <select value={labPriority} onChange={e => setLabPriority(e.target.value as 'Normal' | 'Urgent')} style={{ padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                          <option>Normal</option>
+                          <option>Urgent</option>
+                        </select>
+                      </div>
+                      <button type="button" onClick={handleRequestLab} className="btn-primary" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
+                        <PlusCircle size={16} /> Request
+                      </button>
+                    </div>
+
+                    {/* Pending/Completed Orders List */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', maxHeight: '180px', overflowY: 'auto' }}>
+                      {labOrders.filter(o => o.patientMrn === currentPatient?.mrn).length === 0 ? (
+                        <p style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic', textAlign: 'center' }}>No requested tests for this patient.</p>
+                      ) : (
+                        labOrders.filter(o => o.patientMrn === currentPatient?.mrn).map(order => {
+                          const matchingResults = labResults.filter(r => r.patientMrn === currentPatient?.mrn && r.test === order.tests[0]);
+                          return (
+                            <div key={order.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.6rem' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                                <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#1e293b' }}>{order.tests.join(', ')}</span>
+                                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                                  <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: '700', background: order.priority === 'Urgent' ? '#fef2f2' : '#f1f5f9', color: order.priority === 'Urgent' ? '#dc2626' : '#475569' }}>
+                                    {order.priority}
+                                  </span>
+                                  <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem', borderRadius: '4px', fontWeight: '700', background: order.status === 'Completed' ? '#dcfce7' : '#fef9c3', color: order.status === 'Completed' ? '#15803d' : '#a16207' }}>
+                                    {order.status}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Action to enter result inline if Pending */}
+                              {order.status === 'Pending' && (
+                                <div style={{ marginTop: '0.4rem', display: 'flex', justifyContent: 'flex-end' }}>
+                                  {editingOrderId === order.id ? (
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', background: '#f1f5f9', padding: '0.5rem', borderRadius: '4px', width: '100%', marginTop: '0.25rem' }}>
+                                      <input type="text" placeholder="Value" value={resultInput.value} onChange={e => setResultInput({ ...resultInput, test: order.tests[0], value: e.target.value })} style={{ flex: '1 1 60px', padding: '0.3rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                                      <input type="text" placeholder="Unit" value={resultInput.unit} onChange={e => setResultInput({ ...resultInput, unit: e.target.value })} style={{ flex: '1 1 50px', padding: '0.3rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                                      <input type="text" placeholder="Ref Range" value={resultInput.range} onChange={e => setResultInput({ ...resultInput, range: e.target.value })} style={{ flex: '1 1 70px', padding: '0.3rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                                      <select value={resultInput.status} onChange={e => setResultInput({ ...resultInput, status: e.target.value as 'Normal' | 'Abnormal' })} style={{ flex: '1 1 70px', padding: '0.3rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #cbd5e1', background: 'white' }}>
+                                        <option>Normal</option>
+                                        <option>Abnormal</option>
+                                      </select>
+                                      <button type="button" onClick={() => handleSaveLabResult(order.id)} style={{ background: '#22c55e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>Save</button>
+                                      <button type="button" onClick={() => setEditingOrderId(null)} style={{ background: '#64748b', color: 'white', border: 'none', borderRadius: '4px', padding: '0.3rem 0.6rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer' }}>Cancel</button>
+                                    </div>
+                                  ) : (
+                                    <button type="button" onClick={() => { setEditingOrderId(order.id); setResultInput({ test: order.tests[0], value: '', unit: '', range: '', status: 'Normal' }); }} style={{ background: 'var(--primary-color)', color: 'white', border: 'none', borderRadius: '4px', padding: '0.25rem 0.6rem', fontSize: '0.75rem', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                      <PlusCircle size={12} /> Enter Result
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Display matching results if Completed */}
+                              {order.status === 'Completed' && matchingResults.map(res => (
+                                <div key={res.id} style={{ marginTop: '0.25rem', padding: '0.4rem', background: res.status === 'Abnormal' ? '#fef2f2' : '#f0fdf4', borderRadius: '4px', border: res.status === 'Abnormal' ? '1px dashed #fca5a5' : '1px dashed #bbf7d0', fontSize: '0.8rem', display: 'flex', justifyContent: 'space-between' }}>
+                                  <span style={{ fontWeight: '600', color: res.status === 'Abnormal' ? '#991b1b' : '#166534' }}>Result: {res.value} {res.unit} ({res.status})</span>
+                                  <span style={{ color: '#64748b', fontSize: '0.75rem' }}>Ref: {res.range}</span>
+                                </div>
+                              ))}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Right Column: Advanced Plan & Treatment (Tabbed Interface) */}
+              <div className="stat-card" style={{ padding: '1.5rem', height: 'auto', border: '1px solid #e2e8f0', background: 'white', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <h3 style={{ fontSize: '1rem', fontWeight: '800', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <PenTool size={18} /> Attending Treatment Plan
+                </h3>
+
+                {/* Sub-tabs inside Plan */}
+                <div style={{ display: 'flex', borderBottom: '2px solid #f1f5f9', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+                  <button type="button" onClick={() => setPlanSubTab('prescription')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'prescription' ? '3px solid #3b82f6' : '3px solid transparent', color: planSubTab === 'prescription' ? '#3b82f6' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <PillIcon size={14} /> Prescribe
+                  </button>
+                  <button type="button" onClick={() => setPlanSubTab('surgery')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'surgery' ? '3px solid #8b5cf6' : '3px solid transparent', color: planSubTab === 'surgery' ? '#8b5cf6' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Activity size={14} /> Surgery
+                  </button>
+                  <button type="button" onClick={() => setPlanSubTab('admission')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'admission' ? '3px solid #eab308' : '3px solid transparent', color: planSubTab === 'admission' ? '#a16207' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Clock size={14} /> Admit
+                  </button>
+                  <button type="button" onClick={() => setPlanSubTab('followup')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'followup' ? '3px solid #22c55e' : '3px solid transparent', color: planSubTab === 'followup' ? '#166534' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <Calendar size={14} /> Visit
+                  </button>
+                  <button type="button" onClick={() => setPlanSubTab('general')} style={{ padding: '0.5rem 0.75rem', background: 'none', border: 'none', borderBottom: planSubTab === 'general' ? '3px solid #64748b' : '3px solid transparent', color: planSubTab === 'general' ? '#1e293b' : '#64748b', fontWeight: '700', fontSize: '0.85rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <FileText size={14} /> Notes
+                  </button>
+                </div>
+
+                {/* Sub-tab Content wrapper */}
+                <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0', minHeight: '260px' }}>
+                  
+                  {/* Tab 1: Prescription */}
+                  {planSubTab === 'prescription' && (
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>Medication Outpatient Order</h4>
+                      <div className="form-group" style={{ marginBottom: '0.75rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Select Drug (Pharmacy Stock)</label>
+                        <select value={rxDrugId} onChange={e => setRxDrugId(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                          <option value="">-- Choose Drug --</option>
+                          {drugs.map(d => (
+                            <option key={d.id} value={d.id}>{d.name} ({d.stock} in stock) - {d.category}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Dosage</label>
+                          <input type="text" value={rxDosage} onChange={e => setRxDosage(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Frequency</label>
+                          <input type="text" value={rxFrequency} onChange={e => setRxFrequency(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Duration</label>
+                          <input type="text" value={rxDuration} onChange={e => setRxDuration(e.target.value)} placeholder="5 days" style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Attending Instructions</label>
+                          <input type="text" value={rxInstructions} onChange={e => setRxInstructions(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                        </div>
+                      </div>
+                      <button type="button" onClick={handleAddPrescription} className="btn-primary" style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', marginTop: '0.5rem' }}>
+                        <PillIcon size={16} /> Prescribe & Add Medication
+                      </button>
+
+                      {/* Display already pending prescriptions for this patient */}
+                      <div style={{ marginTop: '0.75rem', maxHeight: '100px', overflowY: 'auto' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: '800', color: '#64748b', marginBottom: '0.25rem' }}>Active Prescriptions:</div>
+                        {prescriptions.filter(p => p.patientMrn === currentPatient?.mrn).map(p => (
+                          <div key={p.id} style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between', padding: '0.25rem', borderBottom: '1px solid #f1f5f9' }}>
+                            <span style={{ fontWeight: '600' }}>{p.drug} - {p.dosage} ({p.frequency})</span>
+                            <span style={{ color: '#22c55e' }}>{p.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 2: Surgery */}
+                  {planSubTab === 'surgery' && (
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>Surgery & OR Reservation</h4>
+                      <div className="form-group" style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Operation Name</label>
+                        <input type="text" value={surgName} onChange={e => setSurgName(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Surgeon</label>
+                          <select value={surgSurgeonId} onChange={e => setSurgSurgeonId(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                            <option value="">-- Choose Surgeon --</option>
+                            {staff.filter(s => s.role.includes('Doctor')).map(s => (
+                              <option key={s.id} value={s.id}>{s.name} ({s.specialization})</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Anesthesia</label>
+                          <input type="text" value={surgAnesthesia} onChange={e => setSurgAnesthesia(e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr 1.2fr', gap: '0.4rem', marginBottom: '0.5rem', alignItems: 'center' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>OR Room</label>
+                          <input type="text" value={surgRoom} onChange={e => setSurgRoom(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>Start Time</label>
+                          <input type="datetime-local" value={surgStart} onChange={e => setSurgStart(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>End Time</label>
+                          <input type="datetime-local" value={surgEnd} onChange={e => setSurgEnd(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                        </div>
+                      </div>
+                      <button type="button" onClick={handleScheduleSurgery} className="btn-primary" style={{ width: '100%', padding: '0.5rem', background: '#8b5cf6', borderColor: '#8b5cf6', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', marginTop: '0.5rem' }}>
+                        <PlusCircle size={16} /> Schedule Operation Room
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Tab 3: Admission */}
+                  {planSubTab === 'admission' && (
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>Inpatient Ward Admission Planning</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', marginBottom: '0.75rem' }}>
+                        <input type="checkbox" id="admitCheck" checked={requiresAdmission} onChange={e => setRequiresAdmission(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                        <label htmlFor="admitCheck" style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', cursor: 'pointer' }}>Register Patient for Inpatient Bed Placement</label>
+                      </div>
+
+                      {requiresAdmission && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
+                          <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Assigned Ward / Room Number</label>
+                            <input type="text" value={admitWard} onChange={e => setAdmitWard(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          </div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Admission Date</label>
+                              <input type="datetime-local" value={admitDate} onChange={e => setAdmitDate(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Est. Discharge Date</label>
+                              <input type="datetime-local" value={dischargeDate} onChange={e => setDischargeDate(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tab 4: Follow-up Outpatient Visit */}
+                  {planSubTab === 'followup' && (
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>Attending Follow-up Schedule</h4>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', padding: '0.5rem 0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', marginBottom: '0.75rem' }}>
+                        <input type="checkbox" id="followCheck" checked={requiresFollowUp} onChange={e => setRequiresFollowUp(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                        <label htmlFor="followCheck" style={{ fontSize: '0.85rem', fontWeight: '700', color: '#1e293b', cursor: 'pointer' }}>Schedule Outpatient Follow-up Appointment</label>
+                      </div>
+
+                      {requiresFollowUp && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', animation: 'fadeIn 0.2s ease' }}>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '0.5rem' }}>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Attending Physician</label>
+                              <select value={followUpDocId} onChange={e => setFollowUpDocId(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.85rem' }}>
+                                <option value="">-- Choose Doctor --</option>
+                                {staff.filter(s => s.role.includes('Doctor')).map(s => (
+                                  <option key={s.id} value={s.id}>{s.name} ({s.specialization})</option>
+                                ))}
+                              </select>
+                            </div>
+                            <div>
+                              <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Date & Time</label>
+                              <input type="datetime-local" value={followUpDate} onChange={e => setFollowUpDate(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                            </div>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>Follow-up Instructions / Notes</label>
+                            <input type="text" value={followUpNotes} onChange={e => setFollowUpNotes(e.target.value)} style={{ width: '100%', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }} />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tab 5: General Plan Notes */}
+                  {planSubTab === 'general' && (
+                    <div>
+                      <h4 style={{ fontSize: '0.85rem', fontWeight: '800', color: '#1e293b', marginBottom: '0.75rem' }}>General Clinical Treatment Notes</h4>
+                      <textarea rows={8} value={soap.plan} onChange={e => setSoap({ ...soap, plan: e.target.value })} placeholder="General nursing care instructions, dietary adjustments, physiotherapy planning, follow-up parameters..." style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}></textarea>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
             </div>
-            <div style={{ marginTop: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f0fdfa', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #ccfbf1' }}>
+
+            <div style={{ marginTop: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#f0fdfa', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #ccfbf1' }}>
                <input type="checkbox" id="publish" checked={soap.publishToPortal} onChange={e => setSoap({...soap, publishToPortal: e.target.checked})} style={{ width: '18px', height: '18px' }} />
-               <label htmlFor="publish" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#134e4a', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                 <Eye size={16} /> Publish diagnosis and plan to Patient Portal
+               <label htmlFor="publish" style={{ fontSize: '0.9rem', fontWeight: '600', color: '#134e4a', display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                 <Eye size={16} /> Publish SOAP Diagnosis, Lab Orders and Treatment Plan to Patient Portal
                </label>
             </div>
-            <div className="form-actions" style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1.5rem' }}>
-              <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
-              <button type="submit" className="btn-primary"><Save size={20} /> Finalize Chart</button>
+            
+            <div className="form-actions" style={{ marginTop: '1.5rem', borderTop: '1px solid #eee', paddingTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button type="button" onClick={onClose} className="btn-secondary" style={{ padding: '0.75rem 1.5rem' }}>Cancel</button>
+              <button type="submit" className="btn-primary" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Save size={20} /> Finalize Chart & Sync Portal
+              </button>
             </div>
           </form>
         ) : activeTab === 'imaging' ? (

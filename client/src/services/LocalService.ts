@@ -8,6 +8,10 @@ export class LocalService implements IDBService {
   private assets: Asset[] = [...initialAssets];
   private medicalHistory: MedicalHistoryItem[] = [];
   private drugs: Drug[] = [];
+  private prescriptions: Prescription[] = [];
+  private labOrders: LabOrder[] = [];
+  private labResults: LabResult[] = [];
+  private surgeries: Surgery[] = [];
 
   async fetchPatients() { return [...this.patients]; }
   async insertPatient(p: Patient) { this.patients.push(p); }
@@ -24,6 +28,10 @@ export class LocalService implements IDBService {
 
   async deleteMedicalHistory(id: number): Promise<void> {
     this.medicalHistory = this.medicalHistory.filter(x => x.id !== id);
+  }
+
+  async insertMedicalHistory(item: Omit<MedicalHistoryItem, 'id' | 'createdAt'>): Promise<void> {
+    this.medicalHistory.push({ ...item, id: Date.now(), createdAt: new Date().toISOString() } as MedicalHistoryItem);
   }
 
   async fetchStaff() { return [...this.staff]; }
@@ -59,15 +67,31 @@ export class LocalService implements IDBService {
   async updateDrug(id: number, changes: Partial<Drug>) {
     this.drugs = this.drugs.map(d => d.id === id ? { ...d, ...changes } : d);
   }
-  async fetchPrescriptions() { return []; }
-  async insertPrescription(p: Omit<Prescription, 'id' | 'createdAt'>) {}
-  async updatePrescriptionStatus(id: number, status: string) {}
-  async fetchLabOrders() { return []; }
-  async fetchLabResults() { return []; }
-  async insertLabResult(r: Omit<LabResult, 'id' | 'createdAt'>) {}
-  async fetchSurgeries() { return []; }
-  async insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>) {}
-  async updateSurgery(id: number, changes: Partial<Surgery>) {}
+  async fetchPrescriptions() { return [...this.prescriptions]; }
+  async insertPrescription(p: Omit<Prescription, 'id' | 'createdAt'>) {
+    this.prescriptions.push({ ...p, id: Date.now(), createdAt: new Date().toISOString() } as Prescription);
+  }
+  async updatePrescriptionStatus(id: number, status: string) {
+    this.prescriptions = this.prescriptions.map(p => p.id === id ? { ...p, status: status as any } : p);
+  }
+  async fetchLabOrders() { return [...this.labOrders]; }
+  async insertLabOrder(o: Omit<LabOrder, 'id' | 'createdAt'>) {
+    this.labOrders.push({ ...o, id: Date.now(), createdAt: new Date().toISOString() } as LabOrder);
+  }
+  async fetchLabResults() { return [...this.labResults]; }
+  async insertLabResult(r: Omit<LabResult, 'id' | 'createdAt'>) {
+    this.labResults.push({ ...r, id: Date.now(), createdAt: new Date().toISOString() } as LabResult);
+  }
+  async updateLabOrderStatus(id: number, status: 'Pending' | 'Completed') {
+    this.labOrders = this.labOrders.map(o => o.id === id ? { ...o, status } : o);
+  }
+  async fetchSurgeries() { return [...this.surgeries]; }
+  async insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>) {
+    this.surgeries.push({ ...s, id: Date.now(), createdAt: new Date().toISOString() } as Surgery);
+  }
+  async updateSurgery(id: number, changes: Partial<Surgery>) {
+    this.surgeries = this.surgeries.map(s => s.id === id ? { ...s, ...changes } : s);
+  }
   async fetchGuardians() { return []; }
   async insertGuardian(g: Omit<GuardianUser, 'id' | 'createdAt'>) {}
   async updateGuardianPrivacy(id: string, settings: any) {}

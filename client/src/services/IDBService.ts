@@ -11,8 +11,10 @@ export interface IDBService {
   insertPatient(p: Patient): Promise<void>;
   updatePatient(mrn: string, changes: Partial<Patient>): Promise<void>;
   appendVitals(mrn: string, vitals: VitalsRecord): Promise<void>;
+  // medical history
   fetchMedicalHistory(): Promise<MedicalHistoryItem[]>;
   deleteMedicalHistory(id: number): Promise<void>;
+  insertMedicalHistory(item: Omit<MedicalHistoryItem, 'id' | 'createdAt'>): Promise<void>;
   // staff
   fetchStaff(): Promise<StaffMember[]>;
   insertStaff(s: Omit<StaffMember, 'id'>): Promise<StaffMember>;
@@ -51,6 +53,8 @@ export interface IDBService {
   fetchLabOrders(): Promise<LabOrder[]>;
   fetchLabResults(): Promise<LabResult[]>;
   insertLabResult(r: Omit<LabResult, 'id' | 'createdAt'>): Promise<void>;
+  insertLabOrder(o: Omit<LabOrder, 'id' | 'createdAt'>): Promise<void>;
+  updateLabOrderStatus(id: number, status: 'Pending' | 'Completed'): Promise<void>;
   // surgery
   fetchSurgeries(): Promise<Surgery[]>;
   insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<void>;
