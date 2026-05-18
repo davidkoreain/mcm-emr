@@ -298,6 +298,12 @@ export type LabOrder = {
   priority: 'Urgent' | 'Normal';
   status: 'Pending' | 'Completed';
   createdAt: string;
+  // Extended fields
+  orderedBy?: string;
+  scheduledDate?: string;
+  resultStatus?: 'Scheduled' | 'In Progress' | 'Completed';
+  notes?: string;
+  assignedTo?: string;
 };
 
 export type LabResult = {
@@ -309,6 +315,22 @@ export type LabResult = {
   unit: string;
   range: string;
   status: 'Normal' | 'Abnormal';
+  createdAt: string;
+  labOrderId?: number;
+  completedBy?: string;
+  notes?: string;
+};
+
+export type LabTestCatalog = {
+  id: number;
+  name: string;
+  category: string;
+  specialty: string;
+  description: string;
+  requiredEquipment: string[];
+  normalRange: string;
+  unit: string;
+  durationMinutes: number;
   createdAt: string;
 };
 
@@ -370,10 +392,12 @@ type EMRContextType = {
   createDrugOrder: (o: Omit<DrugOrder, 'id' | 'createdAt'>) => Promise<void>;
   markMedicationTaken: (scheduleId: number, taken: boolean) => Promise<void>;
   createMedicationSchedule: (rx: Prescription, drug: Drug) => Promise<void>;
+  labTestCatalog: LabTestCatalog[];
   // Lab
   submitLabResult: (orderId: number, result: Omit<LabResult, 'id' | 'createdAt'>) => Promise<void>;
   addLabOrder: (o: Omit<LabOrder, 'id' | 'createdAt'>) => Promise<void>;
   updateLabOrderStatus: (id: number, status: 'Pending' | 'Completed') => Promise<void>;
+  updateLabOrderResultStatus: (id: number, resultStatus: 'Scheduled' | 'In Progress' | 'Completed') => Promise<void>;
   addMedicalHistory: (item: Omit<MedicalHistoryItem, 'id' | 'createdAt'>) => Promise<void>;
 };
 
@@ -434,6 +458,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [inventoryHistory, setInventoryHistory] = useState<InventoryHistory[]>([]);
   const [labOrders, setLabOrders] = useState<LabOrder[]>([]);
   const [labResults, setLabResults] = useState<LabResult[]>([]);
+  const [labTestCatalog, setLabTestCatalog] = useState<LabTestCatalog[]>([]);
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
   const [guardians, setGuardians] = useState<GuardianUser[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
@@ -522,7 +547,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh, ltc] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -539,6 +564,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchMedicationSchedules ? db.fetchMedicationSchedules() : Promise.resolve([] as MedicationSchedule[]), [] as MedicationSchedule[]),
         safeFetch(db.fetchDrugOrders ? db.fetchDrugOrders() : Promise.resolve([] as DrugOrder[]), [] as DrugOrder[]),
         safeFetch(db.fetchInventoryHistory ? db.fetchInventoryHistory() : Promise.resolve([] as InventoryHistory[]), [] as InventoryHistory[]),
+        safeFetch(db.fetchLabTestCatalog ? db.fetchLabTestCatalog() : Promise.resolve([] as LabTestCatalog[]), [] as LabTestCatalog[]),
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -565,6 +591,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setMedicationSchedules(msch);
       setDrugOrders(dord);
       setInventoryHistory(invh);
+      setLabTestCatalog(ltc);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -696,8 +723,20 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const submitLabResult = async (orderId: number, result: Omit<LabResult, 'id' | 'createdAt'>) => {
-    await db.insertLabResult(result);
+  const submitLabResult = async (labOrderId: number, result: Omit<LabResult, 'id' | 'createdAt'>) => {
+    await db.insertLabResult({ ...result, labOrderId });
+    if (db.updateLabOrderResultStatus) {
+      await db.updateLabOrderResultStatus(labOrderId, 'Completed');
+    }
+    await db.updateLabOrderStatus(labOrderId, 'Completed');
+    await refreshData();
+  };
+
+  const updateLabOrderResultStatus = async (id: number, resultStatus: 'Scheduled' | 'In Progress' | 'Completed') => {
+    if (db.updateLabOrderResultStatus) {
+      await db.updateLabOrderResultStatus(id, resultStatus);
+    }
+    if (resultStatus === 'Completed') await db.updateLabOrderStatus(id, 'Completed');
     await refreshData();
   };
 
@@ -803,13 +842,13 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <EMRContext.Provider value={{
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions,
       drugSuppliers, medicationSchedules, drugOrders, inventoryHistory,
-      labOrders, labResults, medicalHistory, staffLeave,
+      labOrders, labResults, labTestCatalog, medicalHistory, staffLeave,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
       addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian,
       dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
-      submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, addMedicalHistory
+      submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, updateLabOrderResultStatus, addMedicalHistory
     }}>
       {children}
     </EMRContext.Provider>

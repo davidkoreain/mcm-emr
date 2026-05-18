@@ -1,4 +1,4 @@
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog } from '../context/EMRContext';
 
 /**
  * Database service interface.
@@ -58,6 +58,8 @@ export interface IDBService {
   insertLabResult(r: Omit<LabResult, 'id' | 'createdAt'>): Promise<void>;
   insertLabOrder(o: Omit<LabOrder, 'id' | 'createdAt'>): Promise<void>;
   updateLabOrderStatus(id: number, status: 'Pending' | 'Completed'): Promise<void>;
+  updateLabOrderResultStatus?(id: number, resultStatus: 'Scheduled' | 'In Progress' | 'Completed'): Promise<void>;
+  fetchLabTestCatalog?(): Promise<LabTestCatalog[]>;
   // surgery
   fetchSurgeries(): Promise<Surgery[]>;
   insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<void>;

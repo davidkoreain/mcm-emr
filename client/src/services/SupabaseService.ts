@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -170,10 +170,15 @@ function rowToLabOrder(r: Record<string, unknown>): LabOrder {
     id: r.id as number,
     patientMrn: r.patient_mrn as string,
     patientName: r.patient_name as string,
-    tests: r.tests as string[],
-    priority: r.priority as 'Urgent' | 'Normal',
-    status: r.status as 'Pending' | 'Completed',
+    tests: (r.tests ?? []) as string[],
+    priority: (r.priority ?? 'Normal') as 'Urgent' | 'Normal',
+    status: (r.status ?? 'Pending') as 'Pending' | 'Completed',
     createdAt: r.created_at as string,
+    orderedBy: (r.ordered_by ?? '') as string,
+    scheduledDate: r.scheduled_date ? (r.scheduled_date as string) : undefined,
+    resultStatus: (r.result_status ?? 'Scheduled') as 'Scheduled' | 'In Progress' | 'Completed',
+    notes: (r.notes ?? '') as string,
+    assignedTo: (r.assigned_to ?? '') as string,
   };
 }
 
@@ -187,6 +192,24 @@ function rowToLabResult(r: Record<string, unknown>): LabResult {
     unit: r.unit as string,
     range: r.range as string,
     status: r.status as 'Normal' | 'Abnormal',
+    createdAt: r.created_at as string,
+    labOrderId: r.lab_order_id ? (r.lab_order_id as number) : undefined,
+    completedBy: (r.completed_by ?? '') as string,
+    notes: (r.notes ?? '') as string,
+  };
+}
+
+function rowToLabTestCatalog(r: Record<string, unknown>): LabTestCatalog {
+  return {
+    id: r.id as number,
+    name: r.name as string,
+    category: r.category as string,
+    specialty: r.specialty as string,
+    description: (r.description ?? '') as string,
+    requiredEquipment: (r.required_equipment ?? []) as string[],
+    normalRange: (r.normal_range ?? '') as string,
+    unit: (r.unit ?? '') as string,
+    durationMinutes: (r.duration_minutes ?? 30) as number,
     createdAt: r.created_at as string,
   };
 }
@@ -950,7 +973,7 @@ export class SupabaseService implements IDBService {
   }
 
   async insertLabResult(r: Omit<LabResult, 'id' | 'createdAt'>): Promise<void> {
-    const { error } = await this.client.from('lab_results').insert({
+    const row: Record<string, unknown> = {
       patient_mrn: r.patientMrn,
       patient_name: r.patientName,
       test: r.test,
@@ -958,24 +981,45 @@ export class SupabaseService implements IDBService {
       unit: r.unit,
       range: r.range,
       status: r.status,
-    });
+    };
+    if (r.labOrderId !== undefined) row.lab_order_id = r.labOrderId;
+    if (r.completedBy !== undefined) row.completed_by = r.completedBy;
+    if (r.notes !== undefined) row.notes = r.notes;
+    const { error } = await this.client.from('lab_results').insert(row);
     if (error) throw new Error(error.message);
   }
 
   async insertLabOrder(o: Omit<LabOrder, 'id' | 'createdAt'>): Promise<void> {
-    const { error } = await this.client.from('lab_orders').insert({
+    const row: Record<string, unknown> = {
       patient_mrn: o.patientMrn,
       patient_name: o.patientName,
       tests: o.tests,
       priority: o.priority,
       status: o.status,
-    });
+      result_status: o.resultStatus ?? 'Scheduled',
+    };
+    if (o.orderedBy) row.ordered_by = o.orderedBy;
+    if (o.scheduledDate) row.scheduled_date = o.scheduledDate;
+    if (o.notes) row.notes = o.notes;
+    if (o.assignedTo) row.assigned_to = o.assignedTo;
+    const { error } = await this.client.from('lab_orders').insert(row);
     if (error) throw new Error(error.message);
   }
 
   async updateLabOrderStatus(id: number, status: 'Pending' | 'Completed'): Promise<void> {
     const { error } = await this.client.from('lab_orders').update({ status }).eq('id', id);
     if (error) throw new Error(error.message);
+  }
+
+  async updateLabOrderResultStatus(id: number, resultStatus: 'Scheduled' | 'In Progress' | 'Completed'): Promise<void> {
+    const { error } = await this.client.from('lab_orders').update({ result_status: resultStatus }).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async fetchLabTestCatalog(): Promise<LabTestCatalog[]> {
+    const { data, error } = await this.client.from('lab_test_catalog').select('*').order('category').order('name');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(rowToLabTestCatalog);
   }
 
   // Surgery

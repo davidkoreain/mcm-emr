@@ -201,15 +201,17 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       labOrders
         .filter(l => l.patientMrn === mrn)
         .forEach(l => {
-          const { dateStr, timeStr } = parseDateTime(l.createdAt);
+          const { dateStr, timeStr } = parseDateTime(l.scheduledDate ?? l.createdAt);
+          const rs = l.resultStatus ?? 'Scheduled';
+          const color = rs === 'In Progress' ? '#f59e0b' : rs === 'Completed' ? '#16a34a' : '#3b82f6';
           events.push({
             id: `lab-${l.id}`,
             title: `검사 의뢰: ${l.tests?.join(', ') || 'General Lab'}`,
             type: 'LabTest',
             dateStr,
             timeStr,
-            color: '#8b5cf6',
-            details: `Laboratory order for test(s): ${l.tests?.join(', ')}. Priority: ${l.priority}. Status: ${l.status}. Ordered on ${l.createdAt}`
+            color,
+            details: `Laboratory order for test(s): ${l.tests?.join(', ')}. Priority: ${l.priority}. Status: ${rs}.`
           });
         });
     }
@@ -1051,6 +1053,48 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                 )}
               </div>
 
+              {/* Lab Status Notifications */}
+              {(() => {
+                const myLabOrders = labOrders.filter(l => l.patientMrn === activeUser.mrn);
+                const scheduled = myLabOrders.filter(l => (l.resultStatus ?? 'Scheduled') === 'Scheduled');
+                const inProgress = myLabOrders.filter(l => l.resultStatus === 'In Progress');
+                const completed = myLabOrders.filter(l => l.resultStatus === 'Completed');
+                if (myLabOrders.length === 0) return null;
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem' }}>
+                    {inProgress.map(l => (
+                      <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1.25rem', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: '0.75rem' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#f59e0b', flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#92400e' }}>Test In Progress</div>
+                          <div style={{ fontSize: '0.8rem', color: '#78350f' }}>{l.tests.join(', ')} — your tests are currently being performed</div>
+                        </div>
+                      </div>
+                    ))}
+                    {scheduled.map(l => (
+                      <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1.25rem', background: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '0.75rem' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#3b82f6', flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#1e40af' }}>Test Scheduled</div>
+                          <div style={{ fontSize: '0.8rem', color: '#1d4ed8' }}>
+                            {l.tests.join(', ')}{l.scheduledDate ? ` — scheduled for ${l.scheduledDate}` : ''}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {completed.map(l => (
+                      <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.875rem 1.25rem', background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '0.75rem' }}>
+                        <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#16a34a', flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#14532d' }}>Results Ready</div>
+                          <div style={{ fontSize: '0.8rem', color: '#166534' }}>{l.tests.join(', ')} — your results are available below</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {/* Laboratory Results */}
               <div style={{ background: 'white', padding: '2.5rem', borderRadius: '2rem', border: '1px solid #e2e8f0' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: '900', marginBottom: '1.5rem' }}><Beaker size={20} color="#2563eb" /> Laboratory Results</h3>
@@ -1059,9 +1103,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                     {filteredLabs.map((l, i) => (
                       <div key={i} style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '1.5rem' }}>
                         <div style={{ fontWeight: '800' }}>{l.test}</div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#2563eb' }}>
+                        <div style={{ fontSize: '1.25rem', fontWeight: '900', color: l.status === 'Abnormal' ? '#dc2626' : '#2563eb' }}>
                           {l.value} <span style={{ fontSize: '0.9rem', color: '#64748b' }}>{l.unit}</span>
                         </div>
+                        {l.range && <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '0.25rem' }}>Normal: {l.range}</div>}
+                        <span style={{ display: 'inline-block', marginTop: '0.5rem', padding: '0.15rem 0.5rem', background: l.status === 'Normal' ? '#f0fdf4' : '#fef2f2', color: l.status === 'Normal' ? '#16a34a' : '#dc2626', borderRadius: '9999px', fontSize: '0.7rem', fontWeight: '700' }}>{l.status}</span>
                       </div>
                     ))}
                   </div>
