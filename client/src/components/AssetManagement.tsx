@@ -5,7 +5,7 @@ import ListFilterControl from './ListFilterControl';
 import { useEMR, type Asset } from '../context/EMRContext';
 import { QRCodeSVG } from 'qrcode.react';
 import { usePageAdjustments } from '../hooks/usePageAdjustments';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutGrid, List } from 'lucide-react';
 
 type MaintenanceLog = { id: number; asset: string; task: string; technician: string; date: string; status: string };
 type LossRecord = { id: number; asset: string; type: string; reason: string; date: string; action: string };
@@ -38,6 +38,9 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
   // Adjustment Settings
   const { columns, itemsPerPage } = usePageAdjustments('assets');
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('emr_view_mode_assets') as 'grid' | 'list') || 'grid';
+  });
 
   React.useEffect(() => {
     if (initialTab) setActiveTab(initialTab);
@@ -360,7 +363,33 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
       <div className="asset-content" style={{ marginTop: '1.5rem' }}>
         {activeTab === 'inventory' && (
           <>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Asset Inventory</h3>
+                <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+                  <button 
+                    onClick={() => { setViewMode('grid'); localStorage.setItem('emr_view_mode_assets', 'grid'); }}
+                    style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                    title="Grid View"
+                  >
+                    <LayoutGrid size={16} color={viewMode === 'grid' ? '#0f172a' : '#64748b'} />
+                  </button>
+                  <button 
+                    onClick={() => { setViewMode('list'); localStorage.setItem('emr_view_mode_assets', 'list'); }}
+                    style={{ background: viewMode === 'list' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                    title="List View"
+                  >
+                    <List size={16} color={viewMode === 'list' ? '#0f172a' : '#64748b'} />
+                  </button>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}><FileText size={18} /> CSV Import</button>
+                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddAssetModal(true)}><Plus size={18} /> Add Asset</button>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', marginBottom: '1rem' }}>
               <div style={{ flex: 1 }}>
                 <ListFilterControl
                   searchValue={invSearch} onSearchChange={setInvSearch} searchPlaceholder="Search by name, serial or supplier..."
@@ -373,78 +402,148 @@ const AssetManagement: React.FC<AssetManagementProps> = ({ autoOpenId, onModalCl
                   onSortChange={setInvSort} totalCount={assets.length} filteredCount={filteredAssets.length}
                 />
               </div>
-              <div style={{ display: 'flex', gap: '0.75rem', paddingTop: '0.15rem' }}>
-                <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}><FileText size={18} /> CSV Import</button>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddAssetModal(true)}><Plus size={18} /> Add Asset</button>
-              </div>
             </div>
-            <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '1.5rem' }}>
-              {paginatedAssets.map((asset) => (
-                <div key={asset.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <div style={{ width: '100%', height: '160px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {asset.photoUrl ? (
-                      <img src={asset.photoUrl} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    ) : (
-                      <Monitor size={64} color="#cbd5e1" />
-                    )}
-                  </div>
-                  <div style={{ padding: '1.25rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                      <div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{asset.id} | S/N: {asset.serial}</div>
-                        <h3 style={{ fontSize: '1rem', marginTop: '0.2rem', fontWeight: '700' }}>{asset.name}</h3>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                        <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{asset.status}</span>
-                        <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
-                          <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${asset.id}`} size={80} level="M" includeMargin={true} />
+            {viewMode === 'grid' ? (
+              <div className="asset-grid" style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '1.5rem' }}>
+                {paginatedAssets.map((asset) => (
+                  <div key={asset.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                    <div style={{ width: '100%', height: '160px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {asset.photoUrl ? (
+                        <img src={asset.photoUrl} alt={asset.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ) : (
+                        <Monitor size={64} color="#cbd5e1" />
+                      )}
+                    </div>
+                    <div style={{ padding: '1.25rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <div>
+                          <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{asset.id} | S/N: {asset.serial}</div>
+                          <h3 style={{ fontSize: '1rem', marginTop: '0.2rem', fontWeight: '700' }}>{asset.name}</h3>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                          <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{asset.status}</span>
+                          <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
+                            <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=asset&id=${asset.id}`} size={80} level="M" includeMargin={true} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><MapPin size={14} color="var(--text-secondary)" /><span>{asset.location}</span></div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><Scale size={14} color="var(--text-secondary)" /><span>{asset.weight}</span></div>
-                    </div>
-                    <div style={{ background: '#f8fafc', padding: '0.6rem', borderRadius: '0.4rem', marginBottom: '0.6rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                        <Truck size={12} /> Supplier: {asset.supplier}
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><MapPin size={14} color="var(--text-secondary)" /><span>{asset.location}</span></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}><Scale size={14} color="var(--text-secondary)" /><span>{asset.weight}</span></div>
                       </div>
-                    </div>
-                    {(asset.rfidTag || asset.barcode) && (
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-                        {asset.rfidTag && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: '600', color: '#6366f1', background: '#eef2ff', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', border: '1px solid #c7d2fe' }}>
-                            <Wifi size={10} /> {asset.rfidTag}
-                          </span>
-                        )}
-                        {asset.barcode && (
-                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: '600', color: '#374151', background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', border: '1px solid #e2e8f0' }}>
-                            <Tag size={10} /> {asset.barcode}
-                          </span>
-                        )}
+                      <div style={{ background: '#f8fafc', padding: '0.6rem', borderRadius: '0.4rem', marginBottom: '0.6rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                          <Truck size={12} /> Supplier: {asset.supplier}
+                        </div>
                       </div>
-                    )}
-                    <div style={{ display: 'flex', gap: '0.5rem' }}>
-                      <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }} onClick={() => setDetailModal(asset)}>Details</button>
-                      <button className="btn-primary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }} onClick={() => { setMaintainForm({ task: '', technician: '' }); setMaintainModal(asset); }}>
-                        {asset.status === 'Maintenance Required' ? <AlertTriangle size={13} /> : null} Maintain
-                      </button>
+                      {(asset.rfidTag || asset.barcode) && (
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+                          {asset.rfidTag && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: '600', color: '#6366f1', background: '#eef2ff', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', border: '1px solid #c7d2fe' }}>
+                              <Wifi size={10} /> {asset.rfidTag}
+                            </span>
+                          )}
+                          {asset.barcode && (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.7rem', fontFamily: 'monospace', fontWeight: '600', color: '#374151', background: '#f1f5f9', padding: '0.2rem 0.5rem', borderRadius: '0.3rem', border: '1px solid #e2e8f0' }}>
+                              <Tag size={10} /> {asset.barcode}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem' }} onClick={() => setDetailModal(asset)}>Details</button>
+                        <button className="btn-primary" style={{ flex: 1, fontSize: '0.75rem', padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }} onClick={() => { setMaintainForm({ task: '', technician: '' }); setMaintainModal(asset); }}>
+                          {asset.status === 'Maintenance Required' ? <AlertTriangle size={13} /> : null} Maintain
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              {filteredAssets.length === 0 && !autoOpenId && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                  일치하는 자산 데이터가 없습니다.
-                </div>
-              )}
-              {autoOpenId && !detailModal && (
-                <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
-                  <p style={{ fontWeight: '700' }}>자산 정보를 불러오는 중입니다...</p>
-                  <p style={{ fontSize: '0.8rem' }}>ID: {autoOpenId}</p>
-                </div>
-              )}
-            </div>
+                ))}
+                {filteredAssets.length === 0 && !autoOpenId && (
+                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                    일치하는 자산 데이터가 없습니다.
+                  </div>
+                )}
+                {autoOpenId && !detailModal && (
+                  <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
+                    <p style={{ fontWeight: '700' }}>자산 정보를 불러오는 중입니다...</p>
+                    <p style={{ fontSize: '0.8rem' }}>ID: {autoOpenId}</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Asset ID</th>
+                      <th>Name</th>
+                      <th>Serial No.</th>
+                      <th>Location</th>
+                      <th>Qty</th>
+                      <th>Supplier</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedAssets.map((asset) => (
+                      <tr key={asset.id} style={{ transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                        <td>
+                          <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#6366f1' }}>{asset.id}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            {asset.photoUrl ? (
+                              <img src={asset.photoUrl} alt={asset.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                              <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: '#e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Monitor size={18} color="#94a3b8" />
+                              </div>
+                            )}
+                            <div style={{ fontWeight: 700, color: '#1e293b' }}>{asset.name}</div>
+                          </div>
+                        </td>
+                        <td>
+                          <span style={{ fontFamily: 'monospace', fontSize: '0.85rem', color: '#64748b' }}>{asset.serial}</span>
+                        </td>
+                        <td>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
+                            <MapPin size={12} color="var(--primary-color)" /> {asset.location}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{asset.qty}</span>
+                        </td>
+                        <td>
+                          <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{asset.supplier}</span>
+                        </td>
+                        <td>
+                          <span className={`status-badge ${asset.status === 'Functional' ? 'status-active' : 'status-pending'}`}>
+                            {asset.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.35rem' }}>
+                            <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => setDetailModal(asset)}>Details</button>
+                            <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => { setMaintainForm({ task: '', technician: '' }); setMaintainModal(asset); }}>
+                              {asset.status === 'Maintenance Required' ? <AlertTriangle size={12} /> : null} Maintain
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {filteredAssets.length === 0 && !autoOpenId && (
+                      <tr>
+                        <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                          일치하는 자산 데이터가 없습니다.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* Pagination Controls */}
             {totalPages > 1 && (

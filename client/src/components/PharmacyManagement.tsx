@@ -2,11 +2,12 @@ import React, { useState, useMemo } from 'react';
 import {
   Pill, ClipboardList, AlertTriangle, Plus, X, CheckCircle2, Eye, Edit2, RefreshCw,
   Search, Calendar, Package, ShieldAlert, BadgeCheck, FileText, Beaker,
-  Users, Clock, XCircle, User, Hash, ChevronLeft, ChevronRight
+  Users, Clock, XCircle, User, Hash, ChevronLeft, ChevronRight, LayoutGrid, List
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import { useEMR, type Drug, type Prescription } from '../context/EMRContext';
 import { usePageAdjustments } from '../hooks/usePageAdjustments';
+import { useViewMode } from '../hooks/useViewMode';
 
 // Simple toast shim (matches existing pattern in this file)
 const toast = { success: (m: string) => alert(m), error: (m: string) => alert(m) };
@@ -254,6 +255,7 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
   // Adjustment Settings
   const { columns, itemsPerPage } = usePageAdjustments('pharmacy');
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useViewMode('pharmacy', 'grid');
   const {
     drugs, prescriptions, drugSuppliers, patients,
     dispenseMedication, cancelPrescription, addPrescription,
@@ -1199,6 +1201,22 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                   <Pill size={24} color="#3b82f6" />
                   <div style={{ fontSize: '1.4rem', fontWeight: 700, color: '#1e293b' }}>Drug Inventory</div>
+                  <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+                    <button 
+                      onClick={() => setViewMode('grid')}
+                      style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                      title="Grid View"
+                    >
+                      <LayoutGrid size={16} color={viewMode === 'grid' ? '#0f172a' : '#64748b'} />
+                    </button>
+                    <button 
+                      onClick={() => setViewMode('list')}
+                      style={{ background: viewMode === 'list' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                      title="List View"
+                    >
+                      <List size={16} color={viewMode === 'list' ? '#0f172a' : '#64748b'} />
+                    </button>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                   <button className="btn-primary" onClick={openAddDrug}><Plus size={16} /> Add Drug</button>
@@ -1258,7 +1276,7 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                 <Pill size={40} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
                 <p style={{ fontWeight: 600 }}>No drugs match the current filters.</p>
               </div>
-            ) : (
+            ) : viewMode === 'grid' ? (
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${columns}, 1fr)`, gap: '1rem' }}>
                 {paginatedDrugs.map(d => {
                   const cat = d.category || '';
@@ -1342,6 +1360,85 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' }
                     </div>
                   );
                 })}
+              </div>
+            ) : (
+              <div className="data-table-container">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Batch No.</th>
+                      <th>Name / Generic Name</th>
+                      <th>Category</th>
+                      <th>Form / Route</th>
+                      <th>Strength</th>
+                      <th>Price</th>
+                      <th>Stock Qty</th>
+                      <th>Expiry</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedDrugs.map((d) => {
+                      const cat = d.category || '';
+                      const colors = CATEGORY_COLORS[cat] || { bg: '#f1f5f9', fg: '#1e293b' };
+                      const days = daysUntil(d.expiryDate);
+                      const exColor = expiryColor(d.expiryDate);
+                      const sColor = stockColor(d);
+                      return (
+                        <tr key={d.id} style={{ transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                          <td>
+                            <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#6366f1' }}>{d.batchNumber || d.id || '—'}</span>
+                          </td>
+                          <td>
+                            <div>
+                              <div style={{ fontWeight: 700, color: '#1e293b' }}>{d.name}</div>
+                              {d.brandName && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{d.brandName}</div>}
+                            </div>
+                          </td>
+                          <td>
+                            {cat ? (
+                              <Pill_Badge bg={colors.bg} color={colors.fg}>{cat}</Pill_Badge>
+                            ) : '—'}
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', color: '#475569' }}>
+                              {d.form}{d.route ? ` · ${d.route}` : ''}
+                            </span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{d.strength || '—'}</span>
+                          </td>
+                          <td>
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{d.price || '—'}</span>
+                          </td>
+                          <td>
+                            <div>
+                              <div style={{ fontSize: '0.95rem', color: sColor, fontWeight: 700 }}>{d.stock}</div>
+                              <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>min: {d.reorderLevel ?? 20}</div>
+                            </div>
+                          </td>
+                          <td>
+                            {d.expiryDate ? (
+                              <div>
+                                <div style={{ fontSize: '0.85rem', color: exColor || '#1e293b', fontWeight: exColor ? 700 : 500 }}>{d.expiryDate}</div>
+                                <div style={{ fontSize: '0.7rem', color: exColor || '#94a3b8' }}>{days === null ? '' : days < 0 ? 'EXPIRED' : `${days}d left`}</div>
+                              </div>
+                            ) : <span style={{ color: '#94a3b8' }}>—</span>}
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '0.35rem' }}>
+                              <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => setDetailDrug(d)}><Eye size={12} /> Details</button>
+                              <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => { setStockModalDrug(d); setStockValue(String(d.stock)); }}><RefreshCw size={12} /> Stock</button>
+                              {role === 'Admin' && (
+                                <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: '#fffbeb', border: 'none', color: '#92400e', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }} onClick={() => openEditDrug(d)}><Edit2 size={12} /> Edit</button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { PlusCircle, Upload, Users, X, Info, Activity, Stethoscope, Clock, Calendar } from 'lucide-react';
+import { PlusCircle, Upload, Users, X, Info, Activity, Stethoscope, Clock, Calendar, LayoutGrid, List } from 'lucide-react';
 import { useEMR, type Patient } from '../context/EMRContext';
 import ListFilterControl from './ListFilterControl';
 import Avatar from './Avatar';
@@ -31,6 +31,9 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const { columns, itemsPerPage } = usePageAdjustments('patients');
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('emr_view_mode_patients') as 'grid' | 'list') || 'grid';
+  });
 
   const handleCsvImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -271,6 +274,22 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Users size={24} color="var(--primary-color)" />
           <h2 style={{ fontSize: '1.25rem', margin: 0 }}>Patient List</h2>
+          <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+            <button 
+              onClick={() => { setViewMode('grid'); localStorage.setItem('emr_view_mode_patients', 'grid'); }}
+              style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              title="Grid View"
+            >
+              <LayoutGrid size={16} color={viewMode === 'grid' ? '#0f172a' : '#64748b'} />
+            </button>
+            <button 
+              onClick={() => { setViewMode('list'); localStorage.setItem('emr_view_mode_patients', 'list'); }}
+              style={{ background: viewMode === 'list' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+              title="List View"
+            >
+              <List size={16} color={viewMode === 'list' ? '#0f172a' : '#64748b'} />
+            </button>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <input ref={csvInputRef} type="file" accept=".csv" style={{ display: 'none' }} onChange={handleCsvImport} />
@@ -329,88 +348,163 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
         filteredCount={filteredPatients.length}
       />
 
-      <div className="patient-grid" style={{ 
-        display: 'grid', 
-        gridTemplateColumns: `repeat(${columns}, 1fr)`, 
-        gap: '1.5rem', 
-        marginTop: '1.5rem' 
-      }}>
-        {paginatedPatients.map((p) => (
-          <div key={p.mrn} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div 
-              onClick={() => setDetailModal(p)}
-              style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-            >
-              {p.photoUrl ? (
-                <img src={p.photoUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <Avatar name={p.name} size={120} />
-              )}
-            </div>
-            <div style={{ padding: '1.25rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <div>
-                  <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#2563eb', fontWeight: '700' }}>{p.mrn}</div>
-                  <h3 onClick={() => setDetailModal(p)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{p.name}</h3>
-                  <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{p.amharic}</div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                  <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`} style={{ height: 'fit-content' }}>
-                    {p.status}
-                  </span>
-                  <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
-                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${p.mrn}`} size={80} level="M" includeMargin={true} />
+      {viewMode === 'grid' ? (
+        <div className="patient-grid" style={{ 
+          display: 'grid', 
+          gridTemplateColumns: `repeat(${columns}, 1fr)`, 
+          gap: '1.5rem', 
+          marginTop: '1.5rem' 
+        }}>
+          {paginatedPatients.map((p) => (
+            <div key={p.mrn} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div 
+                onClick={() => setDetailModal(p)}
+                style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+              >
+                {p.photoUrl ? (
+                  <img src={p.photoUrl} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <Avatar name={p.name} size={120} />
+                )}
+              </div>
+              <div style={{ padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#2563eb', fontWeight: '700' }}>{p.mrn}</div>
+                    <h3 onClick={() => setDetailModal(p)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{p.name}</h3>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{p.amharic}</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                    <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`} style={{ height: 'fit-content' }}>
+                      {p.status}
+                    </span>
+                    <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0', marginTop: '0.25rem' }}>
+                      <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=patient&id=${p.mrn}`} size={80} level="M" includeMargin={true} />
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
-                  <Stethoscope size={14} /> {p.visitType}
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
+                    <Stethoscope size={14} /> {p.visitType}
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Calendar size={14} /> Registered: {p.registeredAt || '—'}
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Calendar size={14} /> Registered: {p.registeredAt || '—'}
-                </div>
-              </div>
 
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setDetailModal(p)}>Details</button>
-                <button 
-                  className="btn-primary" 
-                  style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem', background: '#f59e0b', border: 'none' }} 
-                  onClick={() => onViewVitals({ mrn: p.mrn, name: p.name, amharic: p.amharic })}
-                >
-                  Vitals
-                </button>
-                <button 
-                  className="btn-primary" 
-                  style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} 
-                  onClick={() => onViewEncounter({ mrn: p.mrn, name: p.name, amharic: p.amharic })}
-                >
-                  Consult
-                </button>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setDetailModal(p)}>Details</button>
+                  <button 
+                    className="btn-primary" 
+                    style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem', background: '#f59e0b', border: 'none' }} 
+                    onClick={() => onViewVitals({ mrn: p.mrn, name: p.name, amharic: p.amharic })}
+                  >
+                    Vitals
+                  </button>
+                  <button 
+                    className="btn-primary" 
+                    style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} 
+                    onClick={() => onViewEncounter({ mrn: p.mrn, name: p.name, amharic: p.amharic })}
+                  >
+                    Consult
+                  </button>
+                </div>
               </div>
             </div>
+          ))}
+          {patients.length === 0 && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
+              [시스템] 서버에서 환자 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.
+            </div>
+          )}
+          {patients.length > 0 && filteredPatients.length === 0 && !autoOpenId && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+              일치하는 환자 데이터가 없슴 [Antigravity Ver]
+              <br/><span style={{ fontSize: '0.8rem' }}>(검색어: "{ptSearch}", 전체 환자: {patients.length}명)</span>
+            </div>
+          )}
+          {autoOpenId && !detailModal && (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
+              <p style={{ fontWeight: '700' }}>환자 정보를 매칭 중입니다... (ID: {autoOpenId})</p>
+              <p style={{ fontSize: '0.8rem' }}>현재 전체 데이터 수: {patients.length}개</p>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ marginTop: '1.5rem' }}>
+          <div className="data-table-container">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>MRN</th>
+                  <th>Name</th>
+                  <th>Visit Type</th>
+                  <th>Status</th>
+                  <th>Registered At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedPatients.map((p) => (
+                  <tr key={p.mrn} style={{ transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td>
+                      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#2563eb' }}>{p.mrn}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        {p.photoUrl ? (
+                          <img src={p.photoUrl} alt={p.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                        ) : (
+                          <Avatar name={p.name} size={36} />
+                        )}
+                        <div>
+                          <div style={{ fontWeight: 700, color: '#1e293b' }}>{p.name}</div>
+                          {p.amharic && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{p.amharic}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontWeight: 600, fontSize: '0.85rem' }}>
+                        <Stethoscope size={12} color="var(--primary-color)" /> {p.visitType}
+                      </span>
+                    </td>
+                    <td>
+                      <span className={`status-badge ${p.status === 'Completed' ? 'status-active' : p.status === 'Waiting' ? 'status-pending' : 'status-active'}`}>
+                        {p.status}
+                      </span>
+                    </td>
+                    <td>
+                      <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{p.registeredAt || '—'}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                        <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => setDetailModal(p)}>Details</button>
+                        <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem', background: '#f59e0b', border: 'none' }} onClick={() => onViewVitals({ mrn: p.mrn, name: p.name, amharic: p.amharic })}>Vitals</button>
+                        <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => onViewEncounter({ mrn: p.mrn, name: p.name, amharic: p.amharic })}>Consult</button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {patients.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
+                      [시스템] 서버에서 환자 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                    </td>
+                  </tr>
+                )}
+                {patients.length > 0 && filteredPatients.length === 0 && (
+                  <tr>
+                    <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
+                      일치하는 환자 데이터가 없슴 [Antigravity Ver] (검색어: "{ptSearch}")
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
-        ))}
-        {patients.length === 0 && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
-            [시스템] 서버에서 환자 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.
-          </div>
-        )}
-        {patients.length > 0 && filteredPatients.length === 0 && !autoOpenId && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-            일치하는 환자 데이터가 없슴 [Antigravity Ver]
-            <br/><span style={{ fontSize: '0.8rem' }}>(검색어: "{ptSearch}", 전체 환자: {patients.length}명)</span>
-          </div>
-        )}
-        {autoOpenId && !detailModal && (
-          <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
-            <p style={{ fontWeight: '700' }}>환자 정보를 매칭 중입니다... (ID: {autoOpenId})</p>
-            <p style={{ fontSize: '0.8rem' }}>현재 전체 데이터 수: {patients.length}개</p>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {totalPages > 1 && (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: '3rem', padding: '1rem', borderTop: '1px solid #f1f5f9' }}>

@@ -1,7 +1,8 @@
 import React, { useState, useMemo } from 'react';
 import {
   Calendar, Coffee, Award, ShieldAlert, FileText, CheckCircle, Clock,
-  UserPlus, BookOpen, GraduationCap, ChevronRight, ShieldCheck, Stethoscope, X, Activity, Users
+  UserPlus, BookOpen, GraduationCap, ChevronRight, ShieldCheck, Stethoscope, X, Activity, Users,
+  LayoutGrid, List
 } from 'lucide-react';
 import CSVImportModal from './CSVImportModal';
 import ListFilterControl from './ListFilterControl';
@@ -52,6 +53,9 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   const { columns, itemsPerPage } = usePageAdjustments('staff');
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() => {
+    return (localStorage.getItem('emr_view_mode_staff') as 'grid' | 'list') || 'grid';
+  });
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeave);
@@ -481,13 +485,36 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
           renderProfile(activeStaff)
         ) : (
           <>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginBottom: '1rem' }}>
-              <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
-                <FileText size={18} /> CSV Bulk Upload
-              </button>
-              <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddStaffModal(true)}>
-                <UserPlus size={18} /> Add Staff
-              </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              {activeTab === 'portfolio' ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 800, margin: 0 }}>Staff Roster</h3>
+                  <div style={{ display: 'flex', border: '1px solid #cbd5e1', borderRadius: '0.375rem', overflow: 'hidden', marginLeft: '1rem' }}>
+                    <button 
+                      onClick={() => { setViewMode('grid'); localStorage.setItem('emr_view_mode_staff', 'grid'); }}
+                      style={{ background: viewMode === 'grid' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                      title="Grid View"
+                    >
+                      <LayoutGrid size={16} color={viewMode === 'grid' ? '#0f172a' : '#64748b'} />
+                    </button>
+                    <button 
+                      onClick={() => { setViewMode('list'); localStorage.setItem('emr_view_mode_staff', 'list'); }}
+                      style={{ background: viewMode === 'list' ? '#e2e8f0' : 'white', border: 'none', padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', cursor: 'pointer' }}
+                      title="List View"
+                    >
+                      <List size={16} color={viewMode === 'list' ? '#0f172a' : '#64748b'} />
+                    </button>
+                  </div>
+                </div>
+              ) : <div></div>}
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
+                  <FileText size={18} /> CSV Bulk Upload
+                </button>
+                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddStaffModal(true)}>
+                  <UserPlus size={18} /> Add Staff
+                </button>
+              </div>
             </div>
 
             {activeTab === 'portfolio' && (
@@ -514,57 +541,116 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
                           </div>
                           <h3 style={{ fontSize: '1.25rem', fontWeight: '800' }}>{category}s <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: '500', marginLeft: '0.5rem' }}>({members.length})</span></h3>
                         </div>
-                        <div className="asset-grid" style={{ 
-                          display: 'grid', 
-                          gridTemplateColumns: `repeat(${columns}, 1fr)`, 
-                          gap: '1.5rem' 
-                        }}>
-                          {members.map((s) => (
-                            <div key={s.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                              <div 
-                                onClick={() => setProfileModal(s)}
-                                style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                              >
-                                {s.photoUrl ? (
-                                  <img src={s.photoUrl} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                  <Avatar name={s.name} size={120} />
-                                )}
-                              </div>
-                              <div style={{ padding: '1.25rem' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                                  <div>
-                                    <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700' }}>{fmtStaffId(s.id)}</div>
-                                    <h3 onClick={() => setProfileModal(s)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{s.name}</h3>
-                                  </div>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
-                                  <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : 'status-pending'}`} style={{ height: 'fit-content' }}>{s.status}</span>
-                                  <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
-                                    <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${s.id}`} size={80} level="M" includeMargin={true} />
-                                  </div>
+                        {viewMode === 'grid' ? (
+                          <div className="asset-grid" style={{ 
+                            display: 'grid', 
+                            gridTemplateColumns: `repeat(${columns}, 1fr)`, 
+                            gap: '1.5rem' 
+                          }}>
+                            {members.map((s) => (
+                              <div key={s.id} className="stat-card" style={{ padding: '0', border: '1px solid var(--border-color)', height: 'auto', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                                <div 
+                                  onClick={() => setProfileModal(s)}
+                                  style={{ width: '100%', height: '200px', overflow: 'hidden', background: '#f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                                >
+                                  {s.photoUrl ? (
+                                    <img src={s.photoUrl} alt={s.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                  ) : (
+                                    <Avatar name={s.name} size={120} />
+                                  )}
                                 </div>
-                                </div>
-                                
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
-                                    <Stethoscope size={14} /> {s.role}
+                                <div style={{ padding: '1.25rem' }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                                    <div>
+                                      <div style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: '#6366f1', fontWeight: '700' }}>{fmtStaffId(s.id)}</div>
+                                      <h3 onClick={() => setProfileModal(s)} style={{ fontSize: '1.1rem', marginTop: '0.2rem', fontWeight: '800', cursor: 'pointer' }}>{s.name}</h3>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.5rem' }}>
+                                      <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : s.status === 'Off Duty' ? 'status-pending' : 'status-active'}`} style={{ height: 'fit-content' }}>{s.status}</span>
+                                      <div style={{ background: 'white', padding: '0.3rem', borderRadius: '0.4rem', border: '1px solid #e2e8f0' }}>
+                                        <QRCodeSVG value={`https://mcm-emr-theta.vercel.app/?type=staff&id=${s.id}`} size={80} level="M" includeMargin={true} />
+                                      </div>
+                                    </div>
                                   </div>
-                                  <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Award size={14} /> {s.specialization}
+                                  
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--primary-color)', fontWeight: '700' }}>
+                                      <Stethoscope size={14} /> {s.role}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                      <Award size={14} /> {s.specialization}
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                      <Clock size={14} /> {s.shift} Shift
+                                    </div>
                                   </div>
-                                  <div style={{ fontSize: '0.8rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <Clock size={14} /> {s.shift} Shift
-                                  </div>
-                                </div>
 
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                  <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setProfileModal(s)}>Profile</button>
-                                  <button className="btn-primary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setLogsModal(s)}>Duty Logs</button>
+                                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                    <button className="btn-secondary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setProfileModal(s)}>Profile</button>
+                                    <button className="btn-primary" style={{ flex: 1, fontSize: '0.8rem', padding: '0.5rem' }} onClick={() => setLogsModal(s)}>Duty Logs</button>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="data-table-container">
+                            <table className="data-table">
+                              <thead>
+                                <tr>
+                                  <th>Staff ID</th>
+                                  <th>Name</th>
+                                  <th>Role</th>
+                                  <th>Specialization</th>
+                                  <th>Shift</th>
+                                  <th>Status</th>
+                                  <th>Actions</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {members.map((s) => (
+                                  <tr key={s.id} style={{ transition: 'background-color 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                                    <td>
+                                      <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#6366f1' }}>{fmtStaffId(s.id)}</span>
+                                    </td>
+                                    <td>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                        {s.photoUrl ? (
+                                          <img src={s.photoUrl} alt={s.name} style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} />
+                                        ) : (
+                                          <Avatar name={s.name} size={36} />
+                                        )}
+                                        <div onClick={() => setProfileModal(s)} style={{ fontWeight: 700, color: '#1e293b', cursor: 'pointer' }}>{s.name}</div>
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
+                                        <Stethoscope size={12} color="var(--primary-color)" /> {s.role}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{s.specialization}</span>
+                                    </td>
+                                    <td>
+                                      <span style={{ fontSize: '0.85rem', color: '#64748b' }}>{s.shift} Shift</span>
+                                    </td>
+                                    <td>
+                                      <span className={`status-badge ${s.status === 'On Duty' ? 'status-active' : s.status === 'Off Duty' ? 'status-pending' : 'status-active'}`}>
+                                        {s.status}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <div style={{ display: 'flex', gap: '0.35rem' }}>
+                                        <button className="btn-secondary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => setProfileModal(s)}>Profile</button>
+                                        <button className="btn-primary" style={{ padding: '0.3rem 0.6rem', fontSize: '0.75rem' }} onClick={() => setLogsModal(s)}>Duty Logs</button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        )}
                       </div>
                     )
                   ))}
