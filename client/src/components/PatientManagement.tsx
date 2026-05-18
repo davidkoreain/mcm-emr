@@ -210,13 +210,121 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                 </div>
               )}
 
-              {modalTab === 'history' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                   <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #fee2e2' }}>
-                     <h4 style={{ fontSize: '0.85rem', color: '#991b1b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Activity size={16} /> Clinical Summary</h4>
-                     <p style={{ fontSize: '0.9rem', fontWeight: '600' }}>{detailModal.diagnosisSummary || 'No recent diagnosis recorded.'}</p>
-                   </div>
-                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              {modalTab === 'history' && (() => {
+                const parsedEncounter = (() => {
+                  if (!detailModal.diagnosisSummary) return null;
+                  try {
+                    return JSON.parse(detailModal.diagnosisSummary) as {
+                      date: string;
+                      doctor: string;
+                      icd?: string;
+                      diagnosis?: string;
+                      subjective?: string;
+                      objective?: string;
+                      notes?: string;
+                    };
+                  } catch {
+                    return null;
+                  }
+                })();
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {parsedEncounter ? (
+                      <div style={{ 
+                        background: '#f8fafc', 
+                        padding: '1.25rem', 
+                        borderRadius: '0.75rem', 
+                        border: '1px solid #e2e8f0',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.85rem'
+                      }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          borderBottom: '1px solid #e2e8f0', 
+                          paddingBottom: '0.5rem' 
+                        }}>
+                          <h4 style={{ 
+                            fontSize: '0.9rem', 
+                            color: '#0f172a', 
+                            fontWeight: 800, 
+                            margin: 0, 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            gap: '0.5rem' 
+                          }}>
+                            <Stethoscope size={18} color="#2563eb" /> Clinical Summary
+                          </h4>
+                          <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>
+                            {parsedEncounter.date}
+                          </span>
+                        </div>
+
+                        {/* Doctor & ICD */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: '500' }}>Attending:</span>
+                          <span style={{ fontSize: '0.8rem', color: '#0f172a', fontWeight: '700' }}>Dr. {parsedEncounter.doctor}</span>
+                          {parsedEncounter.icd && (
+                            <span style={{ 
+                              marginLeft: 'auto', 
+                              background: '#ef444410', 
+                              color: '#ef4444', 
+                              padding: '0.15rem 0.5rem', 
+                              borderRadius: '0.25rem', 
+                              fontSize: '0.75rem', 
+                              fontWeight: '700' 
+                            }}>
+                              ICD: {parsedEncounter.icd}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Diagnosis */}
+                        {parsedEncounter.diagnosis && (
+                          <div style={{ background: '#fef2f2', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #fee2e2' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#991b1b', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Diagnosis</div>
+                            <div style={{ fontSize: '0.9rem', color: '#991b1b', fontWeight: '700' }}>{parsedEncounter.diagnosis}</div>
+                          </div>
+                        )}
+
+                        {/* Subjective & Objective */}
+                        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '0.75rem' }}>
+                          {parsedEncounter.subjective && (
+                            <div style={{ background: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Subjective</div>
+                              <div style={{ fontSize: '0.825rem', color: '#334155', lineHeight: '1.4' }}>{parsedEncounter.subjective}</div>
+                            </div>
+                          )}
+                          {parsedEncounter.objective && (
+                            <div style={{ background: 'white', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                              <div style={{ fontSize: '0.7rem', color: '#64748b', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Objective</div>
+                              <div style={{ fontSize: '0.825rem', color: '#334155', lineHeight: '1.4' }}>{parsedEncounter.objective}</div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Clinical Notes */}
+                        {parsedEncounter.notes && (
+                          <div style={{ background: '#eff6ff', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid #dbeafe' }}>
+                            <div style={{ fontSize: '0.7rem', color: '#1e40af', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.2rem' }}>Clinical Notes</div>
+                            <div style={{ fontSize: '0.825rem', color: '#1e40af', lineHeight: '1.4' }}>{parsedEncounter.notes}</div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ background: '#fef2f2', padding: '1rem', borderRadius: '0.5rem', border: '1px solid #fee2e2' }}>
+                        <h4 style={{ fontSize: '0.85rem', color: '#991b1b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <Activity size={16} /> Clinical Summary
+                        </h4>
+                        <p style={{ fontSize: '0.9rem', fontWeight: '600', margin: 0 }}>
+                          {detailModal.diagnosisSummary || 'No recent diagnosis recorded.'}
+                        </p>
+                      </div>
+                    )}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                       <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
                         <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>Visit Type</div>
                         <div style={{ fontWeight: '700' }}>{detailModal.visitType}</div>
@@ -225,17 +333,18 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                         <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>Current Status</div>
                         <div style={{ fontWeight: '700' }}>{detailModal.status}</div>
                       </div>
-                   </div>
-                   <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
+                    </div>
+                    <div style={{ background: '#f8fafc', padding: '0.75rem', borderRadius: '0.5rem' }}>
                       <div style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: '600' }}>Social History</div>
                       <div style={{ fontSize: '0.85rem', marginTop: '0.3rem' }}>
                         Interpreter Needed: {detailModal.interpreterNeeded ? 'Yes' : 'No'} • 
                         Homeless: {detailModal.homelessStatus ? 'Yes' : 'No'} •
                         Income: {detailModal.monthlyIncome ? `$${detailModal.monthlyIncome}/mo` : 'Not Disclosed'}
                       </div>
-                   </div>
-                </div>
-              )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {modalTab === 'insurance' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
