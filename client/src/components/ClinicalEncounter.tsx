@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Clipboard, BookOpen, PenTool, CheckCircle, Save, X, Activity,
   Image as ImageIcon, Video, History, FileText, Plus, Maximize2,
@@ -78,6 +78,13 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
     : patients.find(p => p.name === patientName);
 
   const [activeTab, setActiveTab] = useState<'soap' | 'imaging' | 'history'>(defaultTab);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   const [soap, setSoap] = useState({ 
     subjective: '', 
     objective: '', 
@@ -474,7 +481,7 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
       <div className="encounter-body" style={{ padding: '1.5rem', maxHeight: '70vh', overflowY: 'auto' }}>
         {activeTab === 'soap' ? (
           <form onSubmit={handleSubmit} className="encounter-form">
-            <div className="soap-layout-grid" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '2rem', alignItems: 'start' }}>
+            <div className="soap-layout-grid" style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1fr', gap: isMobile ? '1rem' : '2rem', alignItems: 'start' }}>
               
               {/* Left Column: Diagnostics, SOAP details, Assessment */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
