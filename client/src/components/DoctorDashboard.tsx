@@ -302,7 +302,10 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #e2e8f0', background: 'white' }}>
         {DAYS.map((day, i) => (
-          <div key={i} style={{ padding: '0.75rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>{day}</div>
+          <div key={i} style={{ padding: '0.75rem 0.25rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>
+            <span className="desktop-day">{day}</span>
+            <span className="mobile-day">{day[0]}</span>
+          </div>
         ))}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(6, 1fr)', flex: 1 }}>
@@ -315,12 +318,14 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             <div key={i} style={{ 
               borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid #f1f5f9', 
               borderBottom: i < 35 ? '1px solid #f1f5f9' : 'none',
-              padding: '0.5rem',
+              padding: '0.5rem 0.25rem',
               background: isSelectedMonth ? 'white' : '#f8fafc',
               minHeight: '100px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '0.25rem'
+              gap: '0.25rem',
+              minWidth: '0',
+              overflow: 'hidden'
             }}>
               <div style={{ 
                 fontSize: '0.75rem', 
@@ -792,6 +797,14 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         }
         .calendar-body-scroll::-webkit-scrollbar {
           display: none;
+        }
+        @media (max-width: 640px) {
+          .desktop-day { display: none; }
+          .mobile-day { display: inline; }
+        }
+        @media (min-width: 641px) {
+          .desktop-day { display: inline; }
+          .mobile-day { display: none; }
         }
       `}</style>
     </div>
