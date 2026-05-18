@@ -26,3 +26,6 @@ npm-debug.log*
 Thumbs.db
 
 .vercel
+
+# Playwright MCP snapshots
+.playwright-mcp/
