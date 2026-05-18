@@ -41,9 +41,37 @@ export const MENU_STRUCTURE: MenuItem[] = [
   { key: 'billing',   label: 'Billing', icon: 'CreditCard' },
   { key: 'settings',  label: 'Settings', icon: 'Settings', children: [
     { key: 'settings.permissions', label: 'Permissions' },
-    { key: 'settings.menu_config', label: '메뉴구성' },
+    { key: 'settings.menu_config', label: 'Menu setting' },
     { key: 'settings.adjustment',  label: 'Adjustment' },
   ]}
+];
+
+export const PATIENT_PORTAL_MENU_STRUCTURE: MenuItem[] = [
+  { key: 'info', label: 'Patient Information', icon: 'Info' },
+  { key: 'records', label: 'Medical Records', icon: 'FileText' },
+  { 
+    key: 'appointments', 
+    label: 'Appointments', 
+    icon: 'CalendarDays', 
+    children: [
+      { key: 'step-1', label: 'Discovery' },
+      { key: 'step-2', label: 'Application' },
+      { key: 'step-3', label: 'Confirmation' },
+      { key: 'step-4', label: 'Visit' },
+      { key: 'step-5', label: 'Admission' },
+      { key: 'step-6', label: 'Consultation' },
+      { key: 'step-7', label: 'Examination' },
+      { key: 'step-8', label: 'Results' },
+      { key: 'step-9', label: 'Diagnosis' },
+      { key: 'step-10', label: 'Treatment Plan' },
+      { key: 'step-11', label: 'Therapy' },
+      { key: 'step-12', label: 'Procedure' },
+      { key: 'step-13', label: 'Monitoring' },
+      { key: 'step-14', label: 'Feedback' },
+    ] 
+  },
+  { key: 'schedule', label: 'My Schedule', icon: 'CalendarDays' },
+  { key: 'settings', label: 'Settings', icon: 'Settings' }
 ];
 
 export const DEFAULT_PERMISSIONS: AllPerms = {

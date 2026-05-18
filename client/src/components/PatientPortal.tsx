@@ -1,11 +1,26 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, Heart, Activity, FileText, Beaker, LogOut, 
-  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search as SearchIcon, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star, BookOpen, Briefcase, Medal
+  ChevronLeft, ChevronRight, Clock, User, Award, GraduationCap, Filter, Search as SearchIcon, ShieldAlert, Scissors, Menu, CheckCircle2, ChevronDown, ChevronUp, Settings as SettingsIcon, Info, Edit, Save, X, Camera, ArrowUpDown, Star, BookOpen, Briefcase, Medal,
+  HelpCircle
 } from 'lucide-react';
 import { useEMR, type StaffMember, type Patient } from '../context/EMRContext';
 import Avatar from './Avatar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PATIENT_PORTAL_MENU_STRUCTURE, type MenuItem } from '../config/permissions';
+
+const PORTAL_ICON_MAP: Record<string, any> = {
+  Info,
+  FileText,
+  CalendarDays: CalendarIcon,
+  Calendar: CalendarIcon,
+  Settings: SettingsIcon,
+  Heart,
+  Activity,
+  Beaker,
+  User,
+  HelpCircle
+};
 
 interface PortalProps {
   onLogout: () => void;
@@ -50,7 +65,20 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Navigation
-  const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'schedule' | 'settings'>('appointments');
+  const [activeMenu, setActiveMenu] = useState<string>('appointments');
+
+  const portalMenuStructure = useMemo<MenuItem[]>(() => {
+    const saved = localStorage.getItem('emr_patient_portal_menu_structure');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return PATIENT_PORTAL_MENU_STRUCTURE;
+      }
+    }
+    return PATIENT_PORTAL_MENU_STRUCTURE;
+  }, []);
+
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
   const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
   const [currentJourneyStep, setCurrentJourneyStep] = useState(1);
@@ -71,7 +99,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       if (hash.startsWith('step-')) {
         const step = parseInt(hash.replace('step-', ''));
         if (!isNaN(step)) { setCurrentJourneyStep(step); setActiveMenu('appointments'); setAppointmentsExpanded(true); }
-      } else if (['info', 'records', 'schedule', 'settings'].includes(hash)) { setActiveMenu(hash as any); }
+      } else if (['info', 'records', 'schedule', 'settings'].includes(hash)) { setActiveMenu(hash); }
     };
     window.addEventListener('hashchange', syncWithUrl);
     syncWithUrl();
@@ -79,7 +107,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   }, []);
 
   const changeStep = (step: number) => { setCurrentJourneyStep(step); window.location.hash = `step-${step}`; setMobileMenuOpen(false); };
-  const changeMenu = (menu: 'info' | 'records' | 'appointments' | 'schedule' | 'settings') => {
+  const changeMenu = (menu: string) => {
     setActiveMenu(menu);
     if (menu !== 'appointments') window.location.hash = menu;
     else window.location.hash = `step-${currentJourneyStep}`;
@@ -739,11 +767,91 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           </div>
         </div>
         <nav style={{ flex: 1, padding: '1.5rem 0.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-          <MainMenuItem id="info" label="Patient Information" icon={Info} />
-          <MainMenuItem id="records" label="Medical Records" icon={FileText} />
-          <MainMenuItem id="appointments" label="Appointments" icon={CalendarIcon} expandable />
-          <MainMenuItem id="schedule" label="My Schedule" icon={CalendarIcon} />
-          <MainMenuItem id="settings" label="Settings" icon={SettingsIcon} />
+          {portalMenuStructure.map((menu) => {
+            const Icon = PORTAL_ICON_MAP[menu.icon || 'HelpCircle'] || HelpCircle;
+            const hasChildren = menu.children && menu.children.length > 0;
+            const isActive = activeMenu === menu.key || (menu.children?.some(c => activeMenu === menu.key && window.location.hash === `#${c.key}`));
+            
+            return (
+              <div key={menu.key} style={{ display: 'flex', flexDirection: 'column' }}>
+                <button
+                  onClick={() => {
+                    if (hasChildren) {
+                      setAppointmentsExpanded(!appointmentsExpanded);
+                    } else {
+                      changeMenu(menu.key);
+                    }
+                  }}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.85rem 1rem', borderRadius: '0.75rem', border: 'none',
+                    background: isActive ? '#f1f5f9' : 'transparent', color: isActive ? '#2563eb' : '#64748b', cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left'
+                  }}
+                >
+                  <Icon size={20} />
+                  <span style={{ flex: 1, fontWeight: '800', fontSize: '0.95rem' }}>{menu.label}</span>
+                  {hasChildren && (appointmentsExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />)}
+                </button>
+                
+                {hasChildren && (
+                  <AnimatePresence>
+                    {appointmentsExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        style={{ overflow: 'hidden' }}
+                      >
+                        <div style={{ marginLeft: '1.25rem', marginTop: '0.25rem', display: 'flex', flexDirection: 'column', gap: '0.15rem', borderLeft: '2px solid #f1f5f9' }}>
+                          {menu.children?.map((sub) => {
+                            const isStep = sub.key.startsWith('step-');
+                            const stepId = isStep ? parseInt(sub.key.replace('step-', '')) : null;
+                            const isSubActive = activeMenu === menu.key && (isStep ? currentJourneyStep === stepId : window.location.hash === `#${sub.key}`);
+                            
+                            const matchedStep = isStep && stepId ? JOURNEY_STEPS.find(js => js.id === stepId) : null;
+                            const stepColor = matchedStep?.color || '#3b82f6';
+                            const StepIcon = matchedStep?.icon || HelpCircle;
+
+                            return (
+                              <button 
+                                key={sub.key} 
+                                onClick={() => {
+                                  if (isStep && stepId) {
+                                    setActiveMenu(menu.key);
+                                    changeStep(stepId);
+                                  } else {
+                                    setActiveMenu(menu.key);
+                                    window.location.hash = sub.key;
+                                    setMobileMenuOpen(false);
+                                  }
+                                }} 
+                                style={{ 
+                                  width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 1rem', borderRadius: '0.5rem', border: 'none', 
+                                  background: isSubActive ? `${stepColor}10` : 'transparent', 
+                                  color: isSubActive ? stepColor : '#94a3b8', 
+                                  cursor: 'pointer', transition: 'all 0.15s', textAlign: 'left' 
+                                }}
+                              >
+                                <div style={{ 
+                                  width: '24px', height: '24px', borderRadius: '6px', 
+                                  background: (stepId !== null && stepId < currentJourneyStep) ? '#10b98115' : isSubActive ? stepColor : '#f8fafc', 
+                                  color: (stepId !== null && stepId < currentJourneyStep) ? '#10b981' : isSubActive ? 'white' : '#cbd5e1', 
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 
+                                }}>
+                                  {(stepId !== null && stepId < currentJourneyStep) ? <CheckCircle2 size={12} /> : <StepIcon size={12} />}
+                                </div>
+                                <span style={{ fontSize: '0.8rem', fontWeight: '700', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sub.label}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                )}
+              </div>
+            );
+          })}
         </nav>
         <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid #f1f5f9' }}><button onClick={onLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.85rem 1.25rem', borderRadius: '0.85rem', fontWeight: '800' }}><LogOut size={18} /> Logout</button></div>
       </aside>

@@ -298,7 +298,7 @@ const App: React.FC = () => {
             {view === 'dashboard' ? 'FLOW BOARD' : 
              view === 'patients' ? 'PATIENT DETAILS' : 
              view === 'calendar' ? 'APPOINTMENTS' : 
-             view === 'menu_config' ? 'MENU CONFIGURATION' :
+             view === 'settings.menu_config' ? 'MENU SETTING' :
              view === 'adjustment' ? 'DISPLAY ADJUSTMENTS' :
              view.toUpperCase().replace('_', ' ')}
           </h1>
