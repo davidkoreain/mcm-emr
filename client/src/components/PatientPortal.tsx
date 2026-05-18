@@ -30,12 +30,27 @@ const JOURNEY_STEPS = [
 ];
 
 const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false }) => {
-  const { currentUser, currentGuardian, patients, staff, staffLeave, addAppointment, labResults, guardians, updatePatient, medicalHistory } = useEMR();
+  const { 
+    currentUser, 
+    currentGuardian, 
+    patients, 
+    staff, 
+    staffLeave, 
+    addAppointment, 
+    labResults, 
+    guardians, 
+    updatePatient, 
+    medicalHistory,
+    appointments,
+    surgeries,
+    medicationSchedules,
+    labOrders
+  } = useEMR();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Navigation
-  const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'settings'>('appointments');
+  const [activeMenu, setActiveMenu] = useState<'info' | 'records' | 'appointments' | 'schedule' | 'settings'>('appointments');
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<any | null>(null);
   const [appointmentsExpanded, setAppointmentsExpanded] = useState(true);
   const [currentJourneyStep, setCurrentJourneyStep] = useState(1);
@@ -45,13 +60,18 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState<Partial<Patient>>({});
 
+  // Schedule View States
+  const [scheduleViewType, setScheduleViewType] = useState<'month' | 'week' | 'day'>('month');
+  const [scheduleSelectedDate, setScheduleSelectedDate] = useState(new Date());
+  const [selectedScheduleEvent, setSelectedScheduleEvent] = useState<any | null>(null);
+
   React.useEffect(() => {
     const syncWithUrl = () => {
       const hash = window.location.hash.replace('#', '');
       if (hash.startsWith('step-')) {
         const step = parseInt(hash.replace('step-', ''));
         if (!isNaN(step)) { setCurrentJourneyStep(step); setActiveMenu('appointments'); setAppointmentsExpanded(true); }
-      } else if (['info', 'records', 'settings'].includes(hash)) { setActiveMenu(hash as any); }
+      } else if (['info', 'records', 'schedule', 'settings'].includes(hash)) { setActiveMenu(hash as any); }
     };
     window.addEventListener('hashchange', syncWithUrl);
     syncWithUrl();
@@ -59,7 +79,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   }, []);
 
   const changeStep = (step: number) => { setCurrentJourneyStep(step); window.location.hash = `step-${step}`; setMobileMenuOpen(false); };
-  const changeMenu = (menu: 'info' | 'records' | 'appointments' | 'settings') => {
+  const changeMenu = (menu: 'info' | 'records' | 'appointments' | 'schedule' | 'settings') => {
     setActiveMenu(menu);
     if (menu !== 'appointments') window.location.hash = menu;
     else window.location.hash = `step-${currentJourneyStep}`;
@@ -69,6 +89,154 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const activeUser = isGuardianView
     ? patients.find(p => p.mrn === currentGuardian?.patientMrn)
     : (patients.find(p => p.mrn === currentUser?.mrn) ?? currentUser);
+
+  const getDocName = (docId: number) => {
+    const doc = staff?.find(s => s.id === docId);
+    return doc ? `Dr. ${doc.name}` : 'Attending Physician';
+  };
+
+  const getSurgeonName = (surgeonId: number) => {
+    const doc = staff?.find(s => s.id === surgeonId);
+    return doc ? `Dr. ${doc.name}` : 'Surgeon';
+  };
+
+  const parseDateTime = (isoStr: string) => {
+    if (!isoStr) return { dateStr: '', timeStr: '' };
+    const date = new Date(isoStr);
+    if (isNaN(date.getTime())) return { dateStr: '', timeStr: '' };
+    const dateStr = date.toISOString().split('T')[0];
+    const timeStr = date.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+    return { dateStr, timeStr };
+  };
+
+  // Aggregated patient schedule events
+  const myEvents = useMemo(() => {
+    if (!activeUser) return [];
+    const mrn = activeUser.mrn;
+    const events: any[] = [];
+
+    // 1. Appointments
+    if (appointments) {
+      appointments
+        .filter(apt => apt.patientMrn === mrn && apt.status !== 'Cancelled')
+        .forEach(apt => {
+          const { dateStr, timeStr } = parseDateTime(apt.startTime);
+          events.push({
+            id: `apt-${apt.id}`,
+            title: `${getDocName(apt.doctorId)} 면담`,
+            type: 'Appointment',
+            dateStr,
+            timeStr,
+            color: '#2563eb',
+            details: `Appointment with doctor. Status: ${apt.status}. Notes: ${apt.notes || 'None'}`
+          });
+        });
+    }
+
+    // 2. Surgeries
+    if (surgeries) {
+      surgeries
+        .filter(s => s.patientMrn === mrn && s.status !== 'Cancelled')
+        .forEach(s => {
+          const { dateStr, timeStr } = parseDateTime(s.startTime);
+          events.push({
+            id: `surg-${s.id}`,
+            title: `수술: ${s.operationName}`,
+            type: 'Surgery',
+            dateStr,
+            timeStr,
+            color: '#ef4444',
+            details: `Scheduled operation: ${s.operationName} in Room ${s.roomNumber}. Surgeon: ${getSurgeonName(s.surgeonId)}. Anesthesia: ${s.anesthesiaType}. Status: ${s.status}`
+          });
+        });
+    }
+
+    // 3. MedicationSchedules
+    if (medicationSchedules) {
+      medicationSchedules
+        .filter(m => m.patientMrn === mrn)
+        .forEach(m => {
+          events.push({
+            id: `med-${m.id}`,
+            title: `${m.drugName} 복용 (${m.dosage})`,
+            type: 'Medication',
+            dateStr: m.scheduledDate,
+            timeStr: m.scheduledTime || 'All Day',
+            color: '#10b981',
+            details: `Medication intake reminder. Drug: ${m.drugName}, Dosage: ${m.dosage}. Taken status: ${m.taken ? 'Taken at ' + m.takenAt : 'Not Taken Yet'}. Notes: ${m.notes || 'None'}`
+          });
+        });
+    }
+
+    // 4. LabOrders
+    if (labOrders) {
+      labOrders
+        .filter(l => l.patientMrn === mrn)
+        .forEach(l => {
+          const { dateStr, timeStr } = parseDateTime(l.createdAt);
+          events.push({
+            id: `lab-${l.id}`,
+            title: `검사 의뢰: ${l.tests?.join(', ') || 'General Lab'}`,
+            type: 'LabTest',
+            dateStr,
+            timeStr,
+            color: '#8b5cf6',
+            details: `Laboratory order for test(s): ${l.tests?.join(', ')}. Priority: ${l.priority}. Status: ${l.status}. Ordered on ${l.createdAt}`
+          });
+        });
+    }
+
+    // 5. Admission & Discharge
+    if (activeUser.admissionDate) {
+      const { dateStr, timeStr } = parseDateTime(activeUser.admissionDate);
+      events.push({
+        id: `adm-${activeUser.mrn}`,
+        title: `입원 일정 (${activeUser.ward || 'General Ward'})`,
+        type: 'Admission',
+        dateStr: dateStr || activeUser.admissionDate.split('T')[0],
+        timeStr: timeStr || 'All Day',
+        color: '#f97316',
+        details: `Admitted to ward: ${activeUser.ward || 'General Ward'} on ${activeUser.admissionDate}`
+      });
+    }
+
+    if (activeUser.dischargeDate) {
+      const { dateStr, timeStr } = parseDateTime(activeUser.dischargeDate);
+      events.push({
+        id: `dis-${activeUser.mrn}`,
+        title: `퇴원 일정`,
+        type: 'Discharge',
+        dateStr: dateStr || activeUser.dischargeDate.split('T')[0],
+        timeStr: timeStr || 'All Day',
+        color: '#06b6d4',
+        details: `Scheduled discharge date: ${activeUser.dischargeDate}`
+      });
+    }
+
+    return events;
+  }, [activeUser, appointments, surgeries, medicationSchedules, labOrders, staff]);
+
+  const scheduleMonthDays = useMemo(() => {
+    const start = new Date(scheduleSelectedDate.getFullYear(), scheduleSelectedDate.getMonth(), 1);
+    const dayOfWeek = start.getDay(); // Sunday start (0)
+    start.setDate(start.getDate() - dayOfWeek);
+    
+    return Array.from({ length: 42 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+  }, [scheduleSelectedDate]);
+
+  const scheduleWeekDays = useMemo(() => {
+    const start = new Date(scheduleSelectedDate);
+    start.setDate(start.getDate() - start.getDay()); // Sunday start (0)
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+  }, [scheduleSelectedDate]);
 
   // Booking Flow: Step 1 (Date/Time) -> Step 2 (Doctor List) -> Step 3 (Doctor Details/Confirm)
   const [bookingFlowStep, setBookingFlowStep] = useState<1 | 2 | 3>(1); 
@@ -247,6 +415,316 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     );
   };
 
+  const renderScheduleMonthView = () => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* Days Header */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, i) => {
+            const isSunday = i === 0;
+            return (
+              <div key={i} style={{ 
+                padding: '1rem 0.5rem', 
+                textAlign: 'center', 
+                fontSize: '0.8rem', 
+                fontWeight: '900', 
+                color: isSunday ? '#ef4444' : '#64748b' 
+              }}>
+                <span className="desktop-day">{day.toUpperCase()}</span>
+                <span className="mobile-day">{day[0].toUpperCase()}</span>
+              </div>
+            );
+          })}
+        </div>
+        {/* Days Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: 'minmax(120px, 1fr)' }}>
+          {scheduleMonthDays.map((date, i) => {
+            const isSelectedMonth = date.getMonth() === scheduleSelectedDate.getMonth();
+            const isToday = date.toDateString() === new Date().toDateString();
+            const isSunday = date.getDay() === 0;
+            
+            const dateStr = date.toISOString().split('T')[0];
+            const dayEvents = myEvents.filter(ev => ev.dateStr === dateStr);
+
+            return (
+              <div key={i} style={{ 
+                borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid #f1f5f9', 
+                borderBottom: i < 35 ? '1px solid #f1f5f9' : 'none',
+                padding: '0.5rem',
+                background: isSelectedMonth ? 'white' : '#f8fafc',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.25rem',
+                minWidth: '0',
+                overflow: 'hidden'
+              }}>
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  fontWeight: '800', 
+                  color: isToday 
+                    ? '#2563eb' 
+                    : (isSunday 
+                        ? (isSelectedMonth ? '#ef4444' : '#fca5a5') 
+                        : (isSelectedMonth ? '#1e293b' : '#cbd5e1')),
+                  textAlign: 'right',
+                  paddingRight: '0.25rem'
+                }}>
+                  {date.getDate()}
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px', scrollbarWidth: 'none' }}>
+                  {dayEvents.map(ev => (
+                    <div 
+                      key={ev.id} 
+                      onClick={(e) => { e.stopPropagation(); setSelectedScheduleEvent(ev); }}
+                      style={{ 
+                        fontSize: '0.7rem', 
+                        background: `${ev.color}15`, 
+                        color: ev.color, 
+                        borderLeft: `3px solid ${ev.color}`,
+                        padding: '3px 6px', 
+                        borderRadius: '4px', 
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontWeight: '700',
+                        transition: 'transform 0.1s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                    >
+                      <span style={{ fontSize: '0.65rem', marginRight: '4px', opacity: 0.8 }}>{ev.timeStr}</span>
+                      {ev.title}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderScheduleWeekView = () => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {/* Days Header */}
+        <div className="week-grid" style={{ 
+          borderBottom: '1px solid #e2e8f0', 
+          background: '#f8fafc'
+        }}>
+          <div className="time-header" style={{ padding: '1rem 0.5rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '800', color: '#64748b', borderRight: '1px solid #f1f5f9' }}>
+            TIME
+          </div>
+          {scheduleWeekDays.map((date, i) => {
+            const isSunday = date.getDay() === 0;
+            const isToday = date.toDateString() === new Date().toDateString();
+            const dayNames = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+            return (
+              <div key={i} style={{ 
+                padding: '0.75rem 0.5rem', 
+                textAlign: 'center', 
+                borderRight: i < 6 ? '1px solid #f1f5f9' : 'none', 
+                background: isToday ? '#eff6ff' : 'transparent',
+                minWidth: '0'
+              }}>
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  fontWeight: '900', 
+                  color: isSunday ? '#ef4444' : (isToday ? '#2563eb' : '#1e293b') 
+                }}>
+                  <span className="desktop-day">{dayNames[i]}</span>
+                  <span className="mobile-day">{dayNames[i][0]}</span>
+                </div>
+                <div style={{ fontSize: '0.7rem', fontWeight: '700', color: isSunday ? '#ef4444' : '#94a3b8', marginTop: '2px' }}>
+                  {date.getMonth() + 1}.{date.getDate()}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Hour slots & Events columns */}
+        <div className="week-grid" style={{ height: '480px', position: 'relative' }}>
+          {/* Hour Labels */}
+          <div style={{ borderRight: '1px solid #f1f5f9', background: '#f8fafc', overflowY: 'hidden', height: '100%' }}>
+            {Array.from({ length: 12 }, (_, h) => h + 8).map(h => (
+              <div key={h} className="time-label" style={{ 
+                height: '40px', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: '0.65rem', 
+                fontWeight: '700', 
+                color: '#94a3b8', 
+                borderBottom: '1px solid #f1f5f9' 
+              }}>
+                {h.toString().padStart(2, '0')}:00
+              </div>
+            ))}
+          </div>
+
+          {/* Grid Columns */}
+          {scheduleWeekDays.map((date, colIdx) => {
+            const dateStr = date.toISOString().split('T')[0];
+            const dayEvents = myEvents.filter(ev => ev.dateStr === dateStr);
+
+            return (
+              <div key={colIdx} style={{ 
+                position: 'relative', 
+                height: '100%', 
+                borderRight: colIdx < 6 ? '1px solid #f1f5f9' : 'none',
+                background: date.toDateString() === new Date().toDateString() ? '#eff6ff30' : 'white'
+              }}>
+                {/* Subgrid line placeholders */}
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div key={i} style={{ height: '40px', borderBottom: '1px solid #f1f5f9' }} />
+                ))}
+
+                {/* Relative events positioning */}
+                {dayEvents.map(ev => {
+                  let topPercent = 20; 
+                  let heightVal = 36;
+                  if (ev.timeStr && ev.timeStr !== 'All Day') {
+                    const [h, m] = ev.timeStr.split(':').map(Number);
+                    if (!isNaN(h)) {
+                      const hourDiff = Math.max(0, h - 8);
+                      topPercent = (hourDiff * 40) + ((m || 0) / 60 * 40);
+                    }
+                  } else {
+                    topPercent = 8;
+                    heightVal = 32;
+                  }
+
+                  return (
+                    <div 
+                      key={ev.id} 
+                      onClick={() => setSelectedScheduleEvent(ev)}
+                      style={{ 
+                        position: 'absolute',
+                        top: `${topPercent}px`,
+                        left: '4px',
+                        right: '4px',
+                        height: `${heightVal}px`,
+                        background: ev.color,
+                        color: 'white',
+                        padding: '4px 6px',
+                        borderRadius: '6px',
+                        fontSize: '0.65rem',
+                        fontWeight: '800',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                        zIndex: 10,
+                        overflow: 'hidden',
+                        whiteSpace: 'nowrap',
+                        textOverflow: 'ellipsis',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        border: '1px solid rgba(255,255,255,0.15)',
+                        transition: 'transform 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
+                    >
+                      <div style={{ fontSize: '0.55rem', opacity: 0.9, lineHeight: 1 }}>{ev.timeStr}</div>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderScheduleDayView = () => {
+    const dateStr = scheduleSelectedDate.toISOString().split('T')[0];
+    const dayEvents = myEvents.filter(ev => ev.dateStr === dateStr);
+
+    return (
+      <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>
+            {scheduleSelectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </h3>
+          <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0.35rem 0.85rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800' }}>
+            {dayEvents.length} events scheduled
+          </span>
+        </div>
+
+        {dayEvents.length > 0 ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {dayEvents.map(ev => (
+              <div 
+                key={ev.id} 
+                onClick={() => setSelectedScheduleEvent(ev)}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '1.5rem', 
+                  padding: '1.25rem 1.5rem', 
+                  background: '#f8fafc', 
+                  borderRadius: '1.25rem', 
+                  border: '1px solid #e2e8f0', 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.borderColor = ev.color;
+                  e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.03)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'none';
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <div style={{ 
+                  width: '70px', 
+                  textAlign: 'center', 
+                  fontSize: '0.8rem', 
+                  fontWeight: '900', 
+                  color: ev.color, 
+                  background: `${ev.color}10`,
+                  padding: '0.5rem',
+                  borderRadius: '0.75rem'
+                }}>
+                  {ev.timeStr}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>{ev.title}</h4>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>{ev.details}</p>
+                </div>
+                <div style={{ 
+                  fontSize: '0.7rem', 
+                  fontWeight: '800', 
+                  textTransform: 'uppercase', 
+                  color: ev.color, 
+                  background: `${ev.color}15`, 
+                  padding: '0.25rem 0.75rem', 
+                  borderRadius: '99px' 
+                }}>
+                  {ev.type}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '4rem 1rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
+            <CalendarIcon size={48} style={{ color: '#cbd5e1', marginBottom: '1rem' }} />
+            <h4 style={{ fontSize: '1rem', fontWeight: '900', color: '#64748b', margin: 0 }}>No schedules for this day</h4>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', margin: '0.25rem 0 0 0' }}>Relax! There are no medical events or appointments scheduled.</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="app-container" style={{ minHeight: '100vh', background: '#f8fafc', color: '#1e293b', fontFamily: 'Inter, sans-serif' }}>
       <aside className={`sidebar ${mobileMenuOpen ? 'mobile-open' : ''}`} style={{ width: '320px', background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', position: 'fixed', height: '100vh', left: 0, top: 0, zIndex: 900, transition: 'transform 0.3s ease' }}>
@@ -264,6 +742,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           <MainMenuItem id="info" label="Patient Information" icon={Info} />
           <MainMenuItem id="records" label="Medical Records" icon={FileText} />
           <MainMenuItem id="appointments" label="Appointments" icon={CalendarIcon} expandable />
+          <MainMenuItem id="schedule" label="My Schedule" icon={CalendarIcon} />
           <MainMenuItem id="settings" label="Settings" icon={SettingsIcon} />
         </nav>
         <div style={{ padding: '1.5rem 1rem', borderTop: '1px solid #f1f5f9' }}><button onClick={onLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#fee2e2', color: '#dc2626', border: 'none', padding: '0.85rem 1.25rem', borderRadius: '0.85rem', fontWeight: '800' }}><LogOut size={18} /> Logout</button></div>
@@ -647,6 +1126,198 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                   <h3 style={{ fontSize: '1.75rem', fontWeight: '900', color: '#94a3b8' }}>{JOURNEY_STEPS[currentJourneyStep-1].label} Phase</h3>
                 </div>
               )}
+            </section>
+          )}
+
+          {activeMenu === 'schedule' && (
+            <section style={{ animation: 'fadeIn 0.5s ease-out' }}>
+              <style>{`
+                .week-grid {
+                  display: grid;
+                  grid-template-columns: 80px repeat(7, minmax(0, 1fr));
+                  width: 100%;
+                }
+                .desktop-day { display: inline; }
+                .mobile-day { display: none; }
+                @media (max-width: 768px) {
+                  .week-grid {
+                    grid-template-columns: 45px repeat(7, minmax(0, 1fr)) !important;
+                  }
+                  .desktop-day { display: none !important; }
+                  .mobile-day { display: inline !important; }
+                }
+              `}</style>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#0f172a', margin: 0 }}>My Schedule</h2>
+                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>Comprehensive overview of your upcoming medical activities and appointments</p>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  {/* View Toggles */}
+                  <div style={{ display: 'flex', background: '#e2e8f0', padding: '0.25rem', borderRadius: '0.75rem' }}>
+                    {(['month', 'week', 'day'] as const).map(vt => (
+                      <button
+                        key={vt}
+                        onClick={() => setScheduleViewType(vt)}
+                        style={{
+                          padding: '0.45rem 1rem',
+                          borderRadius: '0.5rem',
+                          border: 'none',
+                          fontSize: '0.8rem',
+                          fontWeight: '800',
+                          background: scheduleViewType === vt ? 'white' : 'transparent',
+                          color: scheduleViewType === vt ? '#2563eb' : '#64748b',
+                          cursor: 'pointer',
+                          boxShadow: scheduleViewType === vt ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                          transition: 'all 0.15s'
+                        }}
+                      >
+                        {vt.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Nav Controls */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <button 
+                      onClick={() => {
+                        const d = new Date(scheduleSelectedDate);
+                        if (scheduleViewType === 'month') d.setMonth(d.getMonth() - 1);
+                        else if (scheduleViewType === 'week') d.setDate(d.getDate() - 7);
+                        else d.setDate(d.getDate() - 1);
+                        setScheduleSelectedDate(d);
+                      }}
+                      style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button 
+                      onClick={() => setScheduleSelectedDate(new Date())}
+                      style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '0.5rem 1rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer' }}
+                    >
+                      TODAY
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const d = new Date(scheduleSelectedDate);
+                        if (scheduleViewType === 'month') d.setMonth(d.getMonth() + 1);
+                        else if (scheduleViewType === 'week') d.setDate(d.getDate() + 7);
+                        else d.setDate(d.getDate() + 1);
+                        setScheduleSelectedDate(d);
+                      }}
+                      style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '0.5rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Calendar Container */}
+              <div style={{ background: 'white', borderRadius: '2rem', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
+                <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>
+                    {scheduleSelectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </h3>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '0.25rem 0.75rem', borderRadius: '99px', background: '#e0f2fe', color: '#0369a1' }}>
+                      {myEvents.length} Total Schedules
+                    </span>
+                  </div>
+                </div>
+
+                {scheduleViewType === 'month' && renderScheduleMonthView()}
+                {scheduleViewType === 'week' && renderScheduleWeekView()}
+                {scheduleViewType === 'day' && renderScheduleDayView()}
+              </div>
+
+              {/* Event details popup modal */}
+              <AnimatePresence>
+                {selectedScheduleEvent && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{
+                      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                      background: 'rgba(15, 23, 42, 0.4)', zIndex: 1000,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      backdropFilter: 'blur(8px)', padding: '1rem'
+                    }}
+                    onClick={() => setSelectedScheduleEvent(null)}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 20 }}
+                      animate={{ scale: 1, y: 0 }}
+                      exit={{ scale: 0.9, y: 20 }}
+                      style={{
+                        background: 'white', width: '100%', maxWidth: '500px',
+                        borderRadius: '2.5rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+                        border: '1px solid #e2e8f0', padding: '2.5rem', position: 'relative'
+                      }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      <button 
+                        onClick={() => setSelectedScheduleEvent(null)}
+                        style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', background: '#f1f5f9', border: 'none', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#64748b' }}
+                      >
+                        <X size={18} />
+                      </button>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div style={{ 
+                          width: '48px', height: '48px', borderRadius: '1rem', 
+                          background: `${selectedScheduleEvent.color}15`, 
+                          color: selectedScheduleEvent.color, 
+                          display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                        }}>
+                          <CalendarIcon size={24} />
+                        </div>
+                        <div>
+                          <span style={{ 
+                            fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase', 
+                            color: selectedScheduleEvent.color, background: `${selectedScheduleEvent.color}15`,
+                            padding: '0.25rem 0.75rem', borderRadius: '99px'
+                          }}>
+                            {selectedScheduleEvent.type}
+                          </span>
+                          <h4 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: '0.25rem 0 0 0' }}>
+                            {selectedScheduleEvent.title}
+                          </h4>
+                        </div>
+                      </div>
+
+                      <div style={{ background: '#f8fafc', padding: '1.5rem', borderRadius: '1.5rem', border: '1px solid #f1f5f9', display: 'grid', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <Clock size={16} style={{ color: '#94a3b8', marginTop: '2px' }} />
+                          <div>
+                            <div style={{ fontSize: '0.7rem', fontWeight: '800', color: '#94a3b8' }}>DATE & TIME</div>
+                            <div style={{ fontSize: '0.9rem', fontWeight: '700', color: '#1e293b' }}>
+                              {selectedScheduleEvent.dateStr} at {selectedScheduleEvent.timeStr}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h5 style={{ fontSize: '0.8rem', fontWeight: '800', color: '#94a3b8', margin: '0 0 0.5rem 0' }}>DETAILS</h5>
+                        <p style={{ fontSize: '0.9rem', color: '#475569', lineHeight: '1.6', margin: 0 }}>
+                          {selectedScheduleEvent.details}
+                        </p>
+                      </div>
+
+                      <button 
+                        onClick={() => setSelectedScheduleEvent(null)}
+                        style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '1.25rem', background: '#1e293b', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
+                      >
+                        Dismiss
+                      </button>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </section>
           )}
 
