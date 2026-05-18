@@ -96,6 +96,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const [scheduleViewType, setScheduleViewType] = useState<'month' | 'week' | 'day'>('month');
   const [scheduleSelectedDate, setScheduleSelectedDate] = useState(new Date());
   const [selectedScheduleEvent, setSelectedScheduleEvent] = useState<any | null>(null);
+  const [doneEvents, setDoneEvents] = useState<Set<string>>(new Set());
 
   React.useEffect(() => {
     const syncWithUrl = () => {
@@ -506,31 +507,37 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                   {date.getDate()}
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px', scrollbarWidth: 'none' }}>
-                  {dayEvents.map(ev => (
-                    <div 
-                      key={ev.id} 
-                      onClick={(e) => { e.stopPropagation(); setSelectedScheduleEvent(ev); }}
-                      style={{ 
-                        fontSize: '0.7rem', 
-                        background: `${ev.color}15`, 
-                        color: ev.color, 
-                        borderLeft: `3px solid ${ev.color}`,
-                        padding: '3px 6px', 
-                        borderRadius: '4px', 
-                        cursor: 'pointer',
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        fontWeight: '700',
-                        transition: 'transform 0.1s'
-                      }}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
-                    >
-                      <span style={{ fontSize: '0.65rem', marginRight: '4px', opacity: 0.8 }}>{ev.timeStr}</span>
-                      {ev.title}
-                    </div>
-                  ))}
+                  {dayEvents.map(ev => {
+                    const evDone = doneEvents.has(String(ev.id));
+                    const evColor = evDone ? '#6b7280' : ev.color;
+                    return (
+                      <div
+                        key={ev.id}
+                        onClick={(e) => { e.stopPropagation(); setSelectedScheduleEvent(ev); }}
+                        style={{
+                          fontSize: '0.7rem',
+                          background: `${evColor}15`,
+                          color: evColor,
+                          borderLeft: `3px solid ${evColor}`,
+                          padding: '3px 6px',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          fontWeight: '700',
+                          transition: 'transform 0.1s',
+                          textDecoration: evDone ? 'line-through' : 'none',
+                          opacity: evDone ? 0.6 : 1
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                      >
+                        <span style={{ fontSize: '0.65rem', marginRight: '4px', opacity: 0.8 }}>{ev.timeStr}</span>
+                        {ev.title}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -631,17 +638,19 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                     heightVal = 32;
                   }
 
+                  const evDoneW = doneEvents.has(String(ev.id));
+                  const evColorW = evDoneW ? '#6b7280' : ev.color;
                   return (
-                    <div 
-                      key={ev.id} 
+                    <div
+                      key={ev.id}
                       onClick={() => setSelectedScheduleEvent(ev)}
-                      style={{ 
+                      style={{
                         position: 'absolute',
                         top: `${topPercent}px`,
                         left: '4px',
                         right: '4px',
                         height: `${heightVal}px`,
-                        background: ev.color,
+                        background: evColorW,
                         color: 'white',
                         padding: '4px 6px',
                         borderRadius: '6px',
@@ -657,13 +666,14 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         flexDirection: 'column',
                         justifyContent: 'center',
                         border: '1px solid rgba(255,255,255,0.15)',
-                        transition: 'transform 0.15s ease'
+                        transition: 'transform 0.15s ease',
+                        opacity: evDoneW ? 0.6 : 1
                       }}
                       onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'}
                       onMouseLeave={(e) => e.currentTarget.style.transform = 'none'}
                     >
                       <div style={{ fontSize: '0.55rem', opacity: 0.9, lineHeight: 1 }}>{ev.timeStr}</div>
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</div>
+                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', textDecoration: evDoneW ? 'line-through' : 'none' }}>{ev.title}</div>
                     </div>
                   );
                 })}
@@ -692,61 +702,66 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
 
         {dayEvents.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {dayEvents.map(ev => (
-              <div 
-                key={ev.id} 
-                onClick={() => setSelectedScheduleEvent(ev)}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '1.5rem', 
-                  padding: '1.25rem 1.5rem', 
-                  background: '#f8fafc', 
-                  borderRadius: '1.25rem', 
-                  border: '1px solid #e2e8f0', 
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'translateY(-2px)';
-                  e.currentTarget.style.borderColor = ev.color;
-                  e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.03)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'none';
-                  e.currentTarget.style.borderColor = '#e2e8f0';
-                  e.currentTarget.style.boxShadow = 'none';
-                }}
-              >
-                <div style={{ 
-                  width: '70px', 
-                  textAlign: 'center', 
-                  fontSize: '0.8rem', 
-                  fontWeight: '900', 
-                  color: ev.color, 
-                  background: `${ev.color}10`,
-                  padding: '0.5rem',
-                  borderRadius: '0.75rem'
-                }}>
-                  {ev.timeStr}
+            {dayEvents.map(ev => {
+              const evDoneD = doneEvents.has(String(ev.id));
+              const evColorD = evDoneD ? '#6b7280' : ev.color;
+              return (
+                <div
+                  key={ev.id}
+                  onClick={() => setSelectedScheduleEvent(ev)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1.5rem',
+                    padding: '1.25rem 1.5rem',
+                    background: '#f8fafc',
+                    borderRadius: '1.25rem',
+                    border: '1px solid #e2e8f0',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    opacity: evDoneD ? 0.6 : 1
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.borderColor = evColorD;
+                    e.currentTarget.style.boxShadow = '0 6px 12px rgba(0,0,0,0.03)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.borderColor = '#e2e8f0';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{
+                    width: '70px',
+                    textAlign: 'center',
+                    fontSize: '0.8rem',
+                    fontWeight: '900',
+                    color: evColorD,
+                    background: `${evColorD}10`,
+                    padding: '0.5rem',
+                    borderRadius: '0.75rem'
+                  }}>
+                    {ev.timeStr}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', margin: 0, textDecoration: evDoneD ? 'line-through' : 'none' }}>{ev.title}</h4>
+                    <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>{ev.details}</p>
+                  </div>
+                  <div style={{
+                    fontSize: '0.7rem',
+                    fontWeight: '800',
+                    textTransform: 'uppercase',
+                    color: evColorD,
+                    background: `${evColorD}15`,
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '99px'
+                  }}>
+                    {ev.type}
+                  </div>
                 </div>
-                <div style={{ flex: 1 }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>{ev.title}</h4>
-                  <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '0.25rem 0 0 0' }}>{ev.details}</p>
-                </div>
-                <div style={{ 
-                  fontSize: '0.7rem', 
-                  fontWeight: '800', 
-                  textTransform: 'uppercase', 
-                  color: ev.color, 
-                  background: `${ev.color}15`, 
-                  padding: '0.25rem 0.75rem', 
-                  borderRadius: '99px' 
-                }}>
-                  {ev.type}
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div style={{ textAlign: 'center', padding: '4rem 1rem', background: '#f8fafc', borderRadius: '1.5rem', border: '1px solid #e2e8f0' }}>
@@ -1441,7 +1456,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           }}>
                             {selectedScheduleEvent.type}
                           </span>
-                          <h4 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: '0.25rem 0 0 0' }}>
+                          <h4 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: '0.25rem 0 0 0', textDecoration: doneEvents.has(String(selectedScheduleEvent.id)) ? 'line-through' : 'none', opacity: doneEvents.has(String(selectedScheduleEvent.id)) ? 0.5 : 1 }}>
                             {selectedScheduleEvent.title}
                           </h4>
                         </div>
@@ -1466,12 +1481,28 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         </p>
                       </div>
 
-                      <button 
-                        onClick={() => setSelectedScheduleEvent(null)}
-                        style={{ width: '100%', marginTop: '2rem', padding: '1rem', borderRadius: '1.25rem', background: '#1e293b', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
-                      >
-                        Dismiss
-                      </button>
+                      <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem' }}>
+                        <button
+                          onClick={() => {
+                            const id = String(selectedScheduleEvent.id);
+                            setDoneEvents(prev => {
+                              const next = new Set(prev);
+                              if (next.has(id)) next.delete(id); else next.add(id);
+                              return next;
+                            });
+                            setSelectedScheduleEvent(null);
+                          }}
+                          style={{ flex: 1, padding: '1rem', borderRadius: '1.25rem', background: '#22c55e', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
+                        >
+                          Done
+                        </button>
+                        <button
+                          onClick={() => setSelectedScheduleEvent(null)}
+                          style={{ flex: 1, padding: '1rem', borderRadius: '1.25rem', background: '#1e293b', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
+                        >
+                          Dismiss
+                        </button>
+                      </div>
                     </motion.div>
                   </motion.div>
                 )}
