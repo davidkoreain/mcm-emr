@@ -506,7 +506,20 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             <div>
               <h4 style={{ fontSize: '0.95rem', fontWeight: '800', color: '#0f172a', marginBottom: '0.75rem' }}>Reason for Visit</h4>
               <div style={{ background: '#f8fafc', padding: '1.25rem', borderRadius: '0.75rem', fontSize: '0.95rem', color: '#334155', borderLeft: '4px solid #3b82f6', lineHeight: 1.6 }}>
-                {selectedPatient.diagnosisSummary || 'Patient reports persistent headache and fatigue for 3 days. History of hypertension. Requires review of current medication plan.'}
+                {(() => {
+                  if (!selectedPatient.diagnosisSummary) {
+                    return 'Patient reports persistent headache and fatigue for 3 days. History of hypertension. Requires review of current medication plan.';
+                  }
+                  try {
+                    const parsed = JSON.parse(selectedPatient.diagnosisSummary);
+                    if (parsed && typeof parsed === 'object') {
+                      return parsed.subjective || parsed.diagnosis || parsed.notes || 'Routine check-up / Regular follow-up visit.';
+                    }
+                  } catch {
+                    return selectedPatient.diagnosisSummary;
+                  }
+                  return selectedPatient.diagnosisSummary;
+                })()}
               </div>
             </div>
 
