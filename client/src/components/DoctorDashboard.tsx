@@ -22,7 +22,7 @@ interface Appointment {
 
 
 const HOURS = Array.from({ length: 14 }, (_, i) => i + 7); // 7:00 to 20:00
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 interface DoctorDashboardProps {
   selectedMrn?: string | null;
@@ -57,7 +57,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
   const weekDays = useMemo(() => {
     const start = new Date(selectedDate);
-    start.setDate(start.getDate() - (start.getDay() === 0 ? 6 : start.getDay() - 1));
+    start.setDate(start.getDate() - start.getDay()); // Sunday start
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
       d.setDate(d.getDate() + i);
@@ -67,7 +67,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
   const monthDays = useMemo(() => {
     const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-    const dayOfWeek = start.getDay() === 0 ? 6 : start.getDay() - 1; // Monday start
+    const dayOfWeek = start.getDay(); // Sunday start
     start.setDate(start.getDate() - dayOfWeek);
     
     return Array.from({ length: 42 }, (_, i) => {
@@ -242,12 +242,23 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
       <div style={{ minWidth: '850px', display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)', borderBottom: '1px solid #e2e8f0', background: 'white' }}>
           <div style={{ padding: '1rem', textAlign: 'center', fontWeight: '600', color: '#64748b', borderRight: '1px solid #f1f5f9' }}>Time</div>
-          {weekDays.map((date, i) => (
-            <div key={i} style={{ padding: '1rem', textAlign: 'center', borderRight: i < 6 ? '1px solid #f1f5f9' : 'none', background: date.toDateString() === new Date().toDateString() ? '#f0f9ff' : 'transparent' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: '700', color: date.toDateString() === new Date().toDateString() ? '#2563eb' : '#1e293b' }}>{DAYS[i]}</div>
-              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{date.getDate()}.{date.getMonth() + 1}</div>
-            </div>
-          ))}
+          {weekDays.map((date, i) => {
+            const isSunday = date.getDay() === 0;
+            const isToday = date.toDateString() === new Date().toDateString();
+            return (
+              <div key={i} style={{ padding: '1rem', textAlign: 'center', borderRight: i < 6 ? '1px solid #f1f5f9' : 'none', background: isToday ? '#f0f9ff' : 'transparent' }}>
+                <div style={{ 
+                  fontSize: '0.85rem', 
+                  fontWeight: '700', 
+                  color: isSunday ? '#ef4444' : (isToday ? '#2563eb' : '#1e293b') 
+                }}>
+                  <span className="desktop-day">{DAYS[i]}</span>
+                  <span className="mobile-day">{DAYS[i][0]}</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: isSunday ? '#ef4444' : '#94a3b8' }}>{date.getDate()}.{date.getMonth() + 1}</div>
+              </div>
+            );
+          })}
         </div>
         <div ref={scrollRef} className="calendar-body-scroll" style={{ position: 'relative', overflowY: 'auto', flex: 1, scrollbarWidth: 'none' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '80px repeat(7, 1fr)', height: `${HOURS.length * 80}px` }}>
@@ -301,17 +312,27 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const renderMonthView = () => (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #e2e8f0', background: 'white' }}>
-        {DAYS.map((day, i) => (
-          <div key={i} style={{ padding: '0.75rem 0.25rem', textAlign: 'center', fontSize: '0.75rem', fontWeight: '700', color: '#64748b' }}>
-            <span className="desktop-day">{day}</span>
-            <span className="mobile-day">{day[0]}</span>
-          </div>
-        ))}
+        {DAYS.map((day, i) => {
+          const isSunday = i === 0;
+          return (
+            <div key={i} style={{ 
+              padding: '0.75rem 0.25rem', 
+              textAlign: 'center', 
+              fontSize: '0.75rem', 
+              fontWeight: '700', 
+              color: isSunday ? '#ef4444' : '#64748b' 
+            }}>
+              <span className="desktop-day">{day}</span>
+              <span className="mobile-day">{day[0]}</span>
+            </div>
+          );
+        })}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: 'repeat(6, 1fr)', flex: 1 }}>
         {monthDays.map((date, i) => {
           const isSelectedMonth = date.getMonth() === selectedDate.getMonth();
           const isToday = date.toDateString() === new Date().toDateString();
+          const isSunday = date.getDay() === 0;
           const apps = displayAppointments.filter(app => app.date.toDateString() === date.toDateString());
           
           return (
@@ -330,7 +351,11 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               <div style={{ 
                 fontSize: '0.75rem', 
                 fontWeight: '700', 
-                color: isToday ? '#2563eb' : isSelectedMonth ? '#1e293b' : '#cbd5e1',
+                color: isToday 
+                  ? '#2563eb' 
+                  : (isSunday 
+                      ? (isSelectedMonth ? '#ef4444' : '#fca5a5') 
+                      : (isSelectedMonth ? '#1e293b' : '#cbd5e1')),
                 textAlign: 'right'
               }}>
                 {date.getDate()}
