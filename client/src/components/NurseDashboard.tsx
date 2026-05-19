@@ -76,10 +76,10 @@ const fmt = (iso: string) => {
 const NurseDashboard: React.FC = () => {
   const { patients, updatePatient, addVitals } = useEMR();
 
-  // 입원 대기 환자 (Register Patient for inpatient Bed Placement 체크 및 미배정 상태)
+  // Inpatient Bed Placement requested patients (unassigned ward)
   const pendingPlacement = patients.filter(p => p.bedPlacementRequested || (p.status === 'Inpatient' && !p.assignedWard));
   
-  // 현재 입원 중인 환자 (병동 배정 완료)
+  // Active inpatients with assigned ward
   const activeInpatients = patients.filter(p => p.status === 'Admitted' || (p.status === 'Inpatient' && p.assignedWard));
 
   const [selectedMrn, setSelectedMrn] = useState<string | null>(
@@ -95,13 +95,13 @@ const NurseDashboard: React.FC = () => {
   const [newTaskTime, setNewTaskTime] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'intensive'>('all');
 
-  // 병상 배정 상태
+  // Allocation state
   const [allocationPatient, setAllocationPatient] = useState<Patient | null>(null);
   const [allocWard, setAllocWard] = useState('Ward A');
   const [allocBed, setAllocBed] = useState('');
   const [allocating, setAllocating] = useState(false);
 
-  // 퇴원 처리 상태
+  // Discharge processing state
   const [discharging, setDischarging] = useState<string | null>(null);
 
   const selected = selectedMrn ? patients.find(p => p.mrn === selectedMrn) ?? null : null;
@@ -116,10 +116,10 @@ const NurseDashboard: React.FC = () => {
 
   const nd = selectedMrn ? getNurse(selectedMrn) : null;
 
-  // 오늘 날짜 문자열 (YYYY-MM-DD)
+  // Today Date String (YYYY-MM-DD)
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // 전체 통계 집계
+  // Statistics calculation
   const totalInpatientsCount = patients.filter(p => p.status === 'Admitted').length;
   const dailyNewCount = patients.filter(p => p.actualAdmissionDate === todayStr).length;
   const dailyDischargedCount = patients.filter(p => p.actualDischargeDate === todayStr || p.status === 'Discharged' && p.actualDischargeDate === todayStr).length;
@@ -134,7 +134,7 @@ const NurseDashboard: React.FC = () => {
     acc + (nurseData[p.mrn]?.tasks ?? []).filter(t => !t.completed).length, 0
   );
 
-  // 병상 배정 기능 실행
+  // Bed allocation handler
   const handleAllocateBed = async () => {
     if (!allocationPatient || !allocBed.trim()) return;
     setAllocating(true);
@@ -156,7 +156,7 @@ const NurseDashboard: React.FC = () => {
     }
   };
 
-  // 퇴원 처리 기능 실행
+  // Discharge handler
   const handleDischargePatient = async (mrn: string) => {
     if (!window.confirm('Are you sure you want to discharge this patient?')) return;
     setDischarging(mrn);
@@ -176,7 +176,7 @@ const NurseDashboard: React.FC = () => {
     }
   };
 
-  // 집중관리 상태 토글
+  // Focus Care status toggle
   const handleToggleIntensiveCare = async (patient: Patient) => {
     try {
       await updatePatient(patient.mrn, {
@@ -187,7 +187,7 @@ const NurseDashboard: React.FC = () => {
     }
   };
 
-  // 간호 기록/행위 액션
+  // Nursing log actions
   const submitVitals = async () => {
     if (!selectedMrn) return;
     const record: VitalsRecord = {
@@ -247,7 +247,7 @@ const NurseDashboard: React.FC = () => {
     });
   };
 
-  // 필터 적용된 입원 환자 리스트
+  // Filtered active inpatient list
   const filteredInpatients = activeInpatients.filter(p => {
     if (filterMode === 'intensive') return p.isIntensiveCare;
     return true;
@@ -276,10 +276,10 @@ const NurseDashboard: React.FC = () => {
       {/* Stats Widgets */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         {[
-          { label: '전체 입원 환자 (Total)', value: totalInpatientsCount, icon: <BedDouble size={20} />, color: '#0891b2', bg: '#ecfeff' },
-          { label: '금일 신규 입원 (New)', value: dailyNewCount, icon: <Sparkles size={20} />, color: '#10b981', bg: '#ecfdf5' },
-          { label: '금일 퇴원 환자 (Discharged)', value: dailyDischargedCount, icon: <LogOut size={20} />, color: '#6366f1', bg: '#e0e7ff' },
-          { label: '집중관리 환자 (Focus Care)', value: intensiveCareCount, icon: <ShieldAlert size={20} />, color: '#f43f5e', bg: '#fff1f2' },
+          { label: 'Total Inpatients', value: totalInpatientsCount, icon: <BedDouble size={20} />, color: '#0891b2', bg: '#ecfeff' },
+          { label: 'Daily New Admissions', value: dailyNewCount, icon: <Sparkles size={20} />, color: '#10b981', bg: '#ecfdf5' },
+          { label: 'Daily Discharges', value: dailyDischargedCount, icon: <LogOut size={20} />, color: '#6366f1', bg: '#e0e7ff' },
+          { label: 'Focus Care Patients', value: intensiveCareCount, icon: <ShieldAlert size={20} />, color: '#f43f5e', bg: '#fff1f2' },
         ].map((s, idx) => (
           <div key={idx} style={{
             ...cardStyle,
@@ -312,12 +312,12 @@ const NurseDashboard: React.FC = () => {
       {/* Main Grid Workspace */}
       <div style={{ display: 'grid', gridTemplateColumns: '320px 320px 1fr', gap: '1.25rem', flex: 1, minHeight: 0 }}>
         
-        {/* COLUMN 1: Bed Placement Waiting List (입원 대기 환자) */}
+        {/* COLUMN 1: Bed Placement Waiting List */}
         <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
             <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
               <Clock size={18} style={{ color: '#0891b2' }} />
-              입원 배정 대기 ({pendingPlacement.length})
+              Bed Placement Pending ({pendingPlacement.length})
             </div>
             <span style={badgeStyle('#e0f2fe', '#0369a1')}>Placement Request</span>
           </div>
@@ -326,7 +326,7 @@ const NurseDashboard: React.FC = () => {
             {pendingPlacement.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
                 <CheckCircle size={32} style={{ color: '#10b981', marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '0.8rem', fontWeight: '500' }}>대기 중인 입원 환자가 없습니다.</div>
+                <div style={{ fontSize: '0.8rem', fontWeight: '500' }}>No patients waiting for placement.</div>
               </div>
             ) : (
               pendingPlacement.map(p => (
@@ -365,7 +365,7 @@ const NurseDashboard: React.FC = () => {
                         boxShadow: '0 2px 4px rgba(8, 145, 178, 0.2)',
                       }}
                     >
-                      <Plus size={12} /> 병상 배정
+                      <Plus size={12} /> Allocate Bed
                     </button>
                   </div>
                 </div>
@@ -382,7 +382,7 @@ const NurseDashboard: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
               <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
                 <BedDouble size={18} style={{ color: '#6366f1' }} />
-                병동 환자 ({filteredInpatients.length})
+                Ward Patients ({filteredInpatients.length})
               </div>
             </div>
             
@@ -398,7 +398,7 @@ const NurseDashboard: React.FC = () => {
                   cursor: 'pointer', transition: 'all 0.15s',
                 }}
               >
-                전체 병동 ({activeInpatients.length})
+                All Wards ({activeInpatients.length})
               </button>
               <button
                 onClick={() => setFilterMode('intensive')}
@@ -411,7 +411,7 @@ const NurseDashboard: React.FC = () => {
                   transition: 'all 0.15s',
                 }}
               >
-                <ShieldAlert size={12} /> 집중관리 ({intensiveCareCount})
+                <ShieldAlert size={12} /> Focus Care ({intensiveCareCount})
               </button>
             </div>
           </div>
@@ -421,7 +421,7 @@ const NurseDashboard: React.FC = () => {
             {filteredInpatients.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#94a3b8' }}>
                 <AlertCircle size={28} style={{ marginBottom: '0.5rem', color: '#cbd5e1' }} />
-                <div style={{ fontSize: '0.8rem' }}>입원 중인 환자가 없습니다.</div>
+                <div style={{ fontSize: '0.8rem' }}>No active inpatients in this ward.</div>
               </div>
             ) : (
               filteredInpatients.map(p => {
@@ -450,7 +450,7 @@ const NurseDashboard: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                           <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
                           {p.isIntensiveCare && (
-                            <span style={badgeStyle('#ffe4e6', '#f43f5e')}>집중</span>
+                            <span style={badgeStyle('#ffe4e6', '#f43f5e')}>Focus</span>
                           )}
                         </div>
                         <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn}</div>
@@ -459,7 +459,7 @@ const NurseDashboard: React.FC = () => {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingLeft: '2.6rem' }}>
                       <span style={{ fontSize: '0.72rem', color: '#0369a1', fontWeight: '700' }}>
-                        📍 {p.assignedWard || p.ward || '미배정'} - {p.assignedBed || '—'}호
+                        📍 {p.assignedWard || p.ward || 'Unassigned'} - Room {p.assignedBed || '—'}
                       </span>
                       {dueMedsCount > 0 && (
                         <span style={badgeStyle('#fee2e2', '#ef4444')}>
@@ -480,7 +480,7 @@ const NurseDashboard: React.FC = () => {
             <div style={{ ...cardStyle, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
               <div style={{ textAlign: 'center', color: '#cbd5e1' }}>
                 <BedDouble size={48} style={{ color: '#94a3b8', marginBottom: '0.75rem' }} />
-                <p style={{ fontWeight: '600', color: '#64748b', fontSize: '0.9rem' }}>병동 환자를 선택하여 간호 관리를 시작하세요.</p>
+                <p style={{ fontWeight: '600', color: '#64748b', fontSize: '0.9rem' }}>Select a ward patient to manage nursing care.</p>
               </div>
             </div>
           ) : (
@@ -525,7 +525,7 @@ const NurseDashboard: React.FC = () => {
                     }}
                   >
                     <Star size={14} fill={selected.isIntensiveCare ? '#e11d48' : 'none'} />
-                    {selected.isIntensiveCare ? '집중관리 취소' : '집중관리 지정'}
+                    {selected.isIntensiveCare ? 'Remove Focus Care' : 'Set Focus Care'}
                   </button>
                   <button
                     onClick={() => handleDischargePatient(selected.mrn)}
@@ -546,7 +546,7 @@ const NurseDashboard: React.FC = () => {
                     }}
                   >
                     <LogOut size={14} />
-                    {discharging === selected.mrn ? 'Processing…' : '퇴원 수속'}
+                    {discharging === selected.mrn ? 'Discharging…' : 'Discharge'}
                   </button>
                 </div>
               </div>
@@ -564,17 +564,17 @@ const NurseDashboard: React.FC = () => {
                     {v.heartRate    && <span>❤️ Pulse: <strong>{v.heartRate} bpm</strong></span>}
                     {v.bpSystolic  && <span>💉 BP: <strong>{v.bpSystolic}/{v.bpDiastolic} mmHg</strong></span>}
                     {v.spo2        && <span>🫁 SpO2: <strong>{v.spo2}%</strong></span>}
-                    <span style={{ color: '#94a3b8', marginLeft: 'auto' }}>최근 측정: {fmt(v.recordedAt)}</span>
+                    <span style={{ color: '#94a3b8', marginLeft: 'auto' }}>Last recorded: {fmt(v.recordedAt)}</span>
                   </div>
                 );
               })()}
 
               {/* Tabs Section */}
               <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '1rem' }}>
-                {tabBtn('vitals', <Activity size={15} />, 'Vitals 기록')}
-                {tabBtn('mar',    <Pill size={15} />,     '투약 기록 (MAR)')}
-                {tabBtn('notes',  <ClipboardList size={15} />, '간호 기록 (Notes)')}
-                {tabBtn('tasks',  <CheckSquare size={15} />,   '수행 태스크')}
+                {tabBtn('vitals', <Activity size={15} />, 'Record Vitals')}
+                {tabBtn('mar',    <Pill size={15} />,     'MAR Log')}
+                {tabBtn('notes',  <ClipboardList size={15} />, 'Nursing Notes')}
+                {tabBtn('tasks',  <CheckSquare size={15} />,   'Care Tasks')}
               </div>
 
               {/* Tab Content Panels */}
@@ -584,17 +584,17 @@ const NurseDashboard: React.FC = () => {
                 {tab === 'vitals' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div style={{ background: '#f8fafc', borderRadius: '0.75rem', padding: '1rem', border: '1px solid #e2e8f0' }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', marginBottom: '0.75rem' }}>새 바이탈 기록하기</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', marginBottom: '0.75rem' }}>Record New Vitals</div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
                         {[
-                          { key: 'temperature',     label: '체온 (°C)',    ph: '36.5' },
-                          { key: 'heartRate',       label: '맥박 (bpm)',   ph: '72' },
-                          { key: 'respiratoryRate', label: '호흡수 (회)',    ph: '16' },
+                          { key: 'temperature',     label: 'Temp (°C)',    ph: '36.5' },
+                          { key: 'heartRate',       label: 'Heart Rate (bpm)',   ph: '72' },
+                          { key: 'respiratoryRate', label: 'Resp Rate (/min)',    ph: '16' },
                           { key: 'spo2',            label: 'SpO2 (%)',     ph: '98' },
-                          { key: 'bpSystolic',      label: '수축기혈압',  ph: '120' },
-                          { key: 'bpDiastolic',     label: '이완기혈압', ph: '80' },
-                          { key: 'weightKg',        label: '체중 (kg)',  ph: '70' },
-                          { key: 'heightCm',        label: '신장 (cm)',  ph: '170' },
+                          { key: 'bpSystolic',      label: 'BP Systolic',  ph: '120' },
+                          { key: 'bpDiastolic',     label: 'BP Diastolic', ph: '80' },
+                          { key: 'weightKg',        label: 'Weight (kg)',  ph: '70' },
+                          { key: 'heightCm',        label: 'Height (cm)',  ph: '170' },
                         ].map(({ key, label: l, ph }) => (
                           <div key={key}>
                             {lbl(l)}
@@ -616,7 +616,7 @@ const NurseDashboard: React.FC = () => {
                             border: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer',
                           }}
                         >
-                          {savingVitals ? '저장 중…' : '기록 저장'}
+                          {savingVitals ? 'Saving…' : 'Save Vitals'}
                         </button>
                       </div>
                     </div>
@@ -624,16 +624,16 @@ const NurseDashboard: React.FC = () => {
                     {/* Vitals History */}
                     {selected.vitals.length > 0 && (
                       <div>
-                        <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', marginBottom: '0.5rem' }}>바이탈 히스토리</div>
+                        <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', marginBottom: '0.5rem' }}>Vitals History</div>
                         <div style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', overflow: 'hidden' }}>
                           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
                             <thead>
                               <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                                <th style={{ padding: '0.6rem' }}>측정시간</th>
-                                <th style={{ padding: '0.6rem' }}>체온</th>
-                                <th style={{ padding: '0.6rem' }}>맥박</th>
-                                <th style={{ padding: '0.6rem' }}>호흡</th>
-                                <th style={{ padding: '0.6rem' }}>혈압</th>
+                                <th style={{ padding: '0.6rem' }}>Recorded Time</th>
+                                <th style={{ padding: '0.6rem' }}>Temp</th>
+                                <th style={{ padding: '0.6rem' }}>Heart Rate</th>
+                                <th style={{ padding: '0.6rem' }}>Resp</th>
+                                <th style={{ padding: '0.6rem' }}>BP</th>
                                 <th style={{ padding: '0.6rem' }}>SpO2</th>
                               </tr>
                             </thead>
@@ -661,11 +661,11 @@ const NurseDashboard: React.FC = () => {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     {(selected.medications ?? []).length === 0 ? (
                       <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', fontSize: '0.85rem' }}>
-                        처방된 약물이 없습니다.
+                        No active medications prescribed.
                       </div>
                     ) : (
                       <>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>투약 스케줄 관리</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>Medication Schedule</div>
                         {(selected.medications ?? []).map(med => {
                           const givenEntry = nd.mar.find(m => m.medId === med.id);
                           const given = !!givenEntry;
@@ -686,7 +686,7 @@ const NurseDashboard: React.FC = () => {
                                 </div>
                                 {given && givenEntry && (
                                   <div style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.35rem', fontWeight: '600' }}>
-                                    ✅ 투약 완료: {fmt(givenEntry.administeredAt)}
+                                    ✅ Administered at: {fmt(givenEntry.administeredAt)}
                                   </div>
                                 )}
                               </div>
@@ -720,7 +720,7 @@ const NurseDashboard: React.FC = () => {
                       <textarea
                         value={noteText}
                         onChange={e => setNoteText(e.target.value)}
-                        placeholder="간호 처치 내역 및 특이사항을 기록해 주세요…"
+                        placeholder="Enter nursing notes and observations here…"
                         rows={3}
                         style={{ ...inputStyle, resize: 'vertical' }}
                       />
@@ -733,7 +733,7 @@ const NurseDashboard: React.FC = () => {
                             border: 'none', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer',
                           }}
                         >
-                          기록 등록
+                          Add Note
                         </button>
                       </div>
                     </div>
@@ -741,7 +741,7 @@ const NurseDashboard: React.FC = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
                       {nd.notes.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                          간호 기록이 아직 없습니다.
+                          No nursing notes recorded yet.
                         </div>
                       ) : (
                         [...nd.notes].reverse().map(note => (
@@ -761,7 +761,7 @@ const NurseDashboard: React.FC = () => {
                 {tab === 'tasks' && nd && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                     <div>
-                      <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#475569', marginBottom: '0.5rem' }}>자주 쓰는 케어 액션</div>
+                      <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#475569', marginBottom: '0.5rem' }}>Quick Care Presets</div>
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.85rem' }}>
                         {PRESET_TASKS.map(t => (
                           <button
@@ -782,7 +782,7 @@ const NurseDashboard: React.FC = () => {
                           value={newTask}
                           onChange={e => setNewTask(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && addTask(newTask)}
-                          placeholder="커스텀 케어 태스크 추가…"
+                          placeholder="Add custom care task…"
                           style={{ ...inputStyle, flex: 1 }}
                         />
                         <input
@@ -806,7 +806,7 @@ const NurseDashboard: React.FC = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       {nd.tasks.length === 0 ? (
                         <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                          지정된 케어 태스크가 없습니다. 프리셋에서 선택하여 활성화할 수 있습니다.
+                          No care tasks assigned. Select presets or create a custom task.
                         </div>
                       ) : (
                         nd.tasks.map(task => (
@@ -835,8 +835,8 @@ const NurseDashboard: React.FC = () => {
                               </div>
                               {(task.dueTime || task.completedAt) && (
                                 <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.15rem', display: 'flex', gap: '0.75rem' }}>
-                                  {task.dueTime && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Clock size={10} /> 예정시간: {task.dueTime}</span>}
-                                  {task.completedAt && <span>완료일시: {fmt(task.completedAt)}</span>}
+                                  {task.dueTime && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Clock size={10} /> Due: {task.dueTime}</span>}
+                                  {task.completedAt && <span>Done: {fmt(task.completedAt)}</span>}
                                 </div>
                               )}
                             </div>
@@ -869,7 +869,7 @@ const NurseDashboard: React.FC = () => {
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
               <BedDouble size={22} style={{ color: '#0891b2' }} />
-              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>병동 및 병상 배정</h3>
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>Ward & Bed Allocation</h3>
             </div>
             
             <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.75rem', marginBottom: '1.25rem' }}>
@@ -882,24 +882,24 @@ const NurseDashboard: React.FC = () => {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
               <div>
-                {lbl('병동 선택 (Ward)')}
+                {lbl('Select Ward')}
                 <select
                   value={allocWard}
                   onChange={e => setAllocWard(e.target.value)}
                   style={{ ...inputStyle, cursor: 'pointer' }}
                 >
-                  <option value="Ward A">Ward A (일반 병동 A)</option>
-                  <option value="Ward B">Ward B (일반 병동 B)</option>
-                  <option value="ICU">ICU (중환자실)</option>
-                  <option value="Pediatrics">Pediatrics (소아청소년과)</option>
+                  <option value="Ward A">Ward A (General Ward A)</option>
+                  <option value="Ward B">Ward B (General Ward B)</option>
+                  <option value="ICU">ICU (Intensive Care Unit)</option>
+                  <option value="Pediatrics">Pediatrics (Pediatric Ward)</option>
                 </select>
               </div>
 
               <div>
-                {lbl('병상 번호 (Bed Number)')}
+                {lbl('Bed Number / Room')}
                 <input
                   type="text"
-                  placeholder="예: 101-A, 305"
+                  placeholder="e.g. 101-A, 305"
                   value={allocBed}
                   onChange={e => setAllocBed(e.target.value)}
                   style={inputStyle}
@@ -915,7 +915,7 @@ const NurseDashboard: React.FC = () => {
                   border: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer'
                 }}
               >
-                취소
+                Cancel
               </button>
               <button
                 onClick={handleAllocateBed}
@@ -926,7 +926,7 @@ const NurseDashboard: React.FC = () => {
                   opacity: (!allocBed.trim() || allocating) ? 0.6 : 1
                 }}
               >
-                {allocating ? '배정 중…' : '배정 완료'}
+                {allocating ? 'Allocating…' : 'Complete Allocation'}
               </button>
             </div>
           </div>

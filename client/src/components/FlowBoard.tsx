@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Activity, Clock, User, ChevronRight } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import Avatar from './Avatar';
+import HospitalCalendar from './HospitalCalendar';
 
 interface FlowBoardProps {
   onStartConsult: (patient: { mrn: string; name: string; amharic: string }) => void;
@@ -110,6 +111,11 @@ const FlowBoard: React.FC<FlowBoardProps> = ({ onStartConsult }) => {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Hospital Calendar */}
+      <div style={{ marginTop: '2rem' }}>
+        <HospitalCalendar />
       </div>
     </div>
   );
