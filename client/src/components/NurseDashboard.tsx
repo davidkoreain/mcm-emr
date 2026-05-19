@@ -274,11 +274,8 @@ const NurseDashboard: React.FC = () => {
     });
   };
 
-  // Filtered active inpatient list
-  const filteredInpatients = activeInpatients.filter(p => {
-    if (filterMode === 'intensive') return p.isIntensiveCare;
-    return true;
-  });
+  // Filtered active inpatient list (All active inpatients, since Focus Care has a dedicated card)
+  const filteredInpatients = activeInpatients;
 
   const tabBtn = (key: typeof tab, icon: React.ReactNode, title: string) => (
     <button
@@ -510,35 +507,7 @@ const NurseDashboard: React.FC = () => {
                 Ward Patients ({filteredInpatients.length})
               </div>
             </div>
-            
-            {/* Filter Toggle */}
-            <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>
-              <button
-                onClick={() => setFilterMode('all')}
-                style={{
-                  flex: 1, padding: '0.35rem', border: 'none', borderRadius: '0.35rem', fontSize: '0.78rem', fontWeight: '600',
-                  background: filterMode === 'all' ? 'white' : 'transparent',
-                  color: filterMode === 'all' ? '#0f172a' : '#64748b',
-                  boxShadow: filterMode === 'all' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                  cursor: 'pointer', transition: 'all 0.15s',
-                }}
-              >
-                All Wards ({activeInpatients.length})
-              </button>
-              <button
-                onClick={() => setFilterMode('intensive')}
-                style={{
-                  flex: 1, padding: '0.35rem', border: 'none', borderRadius: '0.35rem', fontSize: '0.78rem', fontWeight: '600',
-                  background: filterMode === 'intensive' ? 'white' : 'transparent',
-                  color: filterMode === 'intensive' ? '#f43f5e' : '#64748b',
-                  boxShadow: filterMode === 'intensive' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
-                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem',
-                  transition: 'all 0.15s',
-                }}
-              >
-                <ShieldAlert size={12} /> Focus Care ({intensiveCareCount})
-              </button>
-            </div>
+
           </div>
 
           {/* List Wrapper */}
