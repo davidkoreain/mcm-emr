@@ -102,7 +102,7 @@ const RolePermissions: React.FC<Props> = ({ permissions, onUpdate }) => {
             <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>Role Permissions</h2>
           </div>
           <p style={{ margin: 0, color: '#64748b', fontSize: '0.875rem' }}>
-            역할별 사이드바 메뉴 접근 권한을 설정합니다. 1단계 메뉴를 클릭하면 2단계 메뉴가 펼쳐집니다.
+            Configure per-role access to sidebar menus. Click a top-level menu to expand its sub-menu.
           </p>
         </div>
         <button
@@ -234,7 +234,7 @@ const RolePermissions: React.FC<Props> = ({ permissions, onUpdate }) => {
       </div>
 
       <p style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: '#94a3b8', textAlign: 'right' }}>
-        변경사항은 즉시 저장됩니다 · 1단계 메뉴를 끄면 하위 메뉴도 함께 꺼집니다
+        Changes are saved immediately · Disabling a top-level menu also disables its sub-menus
       </p>
     </div>
   );

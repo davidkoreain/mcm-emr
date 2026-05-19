@@ -1050,8 +1050,8 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' |
               <Section title="Timeline" icon={<Clock size={16} />}>
                 <KV k="Prescribed By" v={detailRx.prescribedBy || '—'} />
                 <KV k="Start Date" v={detailRx.startDate || '—'} />
-                <KV k="Created" v={new Date(detailRx.createdAt).toLocaleString()} />
-                {detailRx.dispensedAt && <KV k="Dispensed At" v={new Date(detailRx.dispensedAt).toLocaleString()} />}
+                <KV k="Created" v={new Date(detailRx.createdAt).toLocaleString('en-US')} />
+                {detailRx.dispensedAt && <KV k="Dispensed At" v={new Date(detailRx.dispensedAt).toLocaleString('en-US')} />}
               </Section>
             </div>
           </div>
@@ -1158,8 +1158,8 @@ const PharmacyManagement: React.FC<{ activeTab?: 'inventory' | 'prescriptions' |
                       {/* Meta row */}
                       <div style={{ padding: '0.4rem 1rem', background: '#f8fafc', borderTop: '1px solid #f1f5f9', fontSize: '0.7rem', color: '#94a3b8', display: 'flex', flexWrap: 'wrap', gap: '0.2rem 0.4rem', alignItems: 'center' }}>
                         {rx.prescribedBy && <><User size={10} style={{ flexShrink: 0 }} /><span>{rx.prescribedBy}</span><span style={{ color: '#cbd5e1' }}>·</span></>}
-                        <span>{new Date(rx.createdAt).toLocaleDateString()}</span>
-                        {rx.dispensedAt && <><span style={{ color: '#cbd5e1' }}>·</span><span style={{ color: '#16a34a' }}>Dispensed {new Date(rx.dispensedAt).toLocaleDateString()}</span></>}
+                        <span>{new Date(rx.createdAt).toLocaleDateString('en-US')}</span>
+                        {rx.dispensedAt && <><span style={{ color: '#cbd5e1' }}>·</span><span style={{ color: '#16a34a' }}>Dispensed {new Date(rx.dispensedAt).toLocaleDateString('en-US')}</span></>}
                       </div>
 
                       {/* Actions */}

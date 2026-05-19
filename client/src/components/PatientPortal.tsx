@@ -162,7 +162,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           const { dateStr, timeStr } = parseDateTime(effectiveStart);
           events.push({
             id: `apt-${apt.id}`,
-            title: `${getDocName(apt.doctorId)} 면담`,
+            title: `Consultation with ${getDocName(apt.doctorId)}`,
             type: 'Appointment',
             dateStr,
             timeStr,
@@ -182,7 +182,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           const { dateStr, timeStr } = parseDateTime(s.startTime);
           events.push({
             id: `surg-${s.id}`,
-            title: `수술: ${s.operationName}`,
+            title: `Surgery: ${s.operationName}`,
             type: 'Surgery',
             dateStr,
             timeStr,
@@ -199,7 +199,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         .forEach(m => {
           events.push({
             id: `med-${m.id}`,
-            title: `${m.drugName} 복용 (${m.dosage})`,
+            title: `Take ${m.drugName} (${m.dosage})`,
             type: 'Medication',
             dateStr: m.scheduledDate,
             timeStr: m.scheduledTime || 'All Day',
@@ -219,7 +219,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           const color = rs === 'In Progress' ? '#f59e0b' : rs === 'Completed' ? '#16a34a' : '#3b82f6';
           events.push({
             id: `lab-${l.id}`,
-            title: `검사 의뢰: ${l.tests?.join(', ') || 'General Lab'}`,
+            title: `Lab order: ${l.tests?.join(', ') || 'General Lab'}`,
             type: 'LabTest',
             dateStr,
             timeStr,
@@ -234,7 +234,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       const { dateStr, timeStr } = parseDateTime(activeUser.admissionDate);
       events.push({
         id: `adm-${activeUser.mrn}`,
-        title: `입원 일정 (${activeUser.ward || 'General Ward'})`,
+        title: `Admission (${activeUser.ward || 'General Ward'})`,
         type: 'Admission',
         dateStr: dateStr || activeUser.admissionDate.split('T')[0],
         timeStr: timeStr || 'All Day',
@@ -247,7 +247,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       const { dateStr, timeStr } = parseDateTime(activeUser.dischargeDate);
       events.push({
         id: `dis-${activeUser.mrn}`,
-        title: `퇴원 일정`,
+        title: `Discharge`,
         type: 'Discharge',
         dateStr: dateStr || activeUser.dischargeDate.split('T')[0],
         timeStr: timeStr || 'All Day',
@@ -405,7 +405,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         startTime: start.toISOString(), endTime: end.toISOString(),
         status: 'Applied', notes: isGuardianView ? 'Guardian' : 'Patient'
       });
-      alert(`Your request has been submitted. Dr. ${selDoc.name} · ${selDate.toLocaleDateString()} ${selTime}.\nA manager will review and confirm shortly.`);
+      alert(`Your request has been submitted. Dr. ${selDoc.name} · ${selDate.toLocaleDateString('en-US')} ${selTime}.\nA manager will review and confirm shortly.`);
       changeStep(3);
     } catch (e) { alert('Failed to submit request.'); }
   };

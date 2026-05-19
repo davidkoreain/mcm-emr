@@ -551,7 +551,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
       <div>
         <div className="cal-header-row" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>
-            {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+            {selectedDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
           </h2>
           <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>
             <button className="cal-nav-btn" onClick={handlePrev}><ChevronLeft size={18} /></button>
@@ -691,13 +691,13 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                   if (!raw) return <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No visit reason recorded yet.</span>;
                   try {
                     const parsed = JSON.parse(raw);
-                    // JSON 형태로 저장된 경우: diagnosis 또는 subjective 필드를 사용
+                    // Stored as JSON: prefer diagnosis/subjective/notes fields.
                     const display = parsed.diagnosis || parsed.subjective || parsed.notes || '';
                     return display
                       ? display
                       : <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>No visit reason recorded yet.</span>;
                   } catch {
-                    // 일반 텍스트인 경우 그대로 표시
+                    // Plain-text fallback.
                     return raw;
                   }
                 })()}
@@ -1043,7 +1043,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             </div>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{selectedEvent.title}</h3>
             <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: '#475569' }}>
-              <div><strong>When:</strong> {new Date(selectedEvent.startTime).toLocaleString()} – {new Date(selectedEvent.endTime).toLocaleString()}</div>
+              <div><strong>When:</strong> {new Date(selectedEvent.startTime).toLocaleString('en-US')} – {new Date(selectedEvent.endTime).toLocaleString('en-US')}</div>
               {selectedEvent.location && <div><strong>Where:</strong> {selectedEvent.location}</div>}
               {selectedEvent.notes && <div><strong>Notes:</strong> {selectedEvent.notes}</div>}
             </div>

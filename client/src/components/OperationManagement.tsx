@@ -256,7 +256,7 @@ const OperationManagement: React.FC<{ activeTab?: 'schedule' | 'resources' | 'su
                   {surgeries.map(sc => (
                     <tr key={sc.id}>
                       <td><strong>{sc.roomNumber}</strong></td>
-                      <td>{new Date(sc.startTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</td>
+                      <td>{new Date(sc.startTime).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}</td>
                       <td>{sc.patientName}</td>
                       <td>{sc.operationName}</td>
                       <td>Dr. {staff.find(s => s.id === sc.surgeonId)?.name || 'Unassigned'}</td>

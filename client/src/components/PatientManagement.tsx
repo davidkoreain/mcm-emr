@@ -544,19 +544,19 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
           ))}
           {patients.length === 0 && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
-              [시스템] 서버에서 환자 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.
+              [System] Failed to load patient list from the server. Please retry shortly.
             </div>
           )}
           {patients.length > 0 && filteredPatients.length === 0 && !autoOpenId && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-              일치하는 환자 데이터가 없슴 [Antigravity Ver]
-              <br/><span style={{ fontSize: '0.8rem' }}>(검색어: "{ptSearch}", 전체 환자: {patients.length}명)</span>
+              No matching patient data found.
+              <br/><span style={{ fontSize: '0.8rem' }}>(Search: "{ptSearch}", Total patients: {patients.length})</span>
             </div>
           )}
           {autoOpenId && !detailModal && (
             <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#3b82f6' }}>
-              <p style={{ fontWeight: '700' }}>환자 정보를 매칭 중입니다... (ID: {autoOpenId})</p>
-              <p style={{ fontSize: '0.8rem' }}>현재 전체 데이터 수: {patients.length}개</p>
+              <p style={{ fontWeight: '700' }}>Matching patient details... (ID: {autoOpenId})</p>
+              <p style={{ fontSize: '0.8rem' }}>Loaded patients: {patients.length}</p>
             </div>
           )}
         </div>
@@ -618,14 +618,14 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
                 {patients.length === 0 && (
                   <tr>
                     <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#ef4444' }}>
-                      [시스템] 서버에서 환자 목록을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.
+                      [System] Failed to load patient list from the server. Please retry shortly.
                     </td>
                   </tr>
                 )}
                 {patients.length > 0 && filteredPatients.length === 0 && (
                   <tr>
                     <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#94a3b8' }}>
-                      일치하는 환자 데이터가 없슴 [Antigravity Ver] (검색어: "{ptSearch}")
+                      No matching patient data found. (Search: "{ptSearch}")
                     </td>
                   </tr>
                 )}

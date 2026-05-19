@@ -167,7 +167,7 @@ const InpatientManagement: React.FC = () => {
       id: Date.now(), type: 'Hygiene',
       patient: `${bed.patient.name ?? `Patient`} (Bed ${nursingForm.bedId})`,
       task: 'Nursing Note Added',
-      time: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      time: now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
       sortTime: now.toTimeString().slice(0, 5),
       status: 'Completed',
     }]);

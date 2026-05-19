@@ -503,7 +503,7 @@ const LabManagement: React.FC<{ activeTab?: 'orders' | 'results' }> = ({ activeT
                       {order.orderedBy && <span>Ordered by: <strong style={{ color: '#334155' }}>{order.orderedBy}</strong></span>}
                       {order.assignedTo && <span>Assigned: <strong style={{ color: '#334155' }}>{order.assignedTo}</strong></span>}
                       {order.scheduledDate && <span>Scheduled: <strong style={{ color: '#334155' }}>{order.scheduledDate}</strong></span>}
-                      <span>Created: <strong style={{ color: '#334155' }}>{new Date(order.createdAt).toLocaleDateString()}</strong></span>
+                      <span>Created: <strong style={{ color: '#334155' }}>{new Date(order.createdAt).toLocaleDateString('en-US')}</strong></span>
                     </div>
 
                     {/* Actions */}
@@ -572,7 +572,7 @@ const LabManagement: React.FC<{ activeTab?: 'orders' | 'results' }> = ({ activeT
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem 1.5rem', fontSize: '0.8rem', color: '#64748b', marginBottom: '0.75rem' }}>
                       {res.completedBy && <span>By: <strong style={{ color: '#334155' }}>{res.completedBy}</strong></span>}
-                      <span>Date: <strong style={{ color: '#334155' }}>{new Date(res.createdAt).toLocaleDateString()}</strong></span>
+                      <span>Date: <strong style={{ color: '#334155' }}>{new Date(res.createdAt).toLocaleDateString('en-US')}</strong></span>
                     </div>
 
                     <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => setReportModal(res)}>
