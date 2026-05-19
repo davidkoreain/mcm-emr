@@ -364,7 +364,7 @@ const NurseDashboard: React.FC = () => {
 
       {activeView === 'overview' ? (
         /* Main Grid Workspace */
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 320px 1fr', gap: '1.25rem', flex: 1, minHeight: 0 }}>
+        <div className="nurse-workspace-grid">
         
         {/* COLUMN 1: Bed Placement Waiting List */}
         <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
@@ -991,6 +991,29 @@ const NurseDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      <style>{`
+        .nurse-workspace-grid {
+          display: grid;
+          grid-template-columns: 320px 320px 1fr;
+          gap: 1.25rem;
+          flex: 1;
+          min-height: 0;
+        }
+
+        @media (max-width: 1024px) {
+          .nurse-workspace-grid {
+            grid-template-columns: 1fr !important;
+            grid-auto-rows: auto;
+            overflow-y: auto !important;
+            gap: 1.5rem;
+          }
+          .nurse-workspace-grid > div {
+            height: auto !important;
+            min-height: 480px;
+          }
+        }
+      `}</style>
 
     </div>
   );
