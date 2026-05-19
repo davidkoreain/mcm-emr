@@ -551,7 +551,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
       <div>
         <div className="cal-header-row" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
           <h2 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#1e293b', margin: 0 }}>
-            {selectedDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+            {`${selectedDate.getFullYear()}. ${String(selectedDate.getMonth() + 1).padStart(2, '0')}`}
           </h2>
           <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>
             <button className="cal-nav-btn" onClick={handlePrev}><ChevronLeft size={18} /></button>

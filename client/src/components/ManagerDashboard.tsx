@@ -368,8 +368,8 @@ const ManagerDashboard: React.FC = () => {
           <div style={{ padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', borderBottom: '1px solid #f1f5f9' }}>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#1e293b', margin: 0 }}>
               {viewType === 'day'
-                ? selectedDate.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
-                : selectedDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })
+                ? `${selectedDate.getFullYear()}. ${String(selectedDate.getMonth() + 1).padStart(2, '0')}. ${String(selectedDate.getDate()).padStart(2, '0')}`
+                : `${selectedDate.getFullYear()}. ${String(selectedDate.getMonth() + 1).padStart(2, '0')}`
               }
             </h2>
             <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>

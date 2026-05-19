@@ -1209,7 +1209,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}><CalendarIcon size={24} color="#2563eb" /><h4 style={{ fontSize: '1.25rem', fontWeight: '900' }}>1. Select Date</h4></div>
                           <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                             <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))} style={{ background: 'white', border: '1px solid #e2e8f0', padding: '0.5rem', borderRadius: '0.75rem', cursor: 'pointer' }}><ChevronLeft size={18}/></button>
-                            <span style={{ fontWeight: '900', fontSize: '1rem', minWidth: '140px', textAlign: 'center' }}>{currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
+                            <span style={{ fontWeight: '900', fontSize: '1rem', minWidth: '140px', textAlign: 'center' }}>{`${currentMonth.getFullYear()}. ${String(currentMonth.getMonth() + 1).padStart(2, '0')}`}</span>
                             <button onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))} style={{ background: 'white', border: '1px solid #e2e8f0', padding: '0.5rem', borderRadius: '0.75rem', cursor: 'pointer' }}><ChevronRight size={18}/></button>
                           </div>
                         </div>
@@ -1437,7 +1437,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               <div style={{ background: 'white', borderRadius: '2rem', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                 <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>
-                    {scheduleSelectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                    {`${scheduleSelectedDate.getFullYear()}. ${String(scheduleSelectedDate.getMonth() + 1).padStart(2, '0')}`}
                   </h3>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '0.25rem 0.75rem', borderRadius: '99px', background: '#e0f2fe', color: '#0369a1' }}>

@@ -1592,7 +1592,7 @@ const InventoryHistoryTab: React.FC<{
       });
   }, [inventoryHistory, selectedDate, histSearch, histCategory, histForm, histDoctor, histStockLevel, histSort, drugs]);
 
-  const monthLabel = new Date(calYear, calMonth, 1).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const monthLabel = `${calYear}. ${String(calMonth + 1).padStart(2, '0')}`;
 
   const prevMonth = () => {
     if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
