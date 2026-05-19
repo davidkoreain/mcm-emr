@@ -1,7 +1,17 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { db } from '../services';
 
-export type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier' | 'Patient' | 'Guardian';
+export type UserRole = 'Admin' | 'Manager' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier' | 'Patient' | 'Guardian';
+
+export type AppointmentStatus =
+  | 'Applied'
+  | 'Confirmed'
+  | 'ChangeApplied'
+  | 'ChangeConfirmed'
+  | 'Cancelled'
+  | 'Completed'
+  // legacy value kept for backward-compatibility with existing rows
+  | 'Scheduled';
 
 export type Appointment = {
   id: number;
@@ -9,9 +19,16 @@ export type Appointment = {
   doctorId: number;
   startTime: string;
   endTime: string;
-  status: 'Scheduled' | 'Cancelled' | 'Completed';
+  status: AppointmentStatus;
   notes?: string;
   createdAt: string;
+  // Change-request fields: populated when patient requests to change a Confirmed appointment
+  requestedStartTime?: string;
+  requestedEndTime?: string;
+  requestedDoctorId?: number;
+  changeReason?: string;
+  confirmedAt?: string;
+  confirmedBy?: string;
 };
 
 export type PatientUser = {

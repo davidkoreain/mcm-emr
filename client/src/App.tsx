@@ -18,6 +18,7 @@ import GuardianPortal from './components/GuardianPortal';
 
 import DoctorDashboard from './components/DoctorDashboard';
 import NurseDashboard from './components/NurseDashboard';
+import ManagerDashboard from './components/ManagerDashboard';
 import PatientRegistration from './components/PatientRegistration';
 import StaffManagement from './components/StaffManagement';
 import LabManagement from './components/LabManagement';
@@ -323,19 +324,23 @@ const App: React.FC = () => {
         </header>
         <div className="main-content-inner" style={{ padding: '2rem' }}>
           <ErrorBoundary>
-            {view === 'dashboard' && (role === 'Nurse' ? <NurseDashboard /> : (
-              <DoctorDashboard 
-                selectedMrn={selectedMrn}
-                onSelectMrn={(mrn) => {
-                  setSelectedMrn(mrn);
-                  const patient = patients.find(p => p.mrn === mrn);
-                  setSelectedPatient(patient ? { mrn: patient.mrn, name: patient.name, amharic: patient.amharic } : null);
-                }}
-                onStartConsult={(p) => { setSelectedPatient(p); setSelectedMrn(p.mrn); setSelectedTab('soap'); setView('encounter'); }}
-                onViewHistory={(p) => { setSelectedPatient(p); setSelectedMrn(p.mrn); setSelectedTab('history'); setView('encounter'); }}
-                onNewAppointment={() => setView('calendar')}
-              />
-            ))}
+            {view === 'dashboard' && (
+              role === 'Manager' ? <ManagerDashboard /> :
+              role === 'Nurse' ? <NurseDashboard /> :
+              (
+                <DoctorDashboard
+                  selectedMrn={selectedMrn}
+                  onSelectMrn={(mrn) => {
+                    setSelectedMrn(mrn);
+                    const patient = patients.find(p => p.mrn === mrn);
+                    setSelectedPatient(patient ? { mrn: patient.mrn, name: patient.name, amharic: patient.amharic } : null);
+                  }}
+                  onStartConsult={(p) => { setSelectedPatient(p); setSelectedMrn(p.mrn); setSelectedTab('soap'); setView('encounter'); }}
+                  onViewHistory={(p) => { setSelectedPatient(p); setSelectedMrn(p.mrn); setSelectedTab('history'); setView('encounter'); }}
+                  onNewAppointment={() => setView('calendar')}
+                />
+              )
+            )}
             {view === 'patients' && (
               <PatientManagement 
                 onViewVitals={(p) => { setSelectedPatient(p); setView('vitals'); }}

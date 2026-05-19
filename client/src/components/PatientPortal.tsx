@@ -51,8 +51,9 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     patients, 
     staff, 
     staffLeave, 
-    addAppointment, 
-    labResults, 
+    addAppointment,
+    updateAppointment,
+    labResults,
     guardians, 
     updatePatient, 
     medicalHistory,
@@ -97,6 +98,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
   const [scheduleSelectedDate, setScheduleSelectedDate] = useState(new Date());
   const [selectedScheduleEvent, setSelectedScheduleEvent] = useState<any | null>(null);
   const [doneEvents, setDoneEvents] = useState<Set<string>>(new Set());
+  const [changeRequestForm, setChangeRequestForm] = useState<{ appointmentId: number; date: string; time: string; reason: string } | null>(null);
 
   React.useEffect(() => {
     const syncWithUrl = () => {
@@ -153,7 +155,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       appointments
         .filter(apt => apt.patientMrn === mrn && apt.status !== 'Cancelled')
         .forEach(apt => {
-          const { dateStr, timeStr } = parseDateTime(apt.startTime);
+          // For ChangeApplied, surface the requested time so the patient sees what they asked for.
+          const effectiveStart = apt.status === 'ChangeApplied' && apt.requestedStartTime
+            ? apt.requestedStartTime
+            : apt.startTime;
+          const { dateStr, timeStr } = parseDateTime(effectiveStart);
           events.push({
             id: `apt-${apt.id}`,
             title: `${getDocName(apt.doctorId)} 면담`,
@@ -161,6 +167,8 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             dateStr,
             timeStr,
             color: '#2563eb',
+            status: apt.status,
+            appointmentId: apt.id,
             details: `Appointment with doctor. Status: ${apt.status}. Notes: ${apt.notes || 'None'}`
           });
         });
@@ -346,6 +354,42 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
     return s;
   }, []);
 
+  const getStatusBadge = (status?: string) => {
+    if (!status) return null;
+    const map: Record<string, { label: string; bg: string; color: string; border: string }> = {
+      Applied:         { label: 'Applied',          bg: '#fef3c7', color: '#92400e', border: '#fbbf24' },
+      Confirmed:       { label: 'Confirmed',        bg: '#d1fae5', color: '#065f46', border: '#10b981' },
+      ChangeApplied:   { label: 'Change Applied',   bg: '#ffedd5', color: '#9a3412', border: '#fb923c' },
+      ChangeConfirmed: { label: 'Change Confirmed', bg: '#dbeafe', color: '#1e40af', border: '#3b82f6' },
+      Scheduled:       { label: 'Confirmed',        bg: '#d1fae5', color: '#065f46', border: '#10b981' },
+      Cancelled:       { label: 'Cancelled',        bg: '#fee2e2', color: '#991b1b', border: '#ef4444' },
+      Completed:       { label: 'Completed',        bg: '#e5e7eb', color: '#374151', border: '#9ca3af' },
+    };
+    return map[status] ?? null;
+  };
+
+  const submitChangeRequest = async () => {
+    if (!changeRequestForm) return;
+    const { appointmentId, date, time, reason } = changeRequestForm;
+    if (!date || !time) { alert('Please pick a new date and time.'); return; }
+    const [h, m] = time.split(':');
+    const start = new Date(date);
+    start.setHours(parseInt(h), parseInt(m), 0, 0);
+    const end = new Date(start);
+    end.setMinutes(start.getMinutes() + 15);
+    try {
+      await updateAppointment(appointmentId, {
+        status: 'ChangeApplied',
+        requestedStartTime: start.toISOString(),
+        requestedEndTime: end.toISOString(),
+        changeReason: reason,
+      });
+      setChangeRequestForm(null);
+      setSelectedScheduleEvent(null);
+      alert('Change request submitted. A manager will review it shortly.');
+    } catch (e) { alert('Failed to submit change request.'); }
+  };
+
   const handleBooking = async () => {
     if (!selDate || !selDoc || !selTime) return;
     const [h, m] = selTime.split(':');
@@ -358,11 +402,11 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       await addAppointment({
         patientMrn: activeUser.mrn, doctorId: selDoc.id,
         startTime: start.toISOString(), endTime: end.toISOString(),
-        status: 'Scheduled', notes: isGuardianView ? 'Guardian' : 'Patient'
+        status: 'Applied', notes: isGuardianView ? 'Guardian' : 'Patient'
       });
-      alert(`Appointment confirmed with Dr. ${selDoc.name} on ${selDate.toLocaleDateString()} at ${selTime}`);
+      alert(`Your request has been submitted. Dr. ${selDoc.name} · ${selDate.toLocaleDateString()} ${selTime}.\nA manager will review and confirm shortly.`);
       changeStep(3);
-    } catch (e) { alert('Failed to book.'); }
+    } catch (e) { alert('Failed to submit request.'); }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1459,6 +1503,17 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           <h4 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: '0.25rem 0 0 0', textDecoration: doneEvents.has(String(selectedScheduleEvent.id)) ? 'line-through' : 'none', opacity: doneEvents.has(String(selectedScheduleEvent.id)) ? 0.5 : 1 }}>
                             {selectedScheduleEvent.title}
                           </h4>
+                          {(() => {
+                            const badge = getStatusBadge(selectedScheduleEvent.status);
+                            return badge ? (
+                              <span style={{
+                                display: 'inline-block', marginTop: '0.4rem',
+                                fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05em',
+                                background: badge.bg, color: badge.color, border: `1px solid ${badge.border}`,
+                                padding: '0.2rem 0.6rem', borderRadius: '99px'
+                              }}>{badge.label}</span>
+                            ) : null;
+                          })()}
                         </div>
                       </div>
 
@@ -1481,6 +1536,19 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                         </p>
                       </div>
 
+                      {(selectedScheduleEvent.status === 'Confirmed' || selectedScheduleEvent.status === 'ChangeConfirmed' || selectedScheduleEvent.status === 'Scheduled') && selectedScheduleEvent.appointmentId && (
+                        <button
+                          onClick={() => setChangeRequestForm({
+                            appointmentId: selectedScheduleEvent.appointmentId,
+                            date: selectedScheduleEvent.dateStr,
+                            time: selectedScheduleEvent.timeStr,
+                            reason: '',
+                          })}
+                          style={{ width: '100%', marginTop: '1rem', padding: '0.85rem', borderRadius: '1rem', background: '#fff7ed', color: '#9a3412', border: '1px solid #fed7aa', fontWeight: '800', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
+                        >
+                          Request Change
+                        </button>
+                      )}
                       <div style={{ display: 'flex', gap: '0.75rem', marginTop: '2rem' }}>
                         <button
                           onClick={() => {
@@ -1501,6 +1569,64 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           style={{ flex: 1, padding: '1rem', borderRadius: '1.25rem', background: '#1e293b', color: 'white', fontWeight: '800', border: 'none', cursor: 'pointer' }}
                         >
                           Close
+                        </button>
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Change Request Form Modal */}
+              <AnimatePresence>
+                {changeRequestForm && (
+                  <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    onClick={() => setChangeRequestForm(null)}
+                    style={{
+                      position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', zIndex: 1100,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(8px)', padding: '1rem'
+                    }}
+                  >
+                    <motion.div
+                      initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 20 }}
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ background: 'white', width: '100%', maxWidth: '440px', borderRadius: '1.5rem', padding: '2rem' }}
+                    >
+                      <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>Request Appointment Change</h3>
+                      <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.4rem' }}>Pick the new date and time. A manager will review your request.</p>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                          New date
+                          <input type="date" value={changeRequestForm.date}
+                            onChange={(e) => setChangeRequestForm({ ...changeRequestForm, date: e.target.value })}
+                            style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', marginTop: '0.3rem', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                          />
+                        </label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                          New time
+                          <input type="time" value={changeRequestForm.time}
+                            onChange={(e) => setChangeRequestForm({ ...changeRequestForm, time: e.target.value })}
+                            style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', marginTop: '0.3rem', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                          />
+                        </label>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                          Reason (optional)
+                          <textarea value={changeRequestForm.reason}
+                            onChange={(e) => setChangeRequestForm({ ...changeRequestForm, reason: e.target.value })}
+                            rows={3}
+                            placeholder="e.g. conflict at work"
+                            style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', marginTop: '0.3rem', fontSize: '0.85rem', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
+                          />
+                        </label>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+                        <button onClick={() => setChangeRequestForm(null)}
+                          style={{ padding: '0.6rem 1.1rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                          Cancel
+                        </button>
+                        <button onClick={submitChangeRequest}
+                          style={{ padding: '0.6rem 1.1rem', borderRadius: '0.6rem', border: 'none', background: '#fb923c', color: 'white', fontWeight: 800, cursor: 'pointer' }}>
+                          Submit Request
                         </button>
                       </div>
                     </motion.div>

@@ -1,6 +1,6 @@
 export type AllPerms = Record<string, Record<string, boolean>>;
 
-export const NON_ADMIN_ROLES = ['Doctor', 'Nurse', 'Pharmacist', 'LabTech', 'Cashier'] as const;
+export const NON_ADMIN_ROLES = ['Manager', 'Doctor', 'Nurse', 'Pharmacist', 'LabTech', 'Cashier'] as const;
 export type NonAdminRole = typeof NON_ADMIN_ROLES[number];
 
 export interface MenuItem {
@@ -84,6 +84,15 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     pharmacy: true, 'pharmacy.prescriptions': true, 'pharmacy.inventory': true, 'pharmacy.history': true,
     assets: true, 'assets.inventory': true, 'assets.maintenance': true, 'assets.loss': true,
     settings: true, 'settings.permissions': true, 'settings.menu_config': true, 'settings.adjustment': true,
+  },
+  Manager: {
+    dashboard: true, patients: true, calendar: true, inpatient: false, billing: false,
+    staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
+    lab: false, 'lab.orders': false, 'lab.results': false,
+    operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
+    pharmacy: false, 'pharmacy.prescriptions': false, 'pharmacy.inventory': false, 'pharmacy.history': false,
+    assets: false, 'assets.inventory': false, 'assets.maintenance': false, 'assets.loss': false,
+    settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Doctor: {
     dashboard: true, patients: true, calendar: true, inpatient: true, billing: true,

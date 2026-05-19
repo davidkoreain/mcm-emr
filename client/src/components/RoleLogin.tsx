@@ -1,12 +1,12 @@
 import React from 'react';
 import {
   LayoutDashboard, Activity, Package, Beaker, CreditCard, Users, Heart, Shield,
-  User, Lock, ArrowLeft, Loader2
+  User, Lock, ArrowLeft, Loader2, ClipboardCheck
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import './RoleLogin.css';
 
-type UserRole = 'Admin' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier' | 'Patient' | 'Guardian';
+type UserRole = 'Admin' | 'Manager' | 'Doctor' | 'Nurse' | 'Pharmacist' | 'LabTech' | 'Cashier' | 'Patient' | 'Guardian';
 
 interface Props {
   onLogin: (role: UserRole) => void;
@@ -16,6 +16,7 @@ interface Props {
 
 const roles: { id: UserRole; label: string; desc: string; icon: React.FC<{ size: number; color: string }>; color: string; bg: string }[] = [
   { id: 'Admin',      label: 'Admin',           desc: 'Full system access & management',   icon: LayoutDashboard, color: '#0f172a', bg: '#e2e8f0' },
+  { id: 'Manager',    label: 'Manager',         desc: 'Coordinate & confirm appointments', icon: ClipboardCheck,  color: '#0891b2', bg: '#cffafe' },
   { id: 'Doctor',     label: 'Doctor',          desc: 'Clinical consultations & orders',   icon: Activity,        color: '#2563eb', bg: '#dbeafe' },
   { id: 'Nurse',      label: 'Nurse',           desc: 'Patient care, vitals & ward',       icon: Users,           color: '#059669', bg: '#d1fae5' },
   { id: 'Pharmacist', label: 'Pharmacist',      desc: 'Medication dispensing & inventory', icon: Package,         color: '#7c3aed', bg: '#ede9fe' },

@@ -52,9 +52,15 @@ function rowToAppointment(r: Record<string, unknown>): Appointment {
     doctorId: r.doctor_id as number,
     startTime: r.start_time as string,
     endTime: r.end_time as string,
-    status: r.status as 'Scheduled' | 'Cancelled' | 'Completed',
+    status: r.status as Appointment['status'],
     notes: r.notes as string,
     createdAt: r.created_at as string,
+    requestedStartTime: (r.requested_start_time as string) ?? undefined,
+    requestedEndTime: (r.requested_end_time as string) ?? undefined,
+    requestedDoctorId: (r.requested_doctor_id as number) ?? undefined,
+    changeReason: (r.change_reason as string) ?? undefined,
+    confirmedAt: (r.confirmed_at as string) ?? undefined,
+    confirmedBy: (r.confirmed_by as string) ?? undefined,
   };
 }
 
@@ -616,6 +622,13 @@ export class SupabaseService implements IDBService {
     if (changes.notes !== undefined) row.notes = changes.notes;
     if (changes.startTime !== undefined) row.start_time = changes.startTime;
     if (changes.endTime !== undefined) row.end_time = changes.endTime;
+    if (changes.doctorId !== undefined) row.doctor_id = changes.doctorId;
+    if (changes.requestedStartTime !== undefined) row.requested_start_time = changes.requestedStartTime;
+    if (changes.requestedEndTime !== undefined) row.requested_end_time = changes.requestedEndTime;
+    if (changes.requestedDoctorId !== undefined) row.requested_doctor_id = changes.requestedDoctorId;
+    if (changes.changeReason !== undefined) row.change_reason = changes.changeReason;
+    if (changes.confirmedAt !== undefined) row.confirmed_at = changes.confirmedAt;
+    if (changes.confirmedBy !== undefined) row.confirmed_by = changes.confirmedBy;
     const { error } = await this.client.from('appointments').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }
