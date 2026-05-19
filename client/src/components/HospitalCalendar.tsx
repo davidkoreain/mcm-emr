@@ -1,10 +1,12 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { 
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, Star, Filter, Plus, 
-  Search, Check, CheckSquare, Square, Clock, X, Grid, List
+  Search, Check, CheckSquare, Square, Clock, X, Grid, List,
+  User, Phone, Droplet, ShieldAlert, Heart, Calendar, Activity, Info
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import type { Patient, Surgery, LabOrder } from '../context/EMRContext';
+import Avatar from './Avatar';
 
 type CalEvent = {
   id: string;
@@ -32,12 +34,57 @@ const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'Ju
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const HospitalCalendar: React.FC = () => {
-  const { patients, surgeries, labOrders } = useEMR();
+  const { patients, surgeries, labOrders, medicalHistory } = useEMR();
 
   // Navigation state
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
   
+  // Selected Patient for Popup Modal
+  const [selectedPatientMrn, setSelectedPatientMrn] = useState<string | null>(null);
+
+  const selectedPatient = useMemo(() => {
+    if (!selectedPatientMrn) return null;
+    return patients.find(p => p.mrn === selectedPatientMrn) || null;
+  }, [selectedPatientMrn, patients]);
+
+  const patientDetails = useMemo(() => {
+    if (!selectedPatient) return null;
+
+    // 1. Calculate Age
+    let calculatedAge = '—';
+    if (selectedPatient.dob) {
+      const birthDate = new Date(selectedPatient.dob);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      calculatedAge = `${age}`;
+    }
+
+    // 2. Find Medical History
+    const history = medicalHistory?.filter(h => h.patientMrn === selectedPatient.mrn) || [];
+    const latestHistory = history[history.length - 1];
+
+    // 3. Derive Allergies (using riskFactors)
+    const allergies = latestHistory?.riskFactors?.join(', ') || 'None';
+
+    // 4. Chief Complaint / Reason
+    const reason = selectedPatient.diagnosisSummary || latestHistory?.summary || 'General clinical monitoring';
+
+    // 5. Language/Race
+    const language = selectedPatient.language || 'English';
+
+    return {
+      age: calculatedAge,
+      allergies,
+      reason,
+      language
+    };
+  }, [selectedPatient, medicalHistory]);
+
   // Custom events added manually
   const [customEvents, setCustomEvents] = useState<CalEvent[]>([]);
   const [addModal, setAddModal] = useState(false);
@@ -431,6 +478,12 @@ const HospitalCalendar: React.FC = () => {
                     <div 
                       key={e.id}
                       title={`${e.time} - ${e.title}`}
+                      onClick={(ev) => {
+                        if (e.patientMrn) {
+                          ev.stopPropagation();
+                          setSelectedPatientMrn(e.patientMrn);
+                        }
+                      }}
                       style={{ 
                         fontSize: '0.7rem', 
                         padding: '0.15rem 0.35rem', 
@@ -444,7 +497,8 @@ const HospitalCalendar: React.FC = () => {
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
-                        fontWeight: '600'
+                        fontWeight: '600',
+                        cursor: e.patientMrn ? 'pointer' : 'default'
                       }}
                     >
                       {e.isKey && <Star size={8} fill={e.color} stroke="none" />}
@@ -589,6 +643,12 @@ const HospitalCalendar: React.FC = () => {
                       <div 
                         key={e.id}
                         title={`${e.time} - ${e.title}`}
+                        onClick={(ev) => {
+                          if (e.patientMrn) {
+                            ev.stopPropagation();
+                            setSelectedPatientMrn(e.patientMrn);
+                          }
+                        }}
                         style={{
                           fontSize: '0.68rem',
                           padding: '0.15rem 0.25rem',
@@ -600,7 +660,8 @@ const HospitalCalendar: React.FC = () => {
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
                           fontWeight: '600',
-                          lineHeight: '1.2'
+                          lineHeight: '1.2',
+                          cursor: e.patientMrn ? 'pointer' : 'default'
                         }}
                       >
                         {e.title}
@@ -724,6 +785,12 @@ const HospitalCalendar: React.FC = () => {
                   {hourEvents.map(e => (
                     <div 
                       key={e.id}
+                      onClick={(ev) => {
+                        if (e.patientMrn) {
+                          ev.stopPropagation();
+                          setSelectedPatientMrn(e.patientMrn);
+                        }
+                      }}
                       style={{
                         fontSize: '0.72rem',
                         padding: '0.35rem 0.65rem',
@@ -738,7 +805,8 @@ const HospitalCalendar: React.FC = () => {
                         boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
                         minWidth: '180px',
                         flex: '1 1 auto',
-                        maxHeight: '50px'
+                        maxHeight: '50px',
+                        cursor: e.patientMrn ? 'pointer' : 'default'
                       }}
                     >
                       <div style={{ fontWeight: '700', fontSize: '0.75rem' }}>{e.title}</div>
@@ -1010,6 +1078,99 @@ const HospitalCalendar: React.FC = () => {
           <span>High Priority Only</span>
         </div>
       </div>
+
+      {/* ── Patient Info Detail Modal ── */}
+      {selectedPatient && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '1rem', padding: '1.75rem', width: '520px',
+            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+            border: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '1.25rem'
+          }}>
+            {/* Modal Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <User size={20} style={{ color: '#0284c7' }} />
+                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: '800', color: '#0f172a' }}>Patient Admission Detail</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedPatientMrn(null)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Profile Brief */}
+            <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', background: '#f8fafc', padding: '1rem', borderRadius: '0.75rem' }}>
+              <Avatar name={selectedPatient.name} photoUrl={selectedPatient.photoUrl} size={50} />
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <span style={{ fontWeight: '800', fontSize: '0.95rem', color: '#0f172a' }}>{selectedPatient.name}</span>
+                  <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', borderRadius: '2rem', background: '#e0f2fe', color: '#0369a1', fontWeight: '700' }}>
+                    {selectedPatient.status}
+                  </span>
+                </div>
+                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.15rem' }}>MRN: {selectedPatient.mrn}</div>
+              </div>
+            </div>
+
+            {/* Basic Info Grid */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem', fontSize: '0.8rem' }}>
+              <div style={{ background: '#f8fafc', padding: '0.65rem', borderRadius: '0.5rem' }}>
+                <span style={{ display: 'block', color: '#64748b', fontWeight: '600', marginBottom: '0.15rem', fontSize: '0.72rem' }}>Gender / Age</span>
+                <span style={{ color: '#0f172a', fontWeight: '700' }}>{selectedPatient.gender || '—'} / {patientDetails?.age || '—'} yrs</span>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '0.65rem', borderRadius: '0.5rem' }}>
+                <span style={{ display: 'block', color: '#64748b', fontWeight: '600', marginBottom: '0.15rem', fontSize: '0.72rem' }}>Phone Contact</span>
+                <span style={{ color: '#0f172a', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <Phone size={11} style={{ color: '#64748b' }} /> {selectedPatient.phone || '—'}
+                </span>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '0.65rem', borderRadius: '0.5rem' }}>
+                <span style={{ display: 'block', color: '#64748b', fontWeight: '600', marginBottom: '0.15rem', fontSize: '0.72rem' }}>Assigned Location</span>
+                <span style={{ color: '#0369a1', fontWeight: '800' }}>
+                  📍 {selectedPatient.assignedWard || selectedPatient.ward || 'Unassigned'} {selectedPatient.assignedBed ? `- Room ${selectedPatient.assignedBed}` : ''}
+                </span>
+              </div>
+              <div style={{ background: '#f8fafc', padding: '0.65rem', borderRadius: '0.5rem' }}>
+                <span style={{ display: 'block', color: '#64748b', fontWeight: '600', marginBottom: '0.15rem', fontSize: '0.72rem' }}>Blood Group / Allergies</span>
+                <span style={{ color: patientDetails?.allergies && patientDetails.allergies !== 'None' ? '#ef4444' : '#0f172a', fontWeight: '700' }}>
+                  {selectedPatient.race || 'O+'} / {patientDetails?.allergies || 'None'}
+                </span>
+              </div>
+            </div>
+
+            {/* Medical Brief */}
+            <div style={{ background: '#ecfeff', border: '1px solid #cffafe', padding: '0.85rem', borderRadius: '0.75rem', fontSize: '0.8rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0891b2', fontWeight: '700', marginBottom: '0.35rem', fontSize: '0.75rem' }}>
+                <Activity size={14} /> Chief Complaint / Visit Reason
+              </div>
+              <p style={{ margin: 0, color: '#155e75', fontWeight: '600', lineHeight: '1.4' }}>
+                {patientDetails?.reason || 'No clinical reason recorded.'}
+              </p>
+            </div>
+
+            {/* Close Button Footer */}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #f1f5f9', paddingTop: '0.75rem' }}>
+              <button
+                onClick={() => setSelectedPatientMrn(null)}
+                style={{
+                  padding: '0.5rem 1.25rem', borderRadius: '0.5rem', background: '#0284c7', color: 'white',
+                  border: 'none', fontSize: '0.82rem', fontWeight: '700', cursor: 'pointer',
+                  boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)'
+                }}
+              >
+                Close Profile
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
