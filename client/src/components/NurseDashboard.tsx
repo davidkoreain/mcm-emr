@@ -7,6 +7,7 @@ import {
 import { useEMR } from '../context/EMRContext';
 import type { Patient, VitalsRecord } from '../context/EMRContext';
 import Avatar from './Avatar';
+import HospitalCalendar from './HospitalCalendar';
 
 // ── Types ──────────────────────────────────────────────────────
 type NurseNote = { id: string; text: string; time: string; };
@@ -86,6 +87,7 @@ const NurseDashboard: React.FC = () => {
     activeInpatients.length > 0 ? activeInpatients[0].mrn : null
   );
   
+  const [activeView, setActiveView] = useState<'overview' | 'calendar'>('overview');
   const [tab, setTab] = useState<'vitals' | 'mar' | 'notes' | 'tasks'>('vitals');
   const [nurseData, setNurseData] = useState<Record<string, PatientNurseRecord>>({});
   const [vitalsForm, setVitalsForm] = useState<Partial<VitalsRecord>>(EMPTY_VITALS);
@@ -309,8 +311,60 @@ const NurseDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Main Grid Workspace */}
-      <div style={{ display: 'grid', gridTemplateColumns: '320px 320px 1fr', gap: '1.25rem', flex: 1, minHeight: 0 }}>
+      {/* View Switcher Tabs */}
+      <div style={{ 
+        display: 'flex', 
+        borderBottom: '2px solid #cbd5e1', 
+        marginBottom: '0.25rem',
+        background: 'white',
+        borderRadius: '0.75rem',
+        padding: '0.25rem 0.5rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.02)',
+        gap: '0.5rem'
+      }}>
+        <button
+          onClick={() => setActiveView('overview')}
+          style={{
+            padding: '0.6rem 1.25rem',
+            border: 'none',
+            background: activeView === 'overview' ? '#e0f2fe' : 'transparent',
+            borderRadius: '0.5rem',
+            fontSize: '0.85rem',
+            fontWeight: '700',
+            color: activeView === 'overview' ? '#0369a1' : '#64748b',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s'
+          }}
+        >
+          <ClipboardList size={16} /> Ward Overview
+        </button>
+        <button
+          onClick={() => setActiveView('calendar')}
+          style={{
+            padding: '0.6rem 1.25rem',
+            border: 'none',
+            background: activeView === 'calendar' ? '#e0f2fe' : 'transparent',
+            borderRadius: '0.5rem',
+            fontSize: '0.85rem',
+            fontWeight: '700',
+            color: activeView === 'calendar' ? '#0369a1' : '#64748b',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Calendar size={16} /> Ward Schedule Calendar
+        </button>
+      </div>
+
+      {activeView === 'overview' ? (
+        /* Main Grid Workspace */
+        <div style={{ display: 'grid', gridTemplateColumns: '320px 320px 1fr', gap: '1.25rem', flex: 1, minHeight: 0 }}>
         
         {/* COLUMN 1: Bed Placement Waiting List */}
         <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
@@ -854,6 +908,11 @@ const NurseDashboard: React.FC = () => {
         </div>
 
       </div>
+      ) : (
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <HospitalCalendar />
+        </div>
+      )}
 
       {/* Bed Allocation Modal Overlay */}
       {allocationPatient && (

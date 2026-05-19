@@ -1,271 +1,1016 @@
-import React, { useState, useMemo } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Star, Filter, Plus, LayoutGrid, FileText, X } from 'lucide-react';
-import CSVImportModal from './CSVImportModal';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { 
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight, Star, Filter, Plus, 
+  Search, Check, CheckSquare, Square, Clock, X, Grid, List
+} from 'lucide-react';
+import { useEMR } from '../context/EMRContext';
+import type { Patient, Surgery, LabOrder } from '../context/EMRContext';
 
 type CalEvent = {
-  id: number;
+  id: string;
   title: string;
-  type: string;
-  date: string;
-  time: string;
-  doctor: string;
-  isKey: boolean;
+  type: 'Admission' | 'Discharge' | 'Surgery' | 'Lab' | 'General';
+  date: string; // YYYY-MM-DD
+  time: string; // HH:MM
+  patientName?: string;
+  patientMrn?: string;
+  doctor?: string;
+  location?: string;
+  isKey?: boolean;
   color: string;
 };
 
-const TYPE_COLORS: Record<string, string> = {
-  Surgery: '#ef4444', Ward: '#3b82f6', Staff: '#8b5cf6', Leave: '#f59e0b',
+const TYPE_COLORS: Record<CalEvent['type'], string> = {
+  Surgery: '#ef4444', // Red
+  Admission: '#3b82f6', // Blue
+  Discharge: '#10b981', // Green
+  Lab: '#8b5cf6', // Purple
+  General: '#f59e0b', // Orange
 };
 
-const initialEvents: CalEvent[] = [
-  { id: 1, title: 'Major Surgery: Hip Replacement', type: 'Surgery', date: '2026-05-12', time: '09:00', doctor: 'Dr. Solomon', isKey: true, color: '#ef4444' },
-  { id: 2, title: 'Ward Rounds: General Ward A', type: 'Ward', date: '2026-05-12', time: '08:00', doctor: 'Staff Nurse', isKey: false, color: '#3b82f6' },
-  { id: 3, title: 'Staff Meeting: ICU Team', type: 'Staff', date: '2026-05-13', time: '14:00', doctor: 'All Chiefs', isKey: true, color: '#8b5cf6' },
-  { id: 4, title: 'Patient Discharge: Room 402', type: 'Ward', date: '2026-05-12', time: '11:00', doctor: 'Nurse Martha', isKey: false, color: '#10b981' },
-  { id: 5, title: 'Annual Leave: Dr. Abraham', type: 'Leave', date: '2026-05-14', time: 'All Day', doctor: 'Dr. Abraham', isKey: false, color: '#f59e0b' },
-];
-
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-function getDaysInMonth(year: number, month: number) {
-  if (month === 1 && ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0)) return 29;
-  return DAYS_IN_MONTH[month];
-}
+const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const HospitalCalendar: React.FC = () => {
+  const { patients, surgeries, labOrders } = useEMR();
+
+  // Navigation state
+  const [currentDate, setCurrentDate] = useState(new Date());
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'day'>('month');
-  const [year, setYear] = useState(2026);
-  const [month, setMonth] = useState(4);
-  const [showCSVModal, setShowCSVModal] = useState(false);
-  const [events, setEvents] = useState<CalEvent[]>(initialEvents);
+  
+  // Custom events added manually
+  const [customEvents, setCustomEvents] = useState<CalEvent[]>([]);
   const [addModal, setAddModal] = useState(false);
-  const [addForm, setAddForm] = useState({ title: '', type: 'Ward', date: '', time: '', doctor: '', isKey: false });
-  const [filterType, setFilterType] = useState('');
-  const [showFilter, setShowFilter] = useState(false);
+  const [addForm, setAddForm] = useState({
+    title: '',
+    type: 'General' as CalEvent['type'],
+    date: new Date().toISOString().split('T')[0],
+    time: '12:00',
+    doctor: '',
+    location: '',
+    isKey: false
+  });
+
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedTypes, setSelectedTypes] = useState<CalEvent['type'][]>(['Admission', 'Discharge', 'Surgery', 'Lab', 'General']);
   const [keyOnly, setKeyOnly] = useState(false);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
 
-  const prevMonth = () => { if (month === 0) { setMonth(11); setYear(y => y - 1); } else setMonth(m => m - 1); };
-  const nextMonth = () => { if (month === 11) { setMonth(0); setYear(y => y + 1); } else setMonth(m => m + 1); };
-  const goToday = () => { setYear(2026); setMonth(4); };
+  // Time tracker for current time indicator (red dashed line)
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(new Date());
+    }, 30000); // Update every 30 seconds
+    return () => clearInterval(timer);
+  }, []);
 
+  const timeGridRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to current time position in week/day view on mount or view changes
+  useEffect(() => {
+    if ((viewMode === 'week' || viewMode === 'day') && timeGridRef.current) {
+      const hours = now.getHours();
+      // Scroll to a bit before the current time (e.g. 2 hours before) to keep it in context
+      const scrollPos = Math.max(0, (hours - 2) * 60);
+      timeGridRef.current.scrollTop = scrollPos;
+    }
+  }, [viewMode, now]);
+
+  // Aggregate database events + custom events
+  const allEvents = useMemo(() => {
+    const events: CalEvent[] = [];
+
+    // 1. Admission Events (from Patients)
+    patients.forEach(p => {
+      const admissionDate = p.actualAdmissionDate || p.admissionDate;
+      if (admissionDate) {
+        events.push({
+          id: `admission-${p.mrn}-${admissionDate}`,
+          title: `[Admission] ${p.name} (Ward: ${p.assignedWard || p.ward || '—'})`,
+          type: 'Admission',
+          date: admissionDate,
+          time: '09:00',
+          patientName: p.name,
+          patientMrn: p.mrn,
+          color: TYPE_COLORS.Admission,
+          isKey: p.visitType === 'Emergency'
+        });
+      }
+    });
+
+    // 2. Discharge Events (from Patients)
+    patients.forEach(p => {
+      const dischargeDate = p.actualDischargeDate || p.dischargeDate;
+      if (dischargeDate) {
+        events.push({
+          id: `discharge-${p.mrn}-${dischargeDate}`,
+          title: `[Discharge] ${p.name}`,
+          type: 'Discharge',
+          date: dischargeDate,
+          time: '11:00',
+          patientName: p.name,
+          patientMrn: p.mrn,
+          color: TYPE_COLORS.Discharge,
+          isKey: false
+        });
+      }
+    });
+
+    // 3. Surgery Events
+    surgeries.forEach(s => {
+      if (s.status !== 'Cancelled' && s.startTime) {
+        const datePart = s.startTime.split('T')[0];
+        const timePart = s.startTime.split('T')[1]?.substring(0, 5) || '08:00';
+        events.push({
+          id: `surgery-${s.id}`,
+          title: `[Surgery] ${s.patientName} - ${s.operationName}`,
+          type: 'Surgery',
+          date: datePart,
+          time: timePart,
+          patientName: s.patientName,
+          patientMrn: s.patientMrn,
+          location: `OR Room ${s.roomNumber}`,
+          color: TYPE_COLORS.Surgery,
+          isKey: true
+        });
+      }
+    });
+
+    // 4. Lab Order Events
+    labOrders.forEach(o => {
+      const datePart = o.scheduledDate || o.createdAt?.split('T')[0];
+      if (datePart) {
+        events.push({
+          id: `lab-${o.id}`,
+          title: `[Lab] ${o.patientName} - ${o.tests.join(', ')}`,
+          type: 'Lab',
+          date: datePart,
+          time: '10:00',
+          patientName: o.patientName,
+          patientMrn: o.patientMrn,
+          color: TYPE_COLORS.Lab,
+          isKey: o.priority === 'Urgent'
+        });
+      }
+    });
+
+    // 5. Combine with Custom Events
+    return [...events, ...customEvents];
+  }, [patients, surgeries, labOrders, customEvents]);
+
+  // Filter events based on search and selected types
+  const filteredEvents = useMemo(() => {
+    return allEvents.filter(e => {
+      const matchSearch = searchTerm.trim() === '' || 
+        e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (e.patientName && e.patientName.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (e.patientMrn && e.patientMrn.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (e.doctor && e.doctor.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (e.location && e.location.toLowerCase().includes(searchTerm.toLowerCase()));
+
+      const matchType = selectedTypes.includes(e.type);
+      const matchKey = !keyOnly || e.isKey;
+
+      return matchSearch && matchType && matchKey;
+    });
+  }, [allEvents, searchTerm, selectedTypes, keyOnly]);
+
+  // Navigate dates
+  const handlePrev = () => {
+    const d = new Date(currentDate);
+    if (viewMode === 'month') {
+      d.setMonth(d.getMonth() - 1);
+    } else if (viewMode === 'week') {
+      d.setDate(d.getDate() - 7);
+    } else {
+      d.setDate(d.getDate() - 1);
+    }
+    setCurrentDate(d);
+  };
+
+  const handleNext = () => {
+    const d = new Date(currentDate);
+    if (viewMode === 'month') {
+      d.setMonth(d.getMonth() + 1);
+    } else if (viewMode === 'week') {
+      d.setDate(d.getDate() + 7);
+    } else {
+      d.setDate(d.getDate() + 1);
+    }
+    setCurrentDate(d);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
+  // Add custom event
   const handleAddEvent = () => {
-    if (!addForm.title.trim() || !addForm.date) return;
-    const color = TYPE_COLORS[addForm.type] ?? '#64748b';
-    setEvents(prev => [...prev, {
-      id: Date.now(), title: addForm.title, type: addForm.type,
-      date: addForm.date, time: addForm.time || 'All Day',
-      doctor: addForm.doctor, isKey: addForm.isKey, color,
-    }]);
+    if (!addForm.title.trim()) return;
+    const newEv: CalEvent = {
+      id: `custom-${Date.now()}`,
+      title: addForm.title,
+      type: addForm.type,
+      date: addForm.date,
+      time: addForm.time,
+      doctor: addForm.doctor || undefined,
+      location: addForm.location || undefined,
+      isKey: addForm.isKey,
+      color: TYPE_COLORS[addForm.type]
+    };
+    setCustomEvents(prev => [...prev, newEv]);
     setAddModal(false);
-    setAddForm({ title: '', type: 'Ward', date: '', time: '', doctor: '', isKey: false });
+    setAddForm({
+      title: '',
+      type: 'General',
+      date: new Date().toISOString().split('T')[0],
+      time: '12:00',
+      doctor: '',
+      location: '',
+      isKey: false
+    });
   };
 
-  const daysInMonth = getDaysInMonth(year, month);
-  const firstDay = new Date(year, month, 1).getDay();
-  const currentMonthLabel = `${MONTH_NAMES[month]} ${year}`;
-
-  const filteredEvents = useMemo(() =>
-    events.filter(e => (!filterType || e.type === filterType) && (!keyOnly || e.isKey)),
-    [events, filterType, keyOnly]
-  );
-
-  const getEventsForDay = (day: number) => {
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return filteredEvents.filter(e => e.date === dateStr);
+  // Toggle filter types
+  const toggleTypeFilter = (type: CalEvent['type']) => {
+    setSelectedTypes(prev => 
+      prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]
+    );
   };
 
-  const isToday = (day: number) => year === 2026 && month === 4 && day === 12;
+  // Helper: Month header label
+  const headerLabel = useMemo(() => {
+    if (viewMode === 'month') {
+      return `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    } else if (viewMode === 'week') {
+      const start = new Date(currentDate);
+      start.setDate(start.getDate() - start.getDay()); // Sunday
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6); // Saturday
+      
+      if (start.getMonth() === end.getMonth()) {
+        return `${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`;
+      } else if (start.getFullYear() === end.getFullYear()) {
+        return `${MONTH_NAMES[start.getMonth()]} - ${MONTH_NAMES[end.getMonth()]} ${start.getFullYear()}`;
+      } else {
+        return `${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()} - ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
+      }
+    } else {
+      return `${currentDate.getDate()} ${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+    }
+  }, [currentDate, viewMode]);
 
-  const inputStyle: React.CSSProperties = { width: '100%', padding: '0.65rem', border: '1px solid #e2e8f0', borderRadius: '0.5rem' };
+  // Helper: Month days generation
+  const monthDays = useMemo(() => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDayIndex = new Date(year, month, 1).getDay(); // Sunday is 0
+    const totalDays = new Date(year, month + 1, 0).getDate();
+    const prevMonthTotalDays = new Date(year, month, 0).getDate();
+
+    const days = [];
+
+    // Fill preceding empty slots (previous month days)
+    for (let i = firstDayIndex - 1; i >= 0; i--) {
+      const d = new Date(year, month - 1, prevMonthTotalDays - i);
+      days.push({ date: d, isCurrentMonth: false });
+    }
+
+    // Fill current month days
+    for (let i = 1; i <= totalDays; i++) {
+      const d = new Date(year, month, i);
+      days.push({ date: d, isCurrentMonth: true });
+    }
+
+    // Fill succeeding empty slots to complete the grid (usually 42 boxes)
+    const remaining = 42 - days.length;
+    for (let i = 1; i <= remaining; i++) {
+      const d = new Date(year, month + 1, i);
+      days.push({ date: d, isCurrentMonth: false });
+    }
+
+    return days;
+  }, [currentDate]);
+
+  // Helper: Week days generation (starts on Sunday)
+  const weekDaysList = useMemo(() => {
+    const list = [];
+    const start = new Date(currentDate);
+    start.setDate(start.getDate() - start.getDay()); // Sunday
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      list.push(d);
+    }
+    return list;
+  }, [currentDate]);
+
+  // Check if dates are today
+  const checkIsToday = (date: Date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
+  };
+
+  const getEventsForDate = (date: Date) => {
+    const formatted = date.toISOString().split('T')[0];
+    return filteredEvents.filter(e => e.date === formatted);
+  };
+
+  const getEventsForDateAndTime = (date: Date, hour: number) => {
+    const formattedDate = date.toISOString().split('T')[0];
+    return filteredEvents.filter(e => {
+      if (e.date !== formattedDate) return false;
+      const evHour = parseInt(e.time.split(':')[0], 10);
+      return evHour === hour;
+    });
+  };
+
+  // Current time marker y-coordinate (pixels)
+  const currentTimePosition = useMemo(() => {
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    // 1 hour is 60px height
+    return hours * 60 + minutes;
+  }, [now]);
+
+  const showTimeLineInWeek = useMemo(() => {
+    const today = new Date();
+    const start = new Date(currentDate);
+    start.setDate(start.getDate() - start.getDay());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+
+    today.setHours(0,0,0,0);
+    start.setHours(0,0,0,0);
+    end.setHours(0,0,0,0);
+
+    return today.getTime() >= start.getTime() && today.getTime() <= end.getTime();
+  }, [currentDate, now]);
+
+  const showTimeLineInDay = useMemo(() => {
+    return checkIsToday(currentDate);
+  }, [currentDate, now]);
+
+  const formatHour = (h: number) => {
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayHour = h % 12 === 0 ? 12 : h % 12;
+    return `${displayHour}:00 ${ampm}`;
+  };
+
+  const renderMonthView = () => {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '650px' }}>
+        {/* Week headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+          {WEEK_DAYS.map((day, idx) => (
+            <div 
+              key={day} 
+              style={{ 
+                padding: '0.75rem', 
+                textAlign: 'center', 
+                fontWeight: '700', 
+                fontSize: '0.85rem', 
+                color: idx === 0 ? '#ef4444' : '#64748b' // Sunday is red
+              }}
+            >
+              {day}
+            </div>
+          ))}
+        </div>
+
+        {/* Days grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', flex: 1, gridAutoRows: '1fr', background: '#e2e8f0', gap: '1px' }}>
+          {monthDays.map(({ date, isCurrentMonth }, idx) => {
+            const dayEvents = getEventsForDate(date);
+            const isSunday = date.getDay() === 0;
+            const isTodayDate = checkIsToday(date);
+
+            return (
+              <div 
+                key={idx} 
+                style={{ 
+                  background: isCurrentMonth ? 'white' : '#f8fafc', 
+                  padding: '0.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '0.25rem',
+                  overflow: 'hidden',
+                  minHeight: '100px'
+                }}
+              >
+                {/* Date Number */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                  <span 
+                    style={{ 
+                      fontSize: '0.8rem', 
+                      fontWeight: '700',
+                      color: isTodayDate 
+                        ? 'white' 
+                        : (isSunday ? '#ef4444' : (isCurrentMonth ? '#1e293b' : '#94a3b8')),
+                      background: isTodayDate ? '#3b82f6' : 'transparent',
+                      width: '24px',
+                      height: '24px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    {date.getDate()}
+                  </span>
+                </div>
+
+                {/* Events list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', overflowY: 'auto', flex: 1, maxHeight: '80px' }}>
+                  {dayEvents.map(e => (
+                    <div 
+                      key={e.id}
+                      title={`${e.time} - ${e.title}`}
+                      style={{ 
+                        fontSize: '0.7rem', 
+                        padding: '0.15rem 0.35rem', 
+                        borderRadius: '0.25rem', 
+                        background: `${e.color}15`, 
+                        color: e.color, 
+                        borderLeft: `3px solid ${e.color}`,
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '0.2rem',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontWeight: '600'
+                      }}
+                    >
+                      {e.isKey && <Star size={8} fill={e.color} stroke="none" />}
+                      <span style={{ fontWeight: '800' }}>{e.time}</span>
+                      <span>{e.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderWeekView = () => {
+    return (
+      <div 
+        ref={timeGridRef}
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '600px', 
+          overflowY: 'auto', 
+          background: 'white',
+          position: 'relative'
+        }}
+      >
+        {/* Sticky headers */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '60px repeat(7, 1fr)', 
+          borderBottom: '1px solid #e2e8f0', 
+          background: '#f8fafc',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10
+        }}>
+          <div style={{ borderRight: '1px solid #cbd5e1' }} />
+          {weekDaysList.map((date, idx) => {
+            const isSunday = idx === 0;
+            const isTodayDate = checkIsToday(date);
+            return (
+              <div 
+                key={idx} 
+                style={{ 
+                  padding: '0.5rem', 
+                  textAlign: 'center', 
+                  borderRight: '1px solid #e2e8f0',
+                  color: isSunday ? '#ef4444' : '#475569'
+                }}
+              >
+                <div style={{ fontSize: '0.75rem', fontWeight: '500' }}>{WEEK_DAYS[idx].toUpperCase()}</div>
+                <div style={{ 
+                  fontSize: '1rem', 
+                  fontWeight: '800',
+                  color: isTodayDate ? 'white' : 'inherit',
+                  background: isTodayDate ? '#3b82f6' : 'transparent',
+                  width: '28px',
+                  height: '28px',
+                  borderRadius: '50%',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginTop: '0.15rem'
+                }}>{date.getDate()}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Timeline Grid */}
+        <div style={{ display: 'grid', gridTemplateColumns: '60px repeat(7, 1fr)', position: 'relative', height: '1440px' }}>
+          
+          {/* Time tracker line */}
+          {showTimeLineInWeek && (
+            <div style={{ 
+              position: 'absolute', 
+              top: `${currentTimePosition}px`, 
+              left: '60px', 
+              right: 0, 
+              borderTop: '2px dashed #ef4444', 
+              zIndex: 5,
+              pointerEvents: 'none'
+            }}>
+              <span style={{ 
+                position: 'absolute', 
+                left: '-55px', 
+                top: '-9px', 
+                background: '#ef4444', 
+                color: 'white', 
+                fontSize: '0.65rem', 
+                padding: '0.1rem 0.3rem', 
+                borderRadius: '0.25rem',
+                fontWeight: '800'
+              }}>
+                {now.toTimeString().substring(0, 5)}
+              </span>
+            </div>
+          )}
+
+          {/* Hourly Slots */}
+          {Array.from({ length: 24 }).map((_, hour) => (
+            <React.Fragment key={hour}>
+              {/* Hour Indicator */}
+              <div style={{ 
+                height: '60px', 
+                paddingRight: '0.5rem', 
+                display: 'flex', 
+                alignItems: 'flex-start', 
+                justifyContent: 'flex-end', 
+                fontSize: '0.72rem', 
+                color: '#64748b',
+                fontWeight: '600',
+                borderRight: '1px solid #cbd5e1',
+                paddingTop: '0.25rem',
+                background: '#f8fafc'
+              }}>
+                {formatHour(hour)}
+              </div>
+
+              {/* Day cells for this hour */}
+              {weekDaysList.map((date, idx) => {
+                const hourEvents = getEventsForDateAndTime(date, hour);
+                return (
+                  <div 
+                    key={idx} 
+                    style={{ 
+                      height: '60px', 
+                      borderRight: '1px solid #f1f5f9', 
+                      borderBottom: '1px solid #f1f5f9', 
+                      padding: '0.15rem',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.1rem',
+                      overflow: 'hidden',
+                      position: 'relative'
+                    }}
+                  >
+                    {hourEvents.map(e => (
+                      <div 
+                        key={e.id}
+                        title={`${e.time} - ${e.title}`}
+                        style={{
+                          fontSize: '0.68rem',
+                          padding: '0.15rem 0.25rem',
+                          borderRadius: '0.2rem',
+                          background: `${e.color}15`,
+                          color: e.color,
+                          borderLeft: `2.5px solid ${e.color}`,
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          fontWeight: '600',
+                          lineHeight: '1.2'
+                        }}
+                      >
+                        {e.title}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const renderDayView = () => {
+    const isSunday = currentDate.getDay() === 0;
+    return (
+      <div 
+        ref={timeGridRef}
+        style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          height: '600px', 
+          overflowY: 'auto', 
+          background: 'white',
+          position: 'relative'
+        }}
+      >
+        {/* Sticky Day Header */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '80px 1fr', 
+          borderBottom: '1px solid #e2e8f0', 
+          background: '#f8fafc',
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          padding: '0.75rem'
+        }}>
+          <div />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <span style={{ 
+              fontSize: '1.5rem', 
+              fontWeight: '800', 
+              color: isSunday ? '#ef4444' : '#1e293b' 
+            }}>
+              {WEEK_DAYS[currentDate.getDay()]}
+            </span>
+            <span style={{ 
+              fontSize: '1.25rem', 
+              fontWeight: '500', 
+              color: '#64748b' 
+            }}>
+              {currentDate.getDate()} {MONTH_NAMES[currentDate.getMonth()]}
+            </span>
+          </div>
+        </div>
+
+        {/* Timeline details */}
+        <div style={{ display: 'grid', gridTemplateColumns: '80px 1fr', position: 'relative', height: '1440px' }}>
+          
+          {/* Current time tracker dashed line */}
+          {showTimeLineInDay && (
+            <div style={{ 
+              position: 'absolute', 
+              top: `${currentTimePosition}px`, 
+              left: '80px', 
+              right: 0, 
+              borderTop: '2px dashed #ef4444', 
+              zIndex: 5,
+              pointerEvents: 'none'
+            }}>
+              <span style={{ 
+                position: 'absolute', 
+                left: '-65px', 
+                top: '-9px', 
+                background: '#ef4444', 
+                color: 'white', 
+                fontSize: '0.65rem', 
+                padding: '0.1rem 0.3rem', 
+                borderRadius: '0.25rem',
+                fontWeight: '800'
+              }}>
+                {now.toTimeString().substring(0, 5)}
+              </span>
+            </div>
+          )}
+
+          {/* Slots */}
+          {Array.from({ length: 24 }).map((_, hour) => {
+            const hourEvents = getEventsForDateAndTime(currentDate, hour);
+            return (
+              <React.Fragment key={hour}>
+                <div style={{ 
+                  height: '60px', 
+                  paddingRight: '0.75rem', 
+                  display: 'flex', 
+                  alignItems: 'flex-start', 
+                  justifyContent: 'flex-end', 
+                  fontSize: '0.78rem', 
+                  color: '#64748b',
+                  fontWeight: '600',
+                  borderRight: '1px solid #cbd5e1',
+                  paddingTop: '0.25rem',
+                  background: '#f8fafc'
+                }}>
+                  {formatHour(hour)}
+                </div>
+                
+                <div style={{ 
+                  height: '60px', 
+                  borderBottom: '1px solid #f1f5f9', 
+                  padding: '0.25rem 0.5rem',
+                  display: 'flex',
+                  flexDirection: 'row',
+                  flexWrap: 'wrap',
+                  gap: '0.5rem',
+                  overflowY: 'auto'
+                }}>
+                  {hourEvents.map(e => (
+                    <div 
+                      key={e.id}
+                      style={{
+                        fontSize: '0.72rem',
+                        padding: '0.35rem 0.65rem',
+                        borderRadius: '0.35rem',
+                        background: `${e.color}15`,
+                        color: e.color,
+                        borderLeft: `4px solid ${e.color}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'center',
+                        fontWeight: '600',
+                        boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                        minWidth: '180px',
+                        flex: '1 1 auto',
+                        maxHeight: '50px'
+                      }}
+                    >
+                      <div style={{ fontWeight: '700', fontSize: '0.75rem' }}>{e.title}</div>
+                      {e.location && <div style={{ fontSize: '0.65rem', color: '#64748b', marginTop: '0.1rem' }}>📍 {e.location}</div>}
+                    </div>
+                  ))}
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="calendar-container" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%', background: '#f8fafc', padding: '1rem', borderRadius: '1rem' }}>
+      
+      {/* ── Add Event Modal ── */}
       {addModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ background: 'white', borderRadius: '1rem', padding: '2rem', width: '460px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3>Add New Event</h3>
-              <button onClick={() => setAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X size={20} /></button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', borderRadius: '1rem', padding: '1.75rem', width: '420px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)', border: '1px solid #f1f5f9' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+              <h3 style={{ fontSize: '1rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>Add Custom Schedule</h3>
+              <button onClick={() => setAddModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><X size={18} /></button>
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
               <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Title *</label>
-                <input type="text" value={addForm.title} placeholder="Event title"
-                  onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} style={inputStyle} />
+                <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Event Title *</label>
+                <input type="text" value={addForm.title} placeholder="e.g. Ward checkup meeting"
+                  onChange={e => setAddForm(f => ({ ...f, title: e.target.value }))} 
+                  style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none' }} />
               </div>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Date *</label>
+                  <input type="date" value={addForm.date}
+                    onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} 
+                    style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none' }} />
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Time</label>
+                  <input type="time" value={addForm.time}
+                    onChange={e => setAddForm(f => ({ ...f, time: e.target.value }))} 
+                    style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Type</label>
+                  <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value as CalEvent['type'] }))}
+                    style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none', background: 'white' }}>
+                    <option value="General">General</option>
+                    <option value="Surgery">Surgery</option>
+                    <option value="Admission">Admission</option>
+                    <option value="Discharge">Discharge</option>
+                    <option value="Lab">Lab Test</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Location</label>
+                  <input type="text" value={addForm.location} placeholder="Room / Ward"
+                    onChange={e => setAddForm(f => ({ ...f, location: e.target.value }))} 
+                    style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none' }} />
+                </div>
+              </div>
+
               <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Date *</label>
-                <input type="date" value={addForm.date}
-                  onChange={e => setAddForm(f => ({ ...f, date: e.target.value }))} style={inputStyle} />
+                <label style={{ fontSize: '0.78rem', fontWeight: '700', color: '#475569', display: 'block', marginBottom: '0.3rem' }}>Doctor In-charge</label>
+                <input type="text" value={addForm.doctor} placeholder="Dr. Name"
+                  onChange={e => setAddForm(f => ({ ...f, doctor: e.target.value }))} 
+                  style={{ width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', outline: 'none' }} />
               </div>
-              <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Time</label>
-                <input type="time" value={addForm.time}
-                  onChange={e => setAddForm(f => ({ ...f, time: e.target.value }))} style={inputStyle} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Doctor / Staff</label>
-                <input type="text" value={addForm.doctor} placeholder="e.g. Dr. Solomon"
-                  onChange={e => setAddForm(f => ({ ...f, doctor: e.target.value }))} style={inputStyle} />
-              </div>
-              <div>
-                <label style={{ fontSize: '0.875rem', fontWeight: '600', display: 'block', marginBottom: '0.35rem' }}>Type</label>
-                <select value={addForm.type} onChange={e => setAddForm(f => ({ ...f, type: e.target.value }))} style={inputStyle}>
-                  <option value="Surgery">Surgery</option>
-                  <option value="Ward">Ward / Patient</option>
-                  <option value="Staff">Staff / Admin</option>
-                  <option value="Leave">Leave</option>
-                </select>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: '600', cursor: 'pointer' }}>
-                <input type="checkbox" checked={addForm.isKey} onChange={e => setAddForm(f => ({ ...f, isKey: e.target.checked }))} />
-                Mark as Key Task
+
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', fontWeight: '700', color: '#475569', cursor: 'pointer', marginTop: '0.5rem' }}>
+                <input type="checkbox" checked={addForm.isKey} onChange={e => setAddForm(f => ({ ...f, isKey: e.target.checked }))} style={{ width: '16px', height: '16px' }} />
+                Mark as High Priority Task
               </label>
             </div>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-              <button className="btn-secondary" onClick={() => setAddModal(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleAddEvent} disabled={!addForm.title.trim() || !addForm.date}>Add Event</button>
+            
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.5rem', borderTop: '1px solid #f1f5f9', paddingTop: '1rem' }}>
+              <button onClick={() => setAddModal(false)} style={{ padding: '0.45rem 1rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', background: '#f8fafc', color: '#475569', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}>Cancel</button>
+              <button onClick={handleAddEvent} disabled={!addForm.title.trim()} style={{ padding: '0.45rem 1rem', border: 'none', borderRadius: '0.5rem', background: '#3b82f6', color: 'white', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer' }}>Add Event</button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="calendar-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', background: 'white', padding: '1rem', borderRadius: '0.75rem', border: '1px solid #e2e8f0' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-          <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <CalendarIcon size={28} /> {currentMonthLabel}
-          </h2>
-          <div style={{ display: 'flex', gap: '0.25rem', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
-            <button className="btn-icon" onClick={prevMonth}><ChevronLeft size={20} /></button>
-            <button className="btn-secondary" style={{ padding: '0.25rem 0.75rem', fontSize: '0.85rem' }} onClick={goToday}>Today</button>
-            <button className="btn-icon" onClick={nextMonth}><ChevronRight size={20} /></button>
+      {/* ── Upper Control Toolbar ── */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        background: 'white', 
+        padding: '0.85rem 1.25rem', 
+        borderRadius: '0.75rem', 
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+        flexWrap: 'wrap',
+        gap: '0.75rem'
+      }}>
+        
+        {/* Navigation & Label */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CalendarIcon size={24} style={{ color: '#3b82f6' }} />
+            <h2 style={{ fontSize: '1.15rem', fontWeight: '800', color: '#0f172a', margin: 0 }}>
+              {headerLabel}
+            </h2>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.2rem', background: '#f1f5f9', padding: '0.2rem', borderRadius: '0.5rem' }}>
+            <button onClick={handlePrev} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.35rem', color: '#475569', display: 'flex' }}><ChevronLeft size={16} /></button>
+            <button onClick={handleToday} style={{ border: 'none', background: 'white', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '700', padding: '0.25rem 0.65rem', borderRadius: '0.35rem', color: '#1e293b', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' }}>Today</button>
+            <button onClick={handleNext} style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '0.25rem', borderRadius: '0.35rem', color: '#475569', display: 'flex' }}><ChevronRight size={16} /></button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <div style={{ display: 'flex', background: '#f1f5f9', padding: '0.25rem', borderRadius: '0.5rem' }}>
+        {/* Search, Filter, Views, and Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          
+          {/* Search bar */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <Search size={14} style={{ position: 'absolute', left: '0.65rem', color: '#94a3b8' }} />
+            <input 
+              type="text" 
+              placeholder="Search schedules/patients..." 
+              value={searchTerm} 
+              onChange={e => setSearchTerm(e.target.value)}
+              style={{
+                padding: '0.45rem 0.65rem 0.45rem 1.85rem',
+                border: '1px solid #cbd5e1',
+                borderRadius: '0.5rem',
+                fontSize: '0.78rem',
+                outline: 'none',
+                width: '180px'
+              }}
+            />
+          </div>
+
+          {/* Filter Dropdown Toggle */}
+          <div style={{ position: 'relative' }}>
+            <button 
+              onClick={() => setShowFilterDropdown(prev => !prev)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.35rem',
+                padding: '0.45rem 0.75rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem',
+                background: 'white', fontSize: '0.78rem', fontWeight: '600', color: '#475569', cursor: 'pointer'
+              }}
+            >
+              <Filter size={14} /> Filter
+              {selectedTypes.length < 5 && (
+                <span style={{ background: '#3b82f6', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {selectedTypes.length}
+                </span>
+              )}
+            </button>
+
+            {showFilterDropdown && (
+              <div style={{ 
+                position: 'absolute', right: 0, top: '115%', background: 'white', 
+                border: '1px solid #cbd5e1', borderRadius: '0.75rem', padding: '0.75rem', 
+                boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', zIndex: 100, minWidth: '180px' 
+              }}>
+                <div style={{ fontSize: '0.65rem', fontWeight: '800', color: '#94a3b8', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>FILTER CATEGORIES</div>
+                {(['Admission', 'Discharge', 'Surgery', 'Lab', 'General'] as CalEvent['type'][]).map(t => {
+                  const active = selectedTypes.includes(t);
+                  return (
+                    <button 
+                      key={t}
+                      onClick={() => toggleTypeFilter(t)}
+                      style={{ 
+                        display: 'flex', alignItems: 'center', justifyItems: 'center', gap: '0.5rem',
+                        width: '100%', padding: '0.4rem 0.5rem', border: 'none', background: 'transparent',
+                        borderRadius: '0.35rem', cursor: 'pointer', textAlign: 'left', fontSize: '0.78rem',
+                        color: active ? '#0f172a' : '#64748b', fontWeight: active ? '700' : '400',
+                        transition: 'background 0.15s'
+                      }}
+                      onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: TYPE_COLORS[t] }} />
+                      <span style={{ flex: 1 }}>{t}s</span>
+                      {active ? <CheckSquare size={14} style={{ color: '#3b82f6' }} /> : <Square size={14} style={{ color: '#cbd5e1' }} />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* View switches */}
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '0.2rem', borderRadius: '0.5rem' }}>
             {(['month', 'week', 'day'] as const).map(v => (
-              <button key={v} className={`tab-btn ${viewMode === v ? 'active' : ''}`}
-                style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}
-                onClick={() => setViewMode(v)}>
+              <button 
+                key={v}
+                onClick={() => setViewMode(v)}
+                style={{
+                  padding: '0.35rem 0.75rem',
+                  fontSize: '0.75rem',
+                  fontWeight: '700',
+                  border: 'none',
+                  borderRadius: '0.35rem',
+                  background: viewMode === v ? 'white' : 'transparent',
+                  color: viewMode === v ? '#0f172a' : '#64748b',
+                  boxShadow: viewMode === v ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s'
+                }}
+              >
                 {v.charAt(0).toUpperCase() + v.slice(1)}
               </button>
             ))}
           </div>
-          <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setShowCSVModal(true)}>
-            <FileText size={18} /> CSV Import
-          </button>
-          <div style={{ position: 'relative' }}>
-            <button className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-              onClick={() => setShowFilter(f => !f)}>
-              <Filter size={18} /> Filters
-              {filterType && <span style={{ background: 'var(--primary-color)', color: 'white', borderRadius: '9999px', padding: '0 0.4rem', fontSize: '0.7rem' }}>1</span>}
-            </button>
-            {showFilter && (
-              <div style={{ position: 'absolute', right: 0, top: '110%', background: 'white', border: '1px solid #e2e8f0', borderRadius: '0.75rem', padding: '1rem', zIndex: 100, minWidth: '180px', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}>
-                <p style={{ fontSize: '0.8rem', fontWeight: '700', marginBottom: '0.5rem', color: '#64748b' }}>EVENT TYPE</p>
-                {['', 'Surgery', 'Ward', 'Staff', 'Leave'].map(t => (
-                  <button key={t} onClick={() => { setFilterType(t); setShowFilter(false); }}
-                    style={{ display: 'block', width: '100%', textAlign: 'left', padding: '0.4rem 0.6rem', borderRadius: '0.4rem', border: 'none', cursor: 'pointer', background: filterType === t ? '#eff6ff' : 'transparent', color: filterType === t ? 'var(--primary-color)' : 'inherit', fontWeight: filterType === t ? '700' : '400' }}>
-                    {t || 'All Types'}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-          <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => setAddModal(true)}>
-            <Plus size={18} /> Add Event
+
+          {/* Add schedule button */}
+          <button 
+            onClick={() => setAddModal(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.35rem',
+              padding: '0.45rem 0.85rem', background: '#3b82f6', color: 'white',
+              border: 'none', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: '700',
+              cursor: 'pointer', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
+            }}
+          >
+            <Plus size={14} /> Add Event
           </button>
         </div>
       </div>
 
-      {showCSVModal && (
-        <CSVImportModal title="Hospital Schedules & Events" onClose={() => setShowCSVModal(false)} onImport={(data) => console.log('Imported Events:', data)} />
-      )}
-
-      <div className="calendar-grid-wrapper" style={{ flex: 1, background: 'white', borderRadius: '0.75rem', border: '1px solid #e2e8f0', overflow: 'hidden' }}>
-        {viewMode === 'month' ? (
-          <div className="calendar-month-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', height: '100%', gridAutoRows: 'minmax(120px, 1fr)' }}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, idx) => {
-              const isSunday = idx === 0;
-              return (
-                <div key={day} style={{ 
-                  padding: '0.75rem', 
-                  textAlign: 'center', 
-                  fontWeight: '700', 
-                  fontSize: '0.85rem', 
-                  color: isSunday ? '#ef4444' : '#64748b', 
-                  borderBottom: '1px solid #e2e8f0', 
-                  background: '#f8fafc' 
-                }}>
-                  <span className="desktop-day">{day}</span>
-                  <span className="mobile-day">{day[0]}</span>
-                </div>
-              );
-            })}
-            {Array.from({ length: firstDay }).map((_, i) => (
-              <div key={`empty-${i}`} style={{ borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', background: '#fafafa' }} />
-            ))}
-            {Array.from({ length: daysInMonth }, (_, i) => i + 1).map(day => {
-              const dayEvents = getEventsForDay(day);
-              const isSunday = new Date(year, month, day).getDay() === 0;
-              return (
-                <div key={day} style={{ borderRight: '1px solid #f1f5f9', borderBottom: '1px solid #f1f5f9', padding: '0.5rem', minHeight: '120px' }}>
-                  <span style={{ 
-                    fontSize: '0.85rem', 
-                    fontWeight: '600', 
-                    color: isToday(day) 
-                      ? 'white' 
-                      : (isSunday ? '#ef4444' : '#1e293b'), 
-                    background: isToday(day) ? 'var(--primary-color)' : 'transparent', 
-                    borderRadius: '50%', 
-                    padding: '0.15rem 0.45rem' 
-                  }}>{day}</span>
-                  <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                    {dayEvents.slice(0, 3).map(e => (
-                      <div key={e.id} style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem', borderRadius: '0.25rem', background: `${e.color}18`, color: e.color, borderLeft: `3px solid ${e.color}`, display: 'flex', alignItems: 'center', gap: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: e.isKey ? '700' : '500' }}>
-                        {e.isKey && <Star size={10} fill={e.color} />}
-                        {e.time !== 'All Day' ? e.time + ' ' : ''}{e.title}
-                      </div>
-                    ))}
-                    {dayEvents.length > 3 && <div style={{ fontSize: '0.7rem', color: '#64748b', paddingLeft: '0.25rem' }}>+{dayEvents.length - 3} more</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            <LayoutGrid size={48} style={{ marginBottom: '1rem', opacity: 0.5 }} />
-            <p>Week and Day views are currently under optimization for high-density medical scheduling.</p>
-            <button className="btn-secondary" onClick={() => setViewMode('month')} style={{ marginTop: '1rem' }}>Return to Month View</button>
-          </div>
-        )}
+      {/* ── Main Grid Wrapper ── */}
+      <div style={{ 
+        flex: 1, 
+        background: 'white', 
+        borderRadius: '0.75rem', 
+        boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05)',
+        border: '1px solid #e2e8f0',
+        overflow: 'hidden',
+        minHeight: '450px'
+      }}>
+        {viewMode === 'month' && renderMonthView()}
+        {viewMode === 'week' && renderWeekView()}
+        {viewMode === 'day' && renderDayView()}
       </div>
 
-      <div className="calendar-legend" style={{ marginTop: '1rem', display: 'flex', gap: '1.5rem', padding: '0 0.5rem' }}>
-        {[['#ef4444', 'Surgery'], ['#3b82f6', 'Ward/Patient'], ['#8b5cf6', 'Staff/Admin'], ['#10b981', 'Discharge']].map(([color, label]) => (
-          <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
-            <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: color }} />{label}
-          </div>
-        ))}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', marginLeft: 'auto' }}>
-          <Star size={14} fill="#f59e0b" color="#f59e0b" />
-          <span style={{ fontWeight: '700' }}>Key Tasks Only</span>
-          <input type="checkbox" checked={keyOnly} onChange={e => setKeyOnly(e.target.checked)} style={{ width: '16px', height: '16px' }} />
+      {/* ── Legend footer ── */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        padding: '0 0.5rem',
+        fontSize: '0.75rem',
+        color: '#64748b',
+        fontWeight: '600'
+      }}>
+        <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap' }}>
+          {(Object.keys(TYPE_COLORS) as CalEvent['type'][]).map(type => (
+            <div key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+              <div style={{ width: '10px', height: '10px', borderRadius: '30%', background: TYPE_COLORS[type] }} />
+              <span>{type}s</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }} onClick={() => setKeyOnly(k => !k)}>
+          <Star size={12} fill={keyOnly ? '#f59e0b' : 'none'} color={keyOnly ? '#f59e0b' : '#94a3b8'} />
+          <span>High Priority Only</span>
         </div>
       </div>
-      <style>{`
-        @media (max-width: 640px) {
-          .desktop-day { display: none; }
-          .mobile-day { display: inline; }
-        }
-        @media (min-width: 641px) {
-          .desktop-day { display: inline; }
-          .mobile-day { display: none; }
-        }
-      `}</style>
+
     </div>
   );
 };
