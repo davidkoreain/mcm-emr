@@ -33,6 +33,13 @@ const TYPE_COLORS: Record<CalEvent['type'], string> = {
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const WEEK_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+const formatDateLocal = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const HospitalCalendar: React.FC = () => {
   const { patients, surgeries, labOrders, medicalHistory } = useEMR();
 
@@ -109,7 +116,7 @@ const HospitalCalendar: React.FC = () => {
   const [addForm, setAddForm] = useState({
     title: '',
     type: 'General' as CalEvent['type'],
-    date: new Date().toISOString().split('T')[0],
+    date: formatDateLocal(new Date()),
     time: '12:00',
     doctor: '',
     location: '',
@@ -290,7 +297,7 @@ const HospitalCalendar: React.FC = () => {
     setAddForm({
       title: '',
       type: 'General',
-      date: new Date().toISOString().split('T')[0],
+      date: formatDateLocal(new Date()),
       time: '12:00',
       doctor: '',
       location: '',
@@ -382,12 +389,12 @@ const HospitalCalendar: React.FC = () => {
   };
 
   const getEventsForDate = (date: Date) => {
-    const formatted = date.toISOString().split('T')[0];
+    const formatted = formatDateLocal(date);
     return filteredEvents.filter(e => e.date === formatted);
   };
 
   const getEventsForDateAndTime = (date: Date, hour: number) => {
-    const formattedDate = date.toISOString().split('T')[0];
+    const formattedDate = formatDateLocal(date);
     return filteredEvents.filter(e => {
       if (e.date !== formattedDate) return false;
       const evHour = parseInt(e.time.split(':')[0], 10);
