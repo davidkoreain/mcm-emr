@@ -331,7 +331,7 @@ const NurseDashboard: React.FC = () => {
         ))}
       </div>
 
-        /* Main Grid Workspace */
+        {/* Main Grid Workspace */}
         <div className="nurse-workspace-grid">
         
         {/* COLUMN 1: Bed Placement Waiting List & Focus Care Patients */}
