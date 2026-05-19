@@ -316,10 +316,11 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
       };
 
       if (requiresAdmission) {
-        updateData.ward = admitWard;
-        updateData.admissionDate = admitDate;
-        updateData.dischargeDate = dischargeDate;
-        updateData.status = 'Admitted';
+        updateData.bedPlacementRequested = true;
+        updateData.status = 'Inpatient';
+        if (admitWard) updateData.ward = admitWard;
+        if (admitDate) updateData.admissionDate = admitDate;
+        if (dischargeDate) updateData.dischargeDate = dischargeDate;
       }
 
       await updatePatient(currentPatient.mrn, updateData);

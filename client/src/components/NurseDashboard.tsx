@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { Activity, Pill, ClipboardList, CheckSquare, Plus, BedDouble, Clock, CheckCircle } from 'lucide-react';
+import { 
+  Activity, Pill, ClipboardList, CheckSquare, Plus, BedDouble, 
+  Clock, CheckCircle, ShieldAlert, AlertCircle, Sparkles, Check, 
+  LogOut, Star, UserCheck, Calendar, RefreshCw
+} from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
-import type { VitalsRecord } from '../context/EMRContext';
+import type { Patient, VitalsRecord } from '../context/EMRContext';
 import Avatar from './Avatar';
 
 // ── Types ──────────────────────────────────────────────────────
-
 type NurseNote = { id: string; text: string; time: string; };
 type CareTask = { id: string; task: string; dueTime: string; completed: boolean; completedAt?: string; };
 type MarEntry = { medId: string; administeredAt: string; };
@@ -25,16 +28,41 @@ const EMPTY_VITALS: Partial<VitalsRecord> = {
   bpSystolic: '', bpDiastolic: '', weightKg: '', heightCm: '', spo2: '',
 };
 
-// ── Helpers ────────────────────────────────────────────────────
-
+// ── Styles & Aesthetics ──────────────────────────────────────────
 const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '0.55rem 0.75rem', borderRadius: '0.45rem',
-  border: '1px solid #e2e8f0', fontSize: '0.875rem', fontFamily: 'inherit',
+  width: '100%', 
+  padding: '0.65rem 0.85rem', 
+  borderRadius: '0.5rem',
+  border: '1px solid #cbd5e1', 
+  fontSize: '0.875rem', 
+  fontFamily: 'inherit',
   boxSizing: 'border-box',
+  outline: 'none',
+  transition: 'border-color 0.2s, box-shadow 0.2s',
 };
 
+const cardStyle: React.CSSProperties = {
+  background: 'white',
+  borderRadius: '1rem',
+  padding: '1.25rem',
+  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05)',
+  border: '1px solid #f1f5f9',
+};
+
+const badgeStyle = (bg: string, color: string): React.CSSProperties => ({
+  padding: '0.25rem 0.65rem',
+  borderRadius: '9999px',
+  fontSize: '0.72rem',
+  fontWeight: '600',
+  background: bg,
+  color: color,
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: '0.25rem',
+});
+
 const lbl = (text: string) => (
-  <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#374151', marginBottom: '0.3rem' }}>{text}</div>
+  <div style={{ fontSize: '0.78rem', fontWeight: '600', color: '#475569', marginBottom: '0.35rem' }}>{text}</div>
 );
 
 const fmt = (iso: string) => {
@@ -45,15 +73,19 @@ const fmt = (iso: string) => {
   }
 };
 
-// ── Component ──────────────────────────────────────────────────
-
 const NurseDashboard: React.FC = () => {
-  const { patients, addVitals } = useEMR();
-  const inpatients = patients.filter(p => p.status === 'Inpatient');
+  const { patients, updatePatient, addVitals } = useEMR();
+
+  // 입원 대기 환자 (Register Patient for inpatient Bed Placement 체크 및 미배정 상태)
+  const pendingPlacement = patients.filter(p => p.bedPlacementRequested || (p.status === 'Inpatient' && !p.assignedWard));
+  
+  // 현재 입원 중인 환자 (병동 배정 완료)
+  const activeInpatients = patients.filter(p => p.status === 'Admitted' || (p.status === 'Inpatient' && p.assignedWard));
 
   const [selectedMrn, setSelectedMrn] = useState<string | null>(
-    inpatients.length > 0 ? inpatients[0].mrn : null
+    activeInpatients.length > 0 ? activeInpatients[0].mrn : null
   );
+  
   const [tab, setTab] = useState<'vitals' | 'mar' | 'notes' | 'tasks'>('vitals');
   const [nurseData, setNurseData] = useState<Record<string, PatientNurseRecord>>({});
   const [vitalsForm, setVitalsForm] = useState<Partial<VitalsRecord>>(EMPTY_VITALS);
@@ -61,6 +93,16 @@ const NurseDashboard: React.FC = () => {
   const [noteText, setNoteText] = useState('');
   const [newTask, setNewTask] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'intensive'>('all');
+
+  // 병상 배정 상태
+  const [allocationPatient, setAllocationPatient] = useState<Patient | null>(null);
+  const [allocWard, setAllocWard] = useState('Ward A');
+  const [allocBed, setAllocBed] = useState('');
+  const [allocating, setAllocating] = useState(false);
+
+  // 퇴원 처리 상태
+  const [discharging, setDischarging] = useState<string | null>(null);
 
   const selected = selectedMrn ? patients.find(p => p.mrn === selectedMrn) ?? null : null;
 
@@ -74,16 +116,78 @@ const NurseDashboard: React.FC = () => {
 
   const nd = selectedMrn ? getNurse(selectedMrn) : null;
 
-  // Stats
-  const dueMeds = inpatients.reduce((acc, p) => {
+  // 오늘 날짜 문자열 (YYYY-MM-DD)
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // 전체 통계 집계
+  const totalInpatientsCount = patients.filter(p => p.status === 'Admitted').length;
+  const dailyNewCount = patients.filter(p => p.actualAdmissionDate === todayStr).length;
+  const dailyDischargedCount = patients.filter(p => p.actualDischargeDate === todayStr || p.status === 'Discharged' && p.actualDischargeDate === todayStr).length;
+  const intensiveCareCount = patients.filter(p => p.status === 'Admitted' && p.isIntensiveCare).length;
+
+  const dueMeds = activeInpatients.reduce((acc, p) => {
     const administered = (nurseData[p.mrn]?.mar ?? []).map(m => m.medId);
     return acc + (p.medications ?? []).filter(m => !administered.includes(m.id)).length;
   }, 0);
-  const pendingTasks = inpatients.reduce((acc, p) =>
+  
+  const pendingTasks = activeInpatients.reduce((acc, p) =>
     acc + (nurseData[p.mrn]?.tasks ?? []).filter(t => !t.completed).length, 0
   );
 
-  // Actions
+  // 병상 배정 기능 실행
+  const handleAllocateBed = async () => {
+    if (!allocationPatient || !allocBed.trim()) return;
+    setAllocating(true);
+    try {
+      await updatePatient(allocationPatient.mrn, {
+        status: 'Admitted',
+        bedPlacementRequested: false,
+        assignedWard: allocWard,
+        assignedBed: allocBed.trim(),
+        actualAdmissionDate: todayStr,
+      });
+      setSelectedMrn(allocationPatient.mrn);
+      setAllocationPatient(null);
+      setAllocBed('');
+    } catch (err) {
+      console.error('Failed to allocate bed:', err);
+    } finally {
+      setAllocating(false);
+    }
+  };
+
+  // 퇴원 처리 기능 실행
+  const handleDischargePatient = async (mrn: string) => {
+    if (!window.confirm('Are you sure you want to discharge this patient?')) return;
+    setDischarging(mrn);
+    try {
+      await updatePatient(mrn, {
+        status: 'Discharged',
+        actualDischargeDate: todayStr,
+        bedPlacementRequested: false,
+      });
+      if (selectedMrn === mrn) {
+        setSelectedMrn(null);
+      }
+    } catch (err) {
+      console.error('Failed to discharge patient:', err);
+    } finally {
+      setDischarging(null);
+    }
+  };
+
+  // 집중관리 상태 토글
+  const handleToggleIntensiveCare = async (patient: Patient) => {
+    try {
+      await updatePatient(patient.mrn, {
+        isIntensiveCare: !patient.isIntensiveCare
+      });
+    } catch (err) {
+      console.error('Failed to toggle intensive care:', err);
+    }
+  };
+
+  // 간호 기록/행위 액션
   const submitVitals = async () => {
     if (!selectedMrn) return;
     const record: VitalsRecord = {
@@ -143,390 +247,692 @@ const NurseDashboard: React.FC = () => {
     });
   };
 
-  // ── Render helpers ─────────────────────────────────────────
+  // 필터 적용된 입원 환자 리스트
+  const filteredInpatients = activeInpatients.filter(p => {
+    if (filterMode === 'intensive') return p.isIntensiveCare;
+    return true;
+  });
 
   const tabBtn = (key: typeof tab, icon: React.ReactNode, title: string) => (
     <button
       onClick={() => setTab(key)}
       style={{
         display: 'flex', alignItems: 'center', gap: '0.4rem',
-        padding: '0.5rem 1rem', border: 'none', background: 'none', cursor: 'pointer',
+        padding: '0.6rem 1.1rem', border: 'none', background: 'none', cursor: 'pointer',
         fontWeight: tab === key ? '600' : '400', fontSize: '0.85rem',
         color: tab === key ? '#0891b2' : '#64748b',
         borderBottom: `2px solid ${tab === key ? '#0891b2' : 'transparent'}`,
         marginBottom: '-1px',
+        transition: 'color 0.2s, border-color 0.2s',
       }}
     >
       {icon}{title}
     </button>
   );
 
-  // ── Render ─────────────────────────────────────────────────
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
-
-      {/* Stats */}
-      <div className="stats-grid">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%', fontFamily: 'inherit', color: '#1e293b' }}>
+      
+      {/* Stats Widgets */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
         {[
-          { label: 'Inpatients',    value: inpatients.length, color: '#0891b2' },
-          { label: 'Wards Active',  value: [...new Set(inpatients.map(p => p.ward).filter(Boolean))].length, color: '#7c3aed' },
-          { label: 'Meds Due',      value: dueMeds,           color: '#dc2626' },
-          { label: 'Tasks Pending', value: pendingTasks,      color: '#d97706' },
-        ].map(s => (
-          <div key={s.label} className="stat-card" style={{ borderLeft: `4px solid ${s.color}` }}>
-            <div className="stat-label">{s.label}</div>
-            <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
+          { label: '전체 입원 환자 (Total)', value: totalInpatientsCount, icon: <BedDouble size={20} />, color: '#0891b2', bg: '#ecfeff' },
+          { label: '금일 신규 입원 (New)', value: dailyNewCount, icon: <Sparkles size={20} />, color: '#10b981', bg: '#ecfdf5' },
+          { label: '금일 퇴원 환자 (Discharged)', value: dailyDischargedCount, icon: <LogOut size={20} />, color: '#6366f1', bg: '#e0e7ff' },
+          { label: '집중관리 환자 (Focus Care)', value: intensiveCareCount, icon: <ShieldAlert size={20} />, color: '#f43f5e', bg: '#fff1f2' },
+        ].map((s, idx) => (
+          <div key={idx} style={{
+            ...cardStyle,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            borderLeft: `5px solid ${s.color}`,
+            background: 'white',
+          }}>
+            <div>
+              <div style={{ fontSize: '0.78rem', fontWeight: '600', color: '#64748b', marginBottom: '0.25rem' }}>{s.label}</div>
+              <div style={{ fontSize: '1.75rem', fontWeight: '800', color: s.color, lineHeight: '1' }}>{s.value}</div>
+            </div>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '0.75rem',
+              background: s.bg,
+              color: s.color,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+              {s.icon}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Split panel */}
-      <div className="flow-board-wrapper" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '1rem', flex: 1, minHeight: 0 }}>
-
-        {/* Ward list */}
-        <div className="calendar-section" style={{ background: 'white', borderRadius: '0.75rem', padding: '1.25rem', overflowY: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
-          <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#1e293b', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <BedDouble size={18} /> Ward Patients
+      {/* Main Grid Workspace */}
+      <div style={{ display: 'grid', gridTemplateColumns: '320px 320px 1fr', gap: '1.25rem', flex: 1, minHeight: 0 }}>
+        
+        {/* COLUMN 1: Bed Placement Waiting List (입원 대기 환자) */}
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+            <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+              <Clock size={18} style={{ color: '#0891b2' }} />
+              입원 배정 대기 ({pendingPlacement.length})
+            </div>
+            <span style={badgeStyle('#e0f2fe', '#0369a1')}>Placement Request</span>
           </div>
-          {inpatients.length === 0 && (
-            <p style={{ color: '#94a3b8', fontSize: '0.85rem', textAlign: 'center', marginTop: '2rem' }}>No inpatients currently</p>
-          )}
-          {inpatients.map(p => {
-            const active = selectedMrn === p.mrn;
-            const pnd = getNurse(p.mrn);
-            const administered = pnd.mar.map(m => m.medId);
-            const dueMedsCount = (p.medications ?? []).filter(m => !administered.includes(m.id)).length;
-            return (
-              <div
-                key={p.mrn}
-                onClick={() => { setSelectedMrn(p.mrn); setTab('vitals'); }}
-                style={{
-                  padding: '0.9rem', borderRadius: '0.5rem', cursor: 'pointer', marginBottom: '0.4rem',
-                  background: active ? '#ecfeff' : '#f8fafc',
-                  border: `1px solid ${active ? '#67e8f9' : '#e2e8f0'}`,
-                }}
-              >
-                <div style={{ display: 'flex', gap: '0.55rem', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <Avatar name={p.name} photoUrl={p.photoUrl} size={42} style={{ flexShrink: 0 }} />
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.875rem', lineHeight: '1.2' }}>{p.name}</div>
-                    <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn}</div>
-                  </div>
-                </div>
-                <div style={{ fontSize: '0.72rem', color: '#0891b2', fontWeight: '500', marginLeft: '3rem' }}>
-                  {p.ward || 'Ward not assigned'}
-                </div>
-                {dueMedsCount > 0 && (
-                  <div style={{ fontSize: '0.7rem', color: '#dc2626', marginTop: '0.25rem', fontWeight: '600' }}>
-                    {dueMedsCount} med{dueMedsCount > 1 ? 's' : ''} due
-                  </div>
-                )}
+
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            {pendingPlacement.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
+                <CheckCircle size={32} style={{ color: '#10b981', marginBottom: '0.5rem' }} />
+                <div style={{ fontSize: '0.8rem', fontWeight: '500' }}>대기 중인 입원 환자가 없습니다.</div>
               </div>
-            );
-          })}
+            ) : (
+              pendingPlacement.map(p => (
+                <div key={p.mrn} style={{
+                  padding: '0.85rem',
+                  borderRadius: '0.75rem',
+                  background: '#f8fafc',
+                  border: '1px dashed #cbd5e1',
+                  transition: 'all 0.2s',
+                }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <Avatar name={p.name} photoUrl={p.photoUrl} size={36} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+                    <span style={{ fontSize: '0.75rem', color: '#f43f5e', fontWeight: '600' }}>
+                      {p.visitType} Waiting
+                    </span>
+                    <button
+                      onClick={() => setAllocationPatient(p)}
+                      style={{
+                        padding: '0.35rem 0.75rem',
+                        borderRadius: '0.5rem',
+                        background: '#0891b2',
+                        color: 'white',
+                        border: 'none',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.25rem',
+                        boxShadow: '0 2px 4px rgba(8, 145, 178, 0.2)',
+                      }}
+                    >
+                      <Plus size={12} /> 병상 배정
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
-        {/* Patient detail */}
-        {!selected ? (
-          <div className="detail-section" style={{ background: 'white', borderRadius: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,.07)', minHeight: '200px' }}>
-            <div style={{ textAlign: 'center', color: '#cbd5e1' }}>
-              <BedDouble size={52} />
-              <p style={{ marginTop: '0.75rem', fontWeight: '500', color: '#94a3b8' }}>Select a patient from the ward</p>
+        {/* COLUMN 2: Ward & Bed Patients List */}
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
+          
+          {/* Header & Filter */}
+          <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+              <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+                <BedDouble size={18} style={{ color: '#6366f1' }} />
+                병동 환자 ({filteredInpatients.length})
+              </div>
+            </div>
+            
+            {/* Filter Toggle */}
+            <div style={{ display: 'flex', background: '#f1f5f9', borderRadius: '0.5rem', padding: '0.2rem' }}>
+              <button
+                onClick={() => setFilterMode('all')}
+                style={{
+                  flex: 1, padding: '0.35rem', border: 'none', borderRadius: '0.35rem', fontSize: '0.78rem', fontWeight: '600',
+                  background: filterMode === 'all' ? 'white' : 'transparent',
+                  color: filterMode === 'all' ? '#0f172a' : '#64748b',
+                  boxShadow: filterMode === 'all' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  cursor: 'pointer', transition: 'all 0.15s',
+                }}
+              >
+                전체 병동 ({activeInpatients.length})
+              </button>
+              <button
+                onClick={() => setFilterMode('intensive')}
+                style={{
+                  flex: 1, padding: '0.35rem', border: 'none', borderRadius: '0.35rem', fontSize: '0.78rem', fontWeight: '600',
+                  background: filterMode === 'intensive' ? 'white' : 'transparent',
+                  color: filterMode === 'intensive' ? '#f43f5e' : '#64748b',
+                  boxShadow: filterMode === 'intensive' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem',
+                  transition: 'all 0.15s',
+                }}
+              >
+                <ShieldAlert size={12} /> 집중관리 ({intensiveCareCount})
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="detail-section" style={{ background: 'white', borderRadius: '0.75rem', padding: '1.5rem', overflowY: 'auto', boxShadow: '0 1px 3px rgba(0,0,0,.07)' }}>
 
-            {/* Patient header */}
-            <div style={{ paddingBottom: '1rem', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                  <Avatar name={selected.name} photoUrl={selected.photoUrl} size={64} />
+          {/* List Wrapper */}
+          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {filteredInpatients.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#94a3b8' }}>
+                <AlertCircle size={28} style={{ marginBottom: '0.5rem', color: '#cbd5e1' }} />
+                <div style={{ fontSize: '0.8rem' }}>입원 중인 환자가 없습니다.</div>
+              </div>
+            ) : (
+              filteredInpatients.map(p => {
+                const active = selectedMrn === p.mrn;
+                const pnd = getNurse(p.mrn);
+                const administered = pnd.mar.map(m => m.medId);
+                const dueMedsCount = (p.medications ?? []).filter(m => !administered.includes(m.id)).length;
+                
+                return (
+                  <div
+                    key={p.mrn}
+                    onClick={() => { setSelectedMrn(p.mrn); setTab('vitals'); }}
+                    style={{
+                      padding: '0.85rem',
+                      borderRadius: '0.75rem',
+                      cursor: 'pointer',
+                      background: active ? '#e0f2fe' : '#ffffff',
+                      border: `1px solid ${active ? '#38bdf8' : '#e2e8f0'}`,
+                      boxShadow: active ? '0 2px 8px rgba(56, 189, 248, 0.15)' : 'none',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+                      <Avatar name={p.name} photoUrl={p.photoUrl} size={36} style={{ flexShrink: 0 }} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</span>
+                          {p.isIntensiveCare && (
+                            <span style={badgeStyle('#ffe4e6', '#f43f5e')}>집중</span>
+                          )}
+                        </div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn}</div>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingLeft: '2.6rem' }}>
+                      <span style={{ fontSize: '0.72rem', color: '#0369a1', fontWeight: '700' }}>
+                        📍 {p.assignedWard || p.ward || '미배정'} - {p.assignedBed || '—'}호
+                      </span>
+                      {dueMedsCount > 0 && (
+                        <span style={badgeStyle('#fee2e2', '#ef4444')}>
+                          {dueMedsCount} Meds Due
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* COLUMN 3: Patient Detail View & Nursing Log Area */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0 }}>
+          {!selected ? (
+            <div style={{ ...cardStyle, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '300px' }}>
+              <div style={{ textAlign: 'center', color: '#cbd5e1' }}>
+                <BedDouble size={48} style={{ color: '#94a3b8', marginBottom: '0.75rem' }} />
+                <p style={{ fontWeight: '600', color: '#64748b', fontSize: '0.9rem' }}>병동 환자를 선택하여 간호 관리를 시작하세요.</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ ...cardStyle, flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+              
+              {/* Profile Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid #f1f5f9', paddingBottom: '1rem', marginBottom: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <Avatar name={selected.name} photoUrl={selected.photoUrl} size={56} />
                   <div>
-                    <h2 style={{ fontSize: '1.1rem', fontWeight: '700', margin: 0 }}>{selected.name}</h2>
-                    <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>
-                      <span style={{ fontWeight: '600', color: '#0891b2' }}>{selected.mrn}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <h2 style={{ fontSize: '1.15rem', fontWeight: '800', margin: 0, color: '#0f172a' }}>{selected.name}</h2>
+                      {selected.isIntensiveCare && (
+                        <span style={badgeStyle('#ffe4e6', '#f43f5e')}>Focus Care Patient</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>
+                      <span style={{ fontWeight: '700', color: '#0369a1' }}>{selected.mrn}</span>
                       {' · '}{selected.gender} · DOB: {selected.dob}
                     </div>
                   </div>
                 </div>
-                <span style={{ padding: '0.35rem 0.9rem', borderRadius: '9999px', fontSize: '0.78rem', fontWeight: '700', background: '#ecfeff', color: '#0891b2' }}>
-                  {selected.ward || 'Inpatient'}
-                </span>
+                
+                {/* Actions: Intensive Care Toggle & Discharge Button */}
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleToggleIntensiveCare(selected)}
+                    style={{
+                      padding: '0.45rem 0.85rem',
+                      borderRadius: '0.5rem',
+                      background: selected.isIntensiveCare ? '#ffe4e6' : '#f1f5f9',
+                      color: selected.isIntensiveCare ? '#e11d48' : '#475569',
+                      border: '1px solid',
+                      borderColor: selected.isIntensiveCare ? '#fda4af' : '#cbd5e1',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Star size={14} fill={selected.isIntensiveCare ? '#e11d48' : 'none'} />
+                    {selected.isIntensiveCare ? '집중관리 취소' : '집중관리 지정'}
+                  </button>
+                  <button
+                    onClick={() => handleDischargePatient(selected.mrn)}
+                    disabled={discharging === selected.mrn}
+                    style={{
+                      padding: '0.45rem 0.85rem',
+                      borderRadius: '0.5rem',
+                      background: '#fef2f2',
+                      color: '#ef4444',
+                      border: '1px solid #fca5a5',
+                      fontSize: '0.78rem',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <LogOut size={14} />
+                    {discharging === selected.mrn ? 'Processing…' : '퇴원 수속'}
+                  </button>
+                </div>
               </div>
+
+              {/* Vitals Summary Strip */}
               {selected.vitals.length > 0 && (() => {
                 const v = selected.vitals[selected.vitals.length - 1];
                 return (
-                  <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', color: '#475569', marginTop: '0.5rem', flexWrap: 'wrap' }}>
-                    {v.temperature  && <span>🌡 {v.temperature}°C</span>}
-                    {v.heartRate    && <span>❤️ {v.heartRate} bpm</span>}
-                    {v.bpSystolic  && <span>💉 {v.bpSystolic}/{v.bpDiastolic} mmHg</span>}
-                    {v.spo2        && <span>🫁 SpO2 {v.spo2}%</span>}
-                    <span style={{ color: '#94a3b8' }}>as of {fmt(v.recordedAt)}</span>
+                  <div style={{
+                    display: 'flex', gap: '1.25rem', fontSize: '0.78rem', color: '#475569',
+                    background: '#f8fafc', padding: '0.75rem 1rem', borderRadius: '0.5rem',
+                    marginBottom: '1rem', border: '1px solid #e2e8f0', flexWrap: 'wrap'
+                  }}>
+                    {v.temperature  && <span>🌡️ Temp: <strong>{v.temperature}°C</strong></span>}
+                    {v.heartRate    && <span>❤️ Pulse: <strong>{v.heartRate} bpm</strong></span>}
+                    {v.bpSystolic  && <span>💉 BP: <strong>{v.bpSystolic}/{v.bpDiastolic} mmHg</strong></span>}
+                    {v.spo2        && <span>🫁 SpO2: <strong>{v.spo2}%</strong></span>}
+                    <span style={{ color: '#94a3b8', marginLeft: 'auto' }}>최근 측정: {fmt(v.recordedAt)}</span>
                   </div>
                 );
               })()}
-            </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '1.25rem' }}>
-              {tabBtn('vitals', <Activity size={15} />, 'Vitals')}
-              {tabBtn('mar',    <Pill size={15} />,     'Medications (MAR)')}
-              {tabBtn('notes',  <ClipboardList size={15} />, 'Notes')}
-              {tabBtn('tasks',  <CheckSquare size={15} />,   'Care Tasks')}
-            </div>
+              {/* Tabs Section */}
+              <div style={{ display: 'flex', borderBottom: '1px solid #e2e8f0', marginBottom: '1rem' }}>
+                {tabBtn('vitals', <Activity size={15} />, 'Vitals 기록')}
+                {tabBtn('mar',    <Pill size={15} />,     '투약 기록 (MAR)')}
+                {tabBtn('notes',  <ClipboardList size={15} />, '간호 기록 (Notes)')}
+                {tabBtn('tasks',  <CheckSquare size={15} />,   '수행 태스크')}
+              </div>
 
-            {/* ── TAB: Vitals ── */}
-            {tab === 'vitals' && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div style={{ background: '#f8fafc', borderRadius: '0.6rem', padding: '1.25rem', border: '1px solid #e2e8f0' }}>
-                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#1e293b', marginBottom: '1rem' }}>Record New Vitals</div>
-                  <div className="vitals-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem' }}>
-                    {[
-                      { key: 'temperature',     label: 'Temp (°C)',    ph: '36.5' },
-                      { key: 'heartRate',       label: 'Heart Rate',   ph: '72 bpm' },
-                      { key: 'respiratoryRate', label: 'Resp Rate',    ph: '16' },
-                      { key: 'spo2',            label: 'SpO2 (%)',     ph: '98' },
-                      { key: 'bpSystolic',      label: 'BP Systolic',  ph: '120' },
-                      { key: 'bpDiastolic',     label: 'BP Diastolic', ph: '80' },
-                      { key: 'weightKg',        label: 'Weight (kg)',  ph: '70' },
-                      { key: 'heightCm',        label: 'Height (cm)',  ph: '170' },
-                    ].map(({ key, label: l, ph }) => (
-                      <div key={key}>
-                        {lbl(l)}
-                        <input
-                          value={(vitalsForm as Record<string, string>)[key] ?? ''}
-                          onChange={e => setVitalsForm(prev => ({ ...prev, [key]: e.target.value }))}
-                          placeholder={ph}
-                          style={inputStyle}
-                        />
+              {/* Tab Content Panels */}
+              <div style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
+                
+                {/* TAB: Vitals */}
+                {tab === 'vitals' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ background: '#f8fafc', borderRadius: '0.75rem', padding: '1rem', border: '1px solid #e2e8f0' }}>
+                      <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', marginBottom: '0.75rem' }}>새 바이탈 기록하기</div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
+                        {[
+                          { key: 'temperature',     label: '체온 (°C)',    ph: '36.5' },
+                          { key: 'heartRate',       label: '맥박 (bpm)',   ph: '72' },
+                          { key: 'respiratoryRate', label: '호흡수 (회)',    ph: '16' },
+                          { key: 'spo2',            label: 'SpO2 (%)',     ph: '98' },
+                          { key: 'bpSystolic',      label: '수축기혈압',  ph: '120' },
+                          { key: 'bpDiastolic',     label: '이완기혈압', ph: '80' },
+                          { key: 'weightKg',        label: '체중 (kg)',  ph: '70' },
+                          { key: 'heightCm',        label: '신장 (cm)',  ph: '170' },
+                        ].map(({ key, label: l, ph }) => (
+                          <div key={key}>
+                            {lbl(l)}
+                            <input
+                              value={(vitalsForm as Record<string, string>)[key] ?? ''}
+                              onChange={e => setVitalsForm(prev => ({ ...prev, [key]: e.target.value }))}
+                              placeholder={ph}
+                              style={inputStyle}
+                            />
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                    <button
-                      className="btn-primary"
-                      style={{ background: '#0891b2', fontSize: '0.875rem' }}
-                      onClick={submitVitals}
-                      disabled={savingVitals}
-                    >
-                      {savingVitals ? 'Saving…' : 'Save Vitals'}
-                    </button>
-                  </div>
-                </div>
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+                        <button
+                          onClick={submitVitals}
+                          disabled={savingVitals}
+                          style={{
+                            padding: '0.5rem 1.25rem', borderRadius: '0.5rem', background: '#0891b2', color: 'white',
+                            border: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer',
+                          }}
+                        >
+                          {savingVitals ? '저장 중…' : '기록 저장'}
+                        </button>
+                      </div>
+                    </div>
 
-                {selected.vitals.length > 0 && (
-                  <div>
-                    <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#1e293b', marginBottom: '0.75rem' }}>Vitals History</div>
-                    <div className="data-table-container">
-                      <table className="data-table">
-                        <thead>
-                          <tr><th>Time</th><th>Temp</th><th>HR</th><th>RR</th><th>BP</th><th>SpO2</th><th>Wt</th></tr>
-                        </thead>
-                        <tbody>
-                          {[...selected.vitals].reverse().map((v, i) => (
-                            <tr key={i}>
-                              <td style={{ fontSize: '0.75rem', color: '#64748b', whiteSpace: 'nowrap' }}>{fmt(v.recordedAt)}</td>
-                              <td>{v.temperature || '—'}</td>
-                              <td>{v.heartRate || '—'}</td>
-                              <td>{v.respiratoryRate || '—'}</td>
-                              <td>{v.bpSystolic && v.bpDiastolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '—'}</td>
-                              <td>{v.spo2 || '—'}</td>
-                              <td>{v.weightKg || '—'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    {/* Vitals History */}
+                    {selected.vitals.length > 0 && (
+                      <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', marginBottom: '0.5rem' }}>바이탈 히스토리</div>
+                        <div style={{ border: '1px solid #e2e8f0', borderRadius: '0.5rem', overflow: 'hidden' }}>
+                          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem', textAlign: 'left' }}>
+                            <thead>
+                              <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                <th style={{ padding: '0.6rem' }}>측정시간</th>
+                                <th style={{ padding: '0.6rem' }}>체온</th>
+                                <th style={{ padding: '0.6rem' }}>맥박</th>
+                                <th style={{ padding: '0.6rem' }}>호흡</th>
+                                <th style={{ padding: '0.6rem' }}>혈압</th>
+                                <th style={{ padding: '0.6rem' }}>SpO2</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {[...selected.vitals].reverse().map((v, i) => (
+                                <tr key={i} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                                  <td style={{ padding: '0.6rem', color: '#64748b' }}>{fmt(v.recordedAt)}</td>
+                                  <td style={{ padding: '0.6rem', fontWeight: '500' }}>{v.temperature}°C</td>
+                                  <td style={{ padding: '0.6rem' }}>{v.heartRate}</td>
+                                  <td style={{ padding: '0.6rem' }}>{v.respiratoryRate}</td>
+                                  <td style={{ padding: '0.6rem' }}>{v.bpSystolic && v.bpDiastolic ? `${v.bpSystolic}/${v.bpDiastolic}` : '—'}</td>
+                                  <td style={{ padding: '0.6rem', fontWeight: '500', color: '#0891b2' }}>{v.spo2}%</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB: MAR */}
+                {tab === 'mar' && nd && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {(selected.medications ?? []).length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8', fontSize: '0.85rem' }}>
+                        처방된 약물이 없습니다.
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>투약 스케줄 관리</div>
+                        {(selected.medications ?? []).map(med => {
+                          const givenEntry = nd.mar.find(m => m.medId === med.id);
+                          const given = !!givenEntry;
+                          return (
+                            <div
+                              key={med.id}
+                              style={{
+                                padding: '0.85rem 1.1rem', borderRadius: '0.75rem',
+                                border: `1px solid ${given ? '#a7f3d0' : '#e2e8f0'}`,
+                                background: given ? '#f0fdf4' : '#f8fafc',
+                                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem',
+                              }}
+                            >
+                              <div>
+                                <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#0f172a' }}>{med.drug}</div>
+                                <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>
+                                  {med.dose} · {med.frequency} · {med.duration} · {med.route}
+                                </div>
+                                {given && givenEntry && (
+                                  <div style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.35rem', fontWeight: '600' }}>
+                                    ✅ 투약 완료: {fmt(givenEntry.administeredAt)}
+                                  </div>
+                                )}
+                              </div>
+                              {given ? (
+                                <span style={badgeStyle('#d1fae5', '#065f46')}>
+                                  <Check size={14} /> Administered
+                                </span>
+                              ) : (
+                                <button
+                                  onClick={() => administerMed(med.id)}
+                                  style={{
+                                    padding: '0.4rem 0.85rem', borderRadius: '0.5rem', background: '#0891b2', color: 'white',
+                                    border: 'none', fontSize: '0.78rem', fontWeight: '600', cursor: 'pointer',
+                                  }}
+                                >
+                                  Mark Given
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {/* TAB: Notes */}
+                {tab === 'notes' && nd && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      <textarea
+                        value={noteText}
+                        onChange={e => setNoteText(e.target.value)}
+                        placeholder="간호 처치 내역 및 특이사항을 기록해 주세요…"
+                        rows={3}
+                        style={{ ...inputStyle, resize: 'vertical' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <button
+                          onClick={addNote}
+                          disabled={!noteText.trim()}
+                          style={{
+                            padding: '0.45rem 1rem', borderRadius: '0.5rem', background: '#0891b2', color: 'white',
+                            border: 'none', fontSize: '0.8rem', fontWeight: '600', cursor: 'pointer',
+                          }}
+                        >
+                          기록 등록
+                        </button>
+                      </div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
+                      {nd.notes.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                          간호 기록이 아직 없습니다.
+                        </div>
+                      ) : (
+                        [...nd.notes].reverse().map(note => (
+                          <div key={note.id} style={{ padding: '0.85rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.25rem' }}>
+                              <div style={{ fontSize: '0.82rem', lineHeight: '1.5', color: '#1e293b' }}>{note.text}</div>
+                              <span style={{ fontSize: '0.68rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{fmt(note.time)}</span>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
-              </div>
-            )}
 
-            {/* ── TAB: MAR ── */}
-            {tab === 'mar' && nd && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {(selected.medications ?? []).length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#94a3b8', padding: '3rem', fontSize: '0.85rem' }}>
-                    No medications prescribed for this patient.
-                  </p>
-                ) : (
-                  <>
-                    <p style={{ fontSize: '0.83rem', color: '#64748b' }}>
-                      Medication Administration Record — mark each dose as administered.
-                    </p>
-                    {(selected.medications ?? []).map(med => {
-                      const givenEntry = nd.mar.find(m => m.medId === med.id);
-                      const given = !!givenEntry;
-                      return (
-                        <div
-                          key={med.id}
+                {/* TAB: Tasks */}
+                {tab === 'tasks' && nd && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '0.8rem', color: '#475569', marginBottom: '0.5rem' }}>자주 쓰는 케어 액션</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.85rem' }}>
+                        {PRESET_TASKS.map(t => (
+                          <button
+                            key={t}
+                            onClick={() => addTask(t)}
+                            style={{
+                              padding: '0.3rem 0.65rem', borderRadius: '9999px', fontSize: '0.72rem', cursor: 'pointer',
+                              border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569', transition: 'all 0.15s',
+                            }}
+                          >
+                            + {t}
+                          </button>
+                        ))}
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <input
+                          value={newTask}
+                          onChange={e => setNewTask(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && addTask(newTask)}
+                          placeholder="커스텀 케어 태스크 추가…"
+                          style={{ ...inputStyle, flex: 1 }}
+                        />
+                        <input
+                          type="time"
+                          value={newTaskTime}
+                          onChange={e => setNewTaskTime(e.target.value)}
+                          style={{ ...inputStyle, width: '120px', flex: 'none' }}
+                        />
+                        <button
+                          onClick={() => addTask(newTask)}
                           style={{
-                            padding: '1rem 1.25rem', borderRadius: '0.6rem',
-                            border: `1px solid ${given ? '#86efac' : '#e2e8f0'}`,
-                            background: given ? '#f0fdf4' : '#f8fafc',
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem',
+                            padding: '0.5rem 1rem', borderRadius: '0.5rem', background: '#0891b2', color: 'white',
+                            border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
                           }}
                         >
-                          <div>
-                            <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{med.drug}</div>
-                            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>
-                              {med.dose} · {med.frequency} · {med.duration} · {med.route}
-                            </div>
-                            {given && givenEntry && (
-                              <div style={{ fontSize: '0.72rem', color: '#16a34a', marginTop: '0.25rem', fontWeight: '500' }}>
-                                Administered at {fmt(givenEntry.administeredAt)}
-                              </div>
-                            )}
-                          </div>
-                          {given ? (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem', color: '#16a34a', fontWeight: '600', whiteSpace: 'nowrap' }}>
-                              <CheckCircle size={18} /> Administered
-                            </span>
-                          ) : (
-                            <button
-                              className="btn-primary"
-                              style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem', background: '#0891b2', whiteSpace: 'nowrap' }}
-                              onClick={() => administerMed(med.id)}
-                            >
-                              Mark Given
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </>
-                )}
-              </div>
-            )}
-
-            {/* ── TAB: Notes ── */}
-            {tab === 'notes' && nd && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <div>
-                  <textarea
-                    value={noteText}
-                    onChange={e => setNoteText(e.target.value)}
-                    placeholder="Enter nursing note…"
-                    rows={3}
-                    style={{ ...inputStyle, resize: 'vertical' }}
-                  />
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                    <button
-                      className="btn-primary"
-                      style={{ fontSize: '0.875rem', background: '#0891b2' }}
-                      onClick={addNote}
-                      disabled={!noteText.trim()}
-                    >
-                      Add Note
-                    </button>
-                  </div>
-                </div>
-                {nd.notes.length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', padding: '1.5rem' }}>No notes yet.</p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                    {[...nd.notes].reverse().map(note => (
-                      <div key={note.id} style={{ padding: '0.85rem 1rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
-                          <div style={{ fontSize: '0.875rem', lineHeight: '1.6', color: '#1e293b' }}>{note.text}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{fmt(note.time)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── TAB: Tasks ── */}
-            {tab === 'tasks' && nd && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                <div>
-                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: '#1e293b', marginBottom: '0.6rem' }}>Quick Add</div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem', marginBottom: '0.75rem' }}>
-                    {PRESET_TASKS.map(t => (
-                      <button
-                        key={t}
-                        onClick={() => addTask(t)}
-                        style={{ padding: '0.22rem 0.6rem', borderRadius: '9999px', fontSize: '0.75rem', cursor: 'pointer', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#475569' }}
-                      >
-                        + {t}
-                      </button>
-                    ))}
-                  </div>
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                      value={newTask}
-                      onChange={e => setNewTask(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addTask(newTask)}
-                      placeholder="Custom task…"
-                      style={{ ...inputStyle, flex: 1 }}
-                    />
-                    <input
-                      type="time"
-                      value={newTaskTime}
-                      onChange={e => setNewTaskTime(e.target.value)}
-                      style={{ ...inputStyle, width: '110px', flex: 'none' }}
-                    />
-                    <button
-                      className="btn-primary"
-                      style={{ fontSize: '0.8rem', padding: '0.5rem 0.9rem', background: '#0891b2' }}
-                      onClick={() => addTask(newTask)}
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                </div>
-
-                {nd.tasks.length === 0 ? (
-                  <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem', padding: '1.5rem' }}>
-                    No tasks yet. Add from presets or enter a custom task.
-                  </p>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                    {nd.tasks.map(task => (
-                      <div
-                        key={task.id}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '0.75rem',
-                          padding: '0.75rem 1rem', borderRadius: '0.5rem',
-                          background: task.completed ? '#f0fdf4' : '#f8fafc',
-                          border: `1px solid ${task.completed ? '#86efac' : '#e2e8f0'}`,
-                        }}
-                      >
-                        <button
-                          onClick={() => toggleTask(task.id)}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: task.completed ? '#16a34a' : '#cbd5e1', flexShrink: 0, padding: 0 }}
-                        >
-                          <CheckCircle size={22} />
+                          <Plus size={16} />
                         </button>
-                        <div style={{ flex: 1 }}>
-                          <div style={{
-                            fontSize: '0.875rem', fontWeight: task.completed ? '400' : '500',
-                            color: task.completed ? '#94a3b8' : '#1e293b',
-                            textDecoration: task.completed ? 'line-through' : 'none',
-                          }}>
-                            {task.task}
-                          </div>
-                          {(task.dueTime || task.completedAt) && (
-                            <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.15rem', display: 'flex', gap: '0.75rem' }}>
-                              {task.dueTime && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Clock size={11} /> Due: {task.dueTime}</span>}
-                              {task.completedAt && <span>Done: {fmt(task.completedAt)}</span>}
-                            </div>
-                          )}
-                        </div>
                       </div>
-                    ))}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {nd.tasks.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                          지정된 케어 태스크가 없습니다. 프리셋에서 선택하여 활성화할 수 있습니다.
+                        </div>
+                      ) : (
+                        nd.tasks.map(task => (
+                          <div
+                            key={task.id}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: '0.75rem',
+                              padding: '0.75rem 1rem', borderRadius: '0.5rem',
+                              background: task.completed ? '#ecfdf5' : '#f8fafc',
+                              border: `1px solid ${task.completed ? '#a7f3d0' : '#e2e8f0'}`,
+                            }}
+                          >
+                            <button
+                              onClick={() => toggleTask(task.id)}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', color: task.completed ? '#10b981' : '#cbd5e1', flexShrink: 0, padding: 0 }}
+                            >
+                              <CheckCircle size={20} />
+                            </button>
+                            <div style={{ flex: 1 }}>
+                              <div style={{
+                                fontSize: '0.85rem', fontWeight: task.completed ? '400' : '600',
+                                color: task.completed ? '#94a3b8' : '#1e293b',
+                                textDecoration: task.completed ? 'line-through' : 'none',
+                              }}>
+                                {task.task}
+                              </div>
+                              {(task.dueTime || task.completedAt) && (
+                                <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.15rem', display: 'flex', gap: '0.75rem' }}>
+                                  {task.dueTime && <span style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Clock size={10} /> 예정시간: {task.dueTime}</span>}
+                                  {task.completedAt && <span>완료일시: {fmt(task.completedAt)}</span>}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
                   </div>
                 )}
-              </div>
-            )}
 
-          </div>
-        )}
+              </div>
+
+            </div>
+          )}
+        </div>
+
       </div>
+
+      {/* Bed Allocation Modal Overlay */}
+      {allocationPatient && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.45)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{
+            background: 'white', borderRadius: '1rem', padding: '1.75rem', width: '420px',
+            boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+            border: '1px solid #f1f5f9'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+              <BedDouble size={22} style={{ color: '#0891b2' }} />
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: '800' }}>병동 및 병상 배정</h3>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', background: '#f8fafc', padding: '0.75rem', borderRadius: '0.75rem', marginBottom: '1.25rem' }}>
+              <Avatar name={allocationPatient.name} photoUrl={allocationPatient.photoUrl} size={40} />
+              <div>
+                <div style={{ fontWeight: '700', fontSize: '0.875rem' }}>{allocationPatient.name}</div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>MRN: {allocationPatient.mrn}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1.5rem' }}>
+              <div>
+                {lbl('병동 선택 (Ward)')}
+                <select
+                  value={allocWard}
+                  onChange={e => setAllocWard(e.target.value)}
+                  style={{ ...inputStyle, cursor: 'pointer' }}
+                >
+                  <option value="Ward A">Ward A (일반 병동 A)</option>
+                  <option value="Ward B">Ward B (일반 병동 B)</option>
+                  <option value="ICU">ICU (중환자실)</option>
+                  <option value="Pediatrics">Pediatrics (소아청소년과)</option>
+                </select>
+              </div>
+
+              <div>
+                {lbl('병상 번호 (Bed Number)')}
+                <input
+                  type="text"
+                  placeholder="예: 101-A, 305"
+                  value={allocBed}
+                  onChange={e => setAllocBed(e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setAllocationPatient(null)}
+                style={{
+                  padding: '0.55rem 1.1rem', borderRadius: '0.5rem', background: '#f1f5f9', color: '#475569',
+                  border: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer'
+                }}
+              >
+                취소
+              </button>
+              <button
+                onClick={handleAllocateBed}
+                disabled={allocating || !allocBed.trim()}
+                style={{
+                  padding: '0.55rem 1.1rem', borderRadius: '0.5rem', background: '#0891b2', color: 'white',
+                  border: 'none', fontSize: '0.85rem', fontWeight: '600', cursor: 'pointer',
+                  opacity: (!allocBed.trim() || allocating) ? 0.6 : 1
+                }}
+              >
+                {allocating ? '배정 중…' : '배정 완료'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

@@ -318,6 +318,12 @@ function rowToPatient(r: Record<string, unknown>): Patient {
     dischargeDate: (r.discharge_date as string) || undefined,
     diagnosisSummary: (r.diagnosis_summary as string) || undefined,
     treatmentPlan: (r.treatment_plan as string[]) ?? [],
+    bedPlacementRequested: (r.bed_placement_requested as boolean) ?? false,
+    isIntensiveCare: (r.is_intensive_care as boolean) ?? false,
+    actualAdmissionDate: (r.actual_admission_date as string) || undefined,
+    actualDischargeDate: (r.actual_discharge_date as string) || undefined,
+    assignedWard: (r.assigned_ward as string) || undefined,
+    assignedBed: (r.assigned_bed as string) || undefined,
   };
 }
 
@@ -513,6 +519,12 @@ export class SupabaseService implements IDBService {
     if (changes.interpreterNeeded !== undefined) row.interpreter_needed = changes.interpreterNeeded;
     if (changes.insuranceProvider !== undefined) row.insurance_provider = changes.insuranceProvider;
     if (changes.insurancePolicyNo !== undefined) row.insurance_policy_no = changes.insurancePolicyNo;
+    if (changes.bedPlacementRequested !== undefined) row.bed_placement_requested = changes.bedPlacementRequested;
+    if (changes.isIntensiveCare !== undefined) row.is_intensive_care = changes.isIntensiveCare;
+    if (changes.actualAdmissionDate !== undefined) row.actual_admission_date = changes.actualAdmissionDate;
+    if (changes.actualDischargeDate !== undefined) row.actual_discharge_date = changes.actualDischargeDate;
+    if (changes.assignedWard !== undefined) row.assigned_ward = changes.assignedWard;
+    if (changes.assignedBed !== undefined) row.assigned_bed = changes.assignedBed;
     const { error } = await this.client.from('patients').update(row).eq('mrn', mrn);
     if (error) throw new Error(error.message);
   }

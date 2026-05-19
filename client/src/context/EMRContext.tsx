@@ -143,6 +143,12 @@ export type Patient = {
   dischargeDate?: string;
   diagnosisSummary?: string;
   treatmentPlan?: string[];
+  bedPlacementRequested?: boolean;
+  isIntensiveCare?: boolean;
+  actualAdmissionDate?: string;
+  actualDischargeDate?: string;
+  assignedWard?: string;
+  assignedBed?: string;
 };
 
 export type StaffMember = {
