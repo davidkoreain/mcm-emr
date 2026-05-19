@@ -44,7 +44,10 @@ const ManagerDashboard: React.FC = () => {
 
   // ── helpers ──────────────────────────────────────────────────
   const getPatientName = (mrn: string) => patients.find(p => p.mrn === mrn)?.name ?? mrn;
-  const getDoctorName  = (id?: number)  => (id != null ? staff.find(s => s.id === id)?.name : null) ?? 'Unknown';
+  const getDoctorName  = (id?: number)  => {
+    const name = (id != null ? staff.find(s => s.id === id)?.name : null) ?? 'Unknown';
+    return name.replace(/^Dr\.\s+/i, '');
+  };
   const fmtTime = (iso: string) => {
     const d = new Date(iso);
     return d.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false });
