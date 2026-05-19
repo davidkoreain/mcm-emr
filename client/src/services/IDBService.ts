@@ -1,4 +1,4 @@
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog, CalendarEvent } from '../context/EMRContext';
 
 /**
  * Database service interface.
@@ -27,6 +27,10 @@ export interface IDBService {
   fetchAppointments(): Promise<Appointment[]>;
   insertAppointment(a: Omit<Appointment, 'id' | 'createdAt'>): Promise<void>;
   updateAppointment(id: number, changes: Partial<Appointment>): Promise<void>;
+  // calendar events (doctor personal schedule)
+  fetchCalendarEvents?(): Promise<CalendarEvent[]>;
+  insertCalendarEvent?(e: Omit<CalendarEvent, 'id' | 'createdAt'>): Promise<void>;
+  deleteCalendarEvent?(id: number): Promise<void>;
   // portal auth
   matchPatientRecord(name: string, dob: string, phone: string): Promise<Patient | null>;
   registerPortalUser(mrn: string, passwordHash: string): Promise<void>;

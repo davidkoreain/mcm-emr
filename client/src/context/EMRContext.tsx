@@ -31,6 +31,20 @@ export type Appointment = {
   confirmedBy?: string;
 };
 
+export type CalendarEventCategory = 'Consultation' | 'Seminar' | 'Meeting' | 'Training' | 'Event';
+
+export type CalendarEvent = {
+  id: number;
+  doctorId: number;
+  category: CalendarEventCategory;
+  title: string;
+  startTime: string;
+  endTime: string;
+  location?: string;
+  notes?: string;
+  createdAt: string;
+};
+
 export type PatientUser = {
   id: string;
   patientMrn: string;
@@ -368,6 +382,7 @@ type EMRContextType = {
   labResults: LabResult[];
   medicalHistory: MedicalHistoryItem[];
   staffLeave: StaffLeave[];
+  calendarEvents: CalendarEvent[];
   loading: boolean;
   error: string | null;
   role: UserRole | null;
@@ -387,6 +402,8 @@ type EMRContextType = {
   updateAsset: (id: string, changes: Partial<Asset>) => Promise<void>;
   addAppointment: (app: Omit<Appointment, 'id' | 'createdAt'>) => Promise<void>;
   updateAppointment: (id: number, changes: Partial<Appointment>) => Promise<void>;
+  addCalendarEvent: (ev: Omit<CalendarEvent, 'id' | 'createdAt'>) => Promise<void>;
+  deleteCalendarEvent: (id: number) => Promise<void>;
   // Surgeries
   addSurgery: (s: Omit<Surgery, 'id' | 'createdAt'>) => Promise<void>;
   updateSurgery: (id: number, changes: Partial<Surgery>) => Promise<void>;
@@ -482,6 +499,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [guardians, setGuardians] = useState<GuardianUser[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
   const [staffLeave, setStaffLeave] = useState<StaffLeave[]>([]);
+  const [calendarEvents, setCalendarEvents] = useState<CalendarEvent[]>([]);
 
   // Cookie Helpers for Session-only state (shared across tabs)
   const getSessionCookie = (name: string) => {
@@ -566,7 +584,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh, ltc] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh, ltc, ce] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -584,6 +602,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchDrugOrders ? db.fetchDrugOrders() : Promise.resolve([] as DrugOrder[]), [] as DrugOrder[]),
         safeFetch(db.fetchInventoryHistory ? db.fetchInventoryHistory() : Promise.resolve([] as InventoryHistory[]), [] as InventoryHistory[]),
         safeFetch(db.fetchLabTestCatalog ? db.fetchLabTestCatalog() : Promise.resolve([] as LabTestCatalog[]), [] as LabTestCatalog[]),
+        safeFetch(db.fetchCalendarEvents ? db.fetchCalendarEvents() : Promise.resolve([] as CalendarEvent[]), [] as CalendarEvent[]),
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -611,6 +630,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setDrugOrders(dord);
       setInventoryHistory(invh);
       setLabTestCatalog(ltc);
+      setCalendarEvents(ce);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -668,6 +688,18 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateAppointment = async (id: number, changes: Partial<Appointment>) => {
     await db.updateAppointment(id, changes);
+    await refreshData();
+  };
+
+  const addCalendarEvent = async (ev: Omit<CalendarEvent, 'id' | 'createdAt'>) => {
+    if (!db.insertCalendarEvent) return;
+    await db.insertCalendarEvent(ev);
+    await refreshData();
+  };
+
+  const deleteCalendarEvent = async (id: number) => {
+    if (!db.deleteCalendarEvent) return;
+    await db.deleteCalendarEvent(id);
     await refreshData();
   };
 
@@ -869,11 +901,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <EMRContext.Provider value={{
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions,
       drugSuppliers, medicationSchedules, drugOrders, inventoryHistory,
-      labOrders, labResults, labTestCatalog, medicalHistory, staffLeave,
+      labOrders, labResults, labTestCatalog, medicalHistory, staffLeave, calendarEvents,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
-      addAppointment, updateAppointment, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian, fetchAppSetting, saveAppSetting,
+      addAppointment, updateAppointment, addCalendarEvent, deleteCalendarEvent, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian, fetchAppSetting, saveAppSetting,
       dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
       submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, updateLabOrderResultStatus, addMedicalHistory
     }}>

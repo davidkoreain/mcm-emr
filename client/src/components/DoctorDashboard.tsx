@@ -33,14 +33,26 @@ interface DoctorDashboardProps {
 }
 
 const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelectMrn, onStartConsult, onViewHistory, onNewAppointment }) => {
-  const { appointments, patients, currentStaff, role, medicalHistory, deleteMedicalHistory, addAppointment } = useEMR();
+  const { appointments, patients, currentStaff, role, medicalHistory, deleteMedicalHistory, addAppointment, calendarEvents, addCalendarEvent, deleteCalendarEvent } = useEMR();
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<MedicalHistoryItem | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [newAppt, setNewAppt] = useState({ patientMrn: '', startTime: '', notes: '' });
+  const [newEvent, setNewEvent] = useState<{ category: 'Consultation' | 'Seminar' | 'Meeting' | 'Training' | 'Event'; title: string; startTime: string; endTime: string; location: string; notes: string }>({ category: 'Consultation', title: '', startTime: '', endTime: '', location: '', notes: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [categoryFilter, setCategoryFilter] = useState<Record<string, boolean>>({ Appointment: true, Consultation: true, Seminar: true, Meeting: true, Training: true, Event: true });
+  const [calendarSearch, setCalendarSearch] = useState('');
+  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+
+  const CATEGORY_META: Record<string, { label: string; color: string; bg: string }> = {
+    Appointment:  { label: '환자 진료', color: '#1d4ed8', bg: '#dbeafe' },
+    Consultation: { label: '진료',      color: '#0e7490', bg: '#cffafe' },
+    Seminar:      { label: '세미나',    color: '#6d28d9', bg: '#ede9fe' },
+    Meeting:      { label: '회의',      color: '#c2410c', bg: '#ffedd5' },
+    Training:     { label: '교육',      color: '#15803d', bg: '#dcfce7' },
+    Event:        { label: '행사',      color: '#be185d', bg: '#fce7f3' },
+  };
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
@@ -96,6 +108,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   // ── Data Binding ──────────────────────────────────────────────
 
   const displayAppointments = useMemo(() => {
+    if (!categoryFilter.Appointment) return [];
+
     // PERSONAL CALENDAR FILTERING
     const filteredApps = appointments.filter(app => {
       if (!currentStaff) return false;
@@ -119,15 +133,38 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
       { id: 905, mrn: 'MRN-2026-005', date: new Date(2026, 4, 15, 14, 0), duration: 0.5, color: '#3b82f6' },
     ];
 
-    return combined.map(item => {
-      const patient = patients.find(p => p.mrn === item.mrn);
-      return {
-        ...item,
-        name: patient?.name || 'Unknown Patient',
-        patient: patient
-      };
-    });
-  }, [appointments, patients, currentStaff]);
+    const q = calendarSearch.trim().toLowerCase();
+    return combined
+      .map(item => {
+        const patient = patients.find(p => p.mrn === item.mrn);
+        return {
+          ...item,
+          name: patient?.name || 'Unknown Patient',
+          patient: patient,
+        };
+      })
+      .filter(item => !q || item.name.toLowerCase().includes(q) || item.mrn.toLowerCase().includes(q));
+  }, [appointments, patients, currentStaff, categoryFilter.Appointment, calendarSearch]);
+
+  const displayEvents = useMemo(() => {
+    if (!currentStaff) return [];
+    const q = calendarSearch.trim().toLowerCase();
+    return calendarEvents
+      .filter(ev => ev.doctorId === currentStaff.id)
+      .filter(ev => categoryFilter[ev.category])
+      .filter(ev => !q || ev.title.toLowerCase().includes(q) || (ev.location ?? '').toLowerCase().includes(q))
+      .map(ev => {
+        const start = new Date(ev.startTime);
+        const end = new Date(ev.endTime);
+        const durationHours = Math.max(0.25, (end.getTime() - start.getTime()) / 3_600_000);
+        return { ...ev, date: start, durationHours };
+      });
+  }, [calendarEvents, currentStaff, categoryFilter, calendarSearch]);
+
+  const selectedEvent = useMemo(
+    () => (selectedEventId != null ? calendarEvents.find(e => e.id === selectedEventId) ?? null : null),
+    [selectedEventId, calendarEvents]
+  );
 
   const selectedAppointment = useMemo(() => {
     return displayAppointments.find(app => app.mrn === selectedMrn);
@@ -207,13 +244,31 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             const top = getPosition(app.date);
             const isSelected = selectedMrn === app.mrn;
             return (
-              <div 
-                key={app.id} 
+              <div
+                key={app.id}
                 className={`appointment-card ${selectedMrn === app.mrn ? 'selected' : ''}`}
                 onClick={() => onSelectMrn && onSelectMrn(app.mrn)}
                 style={{ top: `${top}px`, height: `${app.duration * 80 - 4}px`, background: selectedMrn === app.mrn ? '#1e40af' : app.color, left: '8px', right: '8px' }}
               >
                 {app.name}
+              </div>
+            );
+          })
+        }
+        {displayEvents
+          .filter(ev => ev.date.toDateString() === selectedDate.toDateString())
+          .map(ev => {
+            const top = getPosition(ev.date);
+            const meta = CATEGORY_META[ev.category];
+            return (
+              <div
+                key={`ev-${ev.id}`}
+                className="appointment-card event-card"
+                onClick={(e) => { e.stopPropagation(); setSelectedEventId(ev.id); }}
+                style={{ top: `${top}px`, height: `${ev.durationHours * 80 - 4}px`, background: meta.bg, color: meta.color, border: `1px solid ${meta.color}`, left: '8px', right: '8px' }}
+                title={`${meta.label} · ${ev.title}`}
+              >
+                <span style={{ fontWeight: 800 }}>[{meta.label}] {ev.title}</span>
               </div>
             );
           })
@@ -286,13 +341,31 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                     const top = getPosition(app.date);
                     const isSelected = selectedMrn === app.mrn;
                     return (
-                      <div 
-                        key={app.id} 
+                      <div
+                        key={app.id}
                         className={`appointment-card ${selectedMrn === app.mrn ? 'selected' : ''}`}
                         onClick={() => onSelectMrn && onSelectMrn(app.mrn)}
                         style={{ top: `${top}px`, height: `${app.duration * 80 - 4}px`, background: selectedMrn === app.mrn ? '#1e40af' : app.color }}
                       >
                         {app.name}
+                      </div>
+                    );
+                  })
+                }
+                {displayEvents
+                  .filter(ev => ev.date.toDateString() === date.toDateString())
+                  .map(ev => {
+                    const top = getPosition(ev.date);
+                    const meta = CATEGORY_META[ev.category];
+                    return (
+                      <div
+                        key={`ev-${ev.id}`}
+                        className="appointment-card event-card"
+                        onClick={(e) => { e.stopPropagation(); setSelectedEventId(ev.id); }}
+                        style={{ top: `${top}px`, height: `${ev.durationHours * 80 - 4}px`, background: meta.bg, color: meta.color, border: `1px solid ${meta.color}` }}
+                        title={`${meta.label} · ${ev.title}`}
+                      >
+                        <span style={{ fontSize: '0.65rem', fontWeight: 800, lineHeight: 1.1, padding: '2px' }}>[{meta.label}]<br />{ev.title}</span>
                       </div>
                     );
                   })
@@ -346,7 +419,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
           const isToday = date.toDateString() === new Date().toDateString();
           const isSunday = date.getDay() === 0;
           const apps = displayAppointments.filter(app => app.date.toDateString() === date.toDateString());
-          
+          const evs = displayEvents.filter(ev => ev.date.toDateString() === date.toDateString());
+
           return (
             <div key={i} style={{ 
               borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid #f1f5f9', 
@@ -374,15 +448,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               </div>
               <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                 {apps.map(app => (
-                  <div 
-                    key={app.id} 
+                  <div
+                    key={app.id}
                     onClick={(e) => { e.stopPropagation(); onSelectMrn && onSelectMrn(app.mrn); }}
-                    style={{ 
-                      fontSize: '0.65rem', 
-                      background: selectedMrn === app.mrn ? '#1e40af' : app.color, 
-                      color: 'white', 
-                      padding: '2px 4px', 
-                      borderRadius: '3px', 
+                    style={{
+                      fontSize: '0.65rem',
+                      background: selectedMrn === app.mrn ? '#1e40af' : app.color,
+                      color: 'white',
+                      padding: '2px 4px',
+                      borderRadius: '3px',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
@@ -392,6 +466,31 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                     {app.name}
                   </div>
                 ))}
+                {evs.map(ev => {
+                  const meta = CATEGORY_META[ev.category];
+                  return (
+                    <div
+                      key={`ev-${ev.id}`}
+                      onClick={(e) => { e.stopPropagation(); setSelectedEventId(ev.id); }}
+                      style={{
+                        fontSize: '0.65rem',
+                        background: meta.bg,
+                        color: meta.color,
+                        border: `1px solid ${meta.color}`,
+                        padding: '2px 4px',
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        fontWeight: 700,
+                      }}
+                      title={`${meta.label} · ${ev.title}`}
+                    >
+                      [{meta.label}] {ev.title}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           );
@@ -424,7 +523,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             <CalendarIcon size={20} color="#2563eb" style={{ cursor: 'pointer' }} />
           </div>
           <button className="btn-primary" onClick={() => setShowNewModal(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', height: '36px' }}>
-            <Plus size={18} /> New Appointment
+            <Plus size={18} /> New Event
           </button>
           <div className="view-selector">
             <button className={viewType === 'day' ? 'active' : ''} onClick={() => setViewType('day')}>Day</button>
@@ -435,6 +534,42 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}>
           {viewType === 'day' ? selectedDate.toDateString() : viewType === 'week' ? `Week of ${weekDays[0].toDateString()}` : 'Monthly Overview'}
         </p>
+
+        {/* Category filter chips + search bar */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.85rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+            {(['Appointment','Consultation','Seminar','Meeting','Training','Event'] as const).map(cat => {
+              const meta = CATEGORY_META[cat];
+              const active = categoryFilter[cat];
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setCategoryFilter(f => ({ ...f, [cat]: !f[cat] }))}
+                  style={{
+                    fontSize: '0.72rem', fontWeight: 700, padding: '0.3rem 0.7rem',
+                    borderRadius: '999px', cursor: 'pointer',
+                    background: active ? meta.bg : 'white',
+                    color: active ? meta.color : '#94a3b8',
+                    border: `1px solid ${active ? meta.color : '#e2e8f0'}`,
+                    opacity: active ? 1 : 0.6,
+                  }}
+                >
+                  {meta.label}
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: '320px', marginLeft: 'auto' }}>
+            <Search size={14} style={{ position: 'absolute', left: '0.6rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            <input
+              type="text"
+              value={calendarSearch}
+              onChange={e => setCalendarSearch(e.target.value)}
+              placeholder="Search patient name or event title..."
+              style={{ width: '100%', padding: '0.45rem 0.5rem 0.45rem 1.9rem', borderRadius: '0.5rem', border: '1px solid #e2e8f0', fontSize: '0.8rem', boxSizing: 'border-box' }}
+            />
+          </div>
+        </div>
       </div>
 
       <div
@@ -664,70 +799,151 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         </div>
       )}
 
-      {/* New Appointment Modal */}
+      {/* New Event Modal */}
       {showNewModal && (
         <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '1rem' }}>
-          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.25rem', width: '450px', maxWidth: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1e293b' }}>New Appointment</h3>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div className="modal-content" style={{ background: 'white', padding: '2rem', borderRadius: '1.25rem', width: '480px', maxWidth: '100%', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '1.5rem', color: '#1e293b' }}>New Event</h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginBottom: '0.5rem' }}>Select Patient</label>
-                <select 
-                  value={newAppt.patientMrn} 
-                  onChange={(e) => setNewAppt({ ...newAppt, patientMrn: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc' }}
-                >
-                  <option value="">Choose Patient...</option>
-                  {patients.map(p => <option key={p.mrn} value={p.mrn}>{p.name} ({p.mrn})</option>)}
-                </select>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>Category</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                  {(['Consultation','Seminar','Meeting','Training','Event'] as const).map(cat => {
+                    const meta = CATEGORY_META[cat];
+                    const active = newEvent.category === cat;
+                    return (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setNewEvent({ ...newEvent, category: cat })}
+                        style={{
+                          fontSize: '0.78rem', fontWeight: 700, padding: '0.4rem 0.85rem',
+                          borderRadius: '999px', cursor: 'pointer',
+                          background: active ? meta.color : meta.bg,
+                          color: active ? 'white' : meta.color,
+                          border: `1px solid ${meta.color}`,
+                        }}
+                      >{meta.label}</button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginBottom: '0.5rem' }}>Date & Time</label>
-                <input 
-                  type="datetime-local" 
-                  value={newAppt.startTime}
-                  onChange={(e) => setNewAppt({ ...newAppt, startTime: e.target.value })}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc' }}
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>Title</label>
+                <input
+                  type="text"
+                  value={newEvent.title}
+                  onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                  placeholder="e.g. 외래 진료 / 부서 회의 / 심포지엄"
+                  style={{ width: '100%', padding: '0.7rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', boxSizing: 'border-box', fontSize: '0.9rem' }}
+                />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>Start</label>
+                  <input
+                    type="datetime-local"
+                    value={newEvent.startTime}
+                    onChange={(e) => setNewEvent({ ...newEvent, startTime: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', boxSizing: 'border-box', fontSize: '0.85rem' }}
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>End</label>
+                  <input
+                    type="datetime-local"
+                    value={newEvent.endTime}
+                    onChange={(e) => setNewEvent({ ...newEvent, endTime: e.target.value })}
+                    style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', boxSizing: 'border-box', fontSize: '0.85rem' }}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>Location (optional)</label>
+                <input
+                  type="text"
+                  value={newEvent.location}
+                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                  placeholder="e.g. 회의실 A, Zoom"
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', boxSizing: 'border-box', fontSize: '0.85rem' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', color: '#64748b', marginBottom: '0.5rem' }}>Notes</label>
-                <textarea 
-                  value={newAppt.notes}
-                  onChange={(e) => setNewAppt({ ...newAppt, notes: e.target.value })}
-                  placeholder="Reason for appointment..."
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', height: '100px', resize: 'none' }}
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>Notes (optional)</label>
+                <textarea
+                  value={newEvent.notes}
+                  onChange={(e) => setNewEvent({ ...newEvent, notes: e.target.value })}
+                  placeholder="Agenda, topic, etc."
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', height: '70px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box', fontSize: '0.85rem' }}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem' }}>
-                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowNewModal(false)}>Cancel</button>
-                <button 
-                  className="btn-primary" 
-                  style={{ flex: 1.5 }}
-                  disabled={!newAppt.patientMrn || !newAppt.startTime}
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.25rem' }}>
+                <button className="btn-secondary" style={{ flex: 1, padding: '0.7rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: 'white', color: '#475569', fontWeight: 700, cursor: 'pointer' }} onClick={() => setShowNewModal(false)}>Cancel</button>
+                <button
+                  className="btn-primary"
+                  style={{ flex: 1.5, padding: '0.7rem', borderRadius: '0.6rem', border: 'none', background: '#2563eb', color: 'white', fontWeight: 800, cursor: 'pointer' }}
+                  disabled={!newEvent.title || !newEvent.startTime || !newEvent.endTime}
                   onClick={async () => {
                     if (!currentStaff) return;
-                    const start = new Date(newAppt.startTime);
-                    const end = new Date(start.getTime() + 30 * 60000); // Default 30 min
-                    await addAppointment({
-                      patientMrn: newAppt.patientMrn,
+                    const start = new Date(newEvent.startTime);
+                    const end = newEvent.endTime ? new Date(newEvent.endTime) : new Date(start.getTime() + 30 * 60000);
+                    await addCalendarEvent({
                       doctorId: currentStaff.id,
+                      category: newEvent.category,
+                      title: newEvent.title.trim(),
                       startTime: start.toISOString(),
                       endTime: end.toISOString(),
-                      status: 'Scheduled',
-                      notes: newAppt.notes
+                      location: newEvent.location.trim() || undefined,
+                      notes: newEvent.notes.trim() || undefined,
                     });
                     setShowNewModal(false);
-                    setNewAppt({ patientMrn: '', startTime: '', notes: '' });
+                    setNewEvent({ category: 'Consultation', title: '', startTime: '', endTime: '', location: '', notes: '' });
                   }}
                 >
-                  Schedule
+                  Add Event
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)', padding: '1rem' }} onClick={() => setSelectedEventId(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ background: 'white', padding: '1.75rem', borderRadius: '1.25rem', width: '420px', maxWidth: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+              <span style={{
+                fontSize: '0.7rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em',
+                background: CATEGORY_META[selectedEvent.category].bg, color: CATEGORY_META[selectedEvent.category].color,
+                border: `1px solid ${CATEGORY_META[selectedEvent.category].color}`,
+                padding: '0.25rem 0.7rem', borderRadius: '999px'
+              }}>{CATEGORY_META[selectedEvent.category].label}</span>
+              <button onClick={() => setSelectedEventId(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><X size={20} /></button>
+            </div>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', margin: 0 }}>{selectedEvent.title}</h3>
+            <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: '#475569' }}>
+              <div><strong>When:</strong> {new Date(selectedEvent.startTime).toLocaleString()} – {new Date(selectedEvent.endTime).toLocaleString()}</div>
+              {selectedEvent.location && <div><strong>Where:</strong> {selectedEvent.location}</div>}
+              {selectedEvent.notes && <div><strong>Notes:</strong> {selectedEvent.notes}</div>}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+              <button
+                onClick={async () => {
+                  if (confirm('Delete this event?')) {
+                    await deleteCalendarEvent(selectedEvent.id);
+                    setSelectedEventId(null);
+                  }
+                }}
+                style={{ padding: '0.55rem 1rem', borderRadius: '0.5rem', border: '1px solid #fecaca', background: 'white', color: '#b91c1c', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              ><Trash2 size={14} /> Delete</button>
+              <button onClick={() => setSelectedEventId(null)} style={{ padding: '0.55rem 1.1rem', borderRadius: '0.5rem', border: 'none', background: '#1e293b', color: 'white', fontWeight: 700, cursor: 'pointer' }}>Close</button>
             </div>
           </div>
         </div>

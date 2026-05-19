@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog, CalendarEvent } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -613,6 +613,40 @@ export class SupabaseService implements IDBService {
       status: a.status,
       notes: a.notes,
     });
+    if (error) throw new Error(error.message);
+  }
+
+  async fetchCalendarEvents(): Promise<CalendarEvent[]> {
+    const { data, error } = await this.client.from('calendar_events').select('*').order('start_time');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map((r: Record<string, unknown>) => ({
+      id: r.id as number,
+      doctorId: r.doctor_id as number,
+      category: r.category as CalendarEvent['category'],
+      title: r.title as string,
+      startTime: r.start_time as string,
+      endTime: r.end_time as string,
+      location: (r.location as string) ?? undefined,
+      notes: (r.notes as string) ?? undefined,
+      createdAt: r.created_at as string,
+    }));
+  }
+
+  async insertCalendarEvent(e: Omit<CalendarEvent, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('calendar_events').insert({
+      doctor_id: e.doctorId,
+      category: e.category,
+      title: e.title,
+      start_time: e.startTime,
+      end_time: e.endTime,
+      location: e.location,
+      notes: e.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async deleteCalendarEvent(id: number): Promise<void> {
+    const { error } = await this.client.from('calendar_events').delete().eq('id', id);
     if (error) throw new Error(error.message);
   }
 
