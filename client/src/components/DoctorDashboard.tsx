@@ -172,10 +172,21 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   }, [selectedMrn, displayAppointments]);
 
   // Original Appointment row (with status, etc.) — needed for change-request flow.
+  // Looks up by MRN so it still works when the visible chip came from the demo
+  // fallback list (those carry fake ids 901-905 that won't match real rows).
   const selectedAppointmentRow = useMemo(() => {
-    if (!selectedAppointment) return null;
-    return appointments.find(a => a.id === selectedAppointment.id) ?? null;
-  }, [selectedAppointment, appointments]);
+    if (!selectedMrn) return null;
+    const candidates = appointments
+      .filter(a => a.patientMrn === selectedMrn)
+      .filter(a => a.status !== 'Cancelled' && a.status !== 'Completed');
+    candidates.sort((a, b) => {
+      const aMine = currentStaff && a.doctorId === currentStaff.id ? 0 : 1;
+      const bMine = currentStaff && b.doctorId === currentStaff.id ? 0 : 1;
+      if (aMine !== bMine) return aMine - bMine;
+      return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+    });
+    return candidates[0] ?? null;
+  }, [selectedMrn, appointments, currentStaff]);
 
   const canRequestAppointmentChange = !!selectedAppointmentRow && (
     selectedAppointmentRow.status === 'Confirmed' ||
