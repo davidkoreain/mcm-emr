@@ -784,7 +784,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', background: '#f8fafc', padding: '0.75rem', borderRadius: '1rem' }}>
             {activeUser.photoUrl ? <img src={activeUser.photoUrl} alt="Profile" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} /> : <Avatar name={activeUser.name} size={36} />}
-            <div style={{ overflow: 'hidden' }}><div style={{ fontSize: '0.9rem', fontWeight: '800' }}>{activeUser.name}</div><div style={{ fontSize: '0.7rem', color: '#64748b' }}>{activeUser.mrn}</div></div>
+            <div style={{ overflow: 'hidden' }}><div style={{ fontSize: '0.9rem', fontWeight: '800', color: '#0f172a' }}>{activeUser.name}</div><div style={{ fontSize: '0.7rem', color: '#64748b' }}>{activeUser.mrn}</div></div>
           </div>
         </div>
         <nav style={{ flex: 1, padding: '1.5rem 0.75rem', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
