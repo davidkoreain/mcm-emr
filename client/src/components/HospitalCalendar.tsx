@@ -71,8 +71,24 @@ const HospitalCalendar: React.FC = () => {
     // 3. Derive Allergies (using riskFactors)
     const allergies = latestHistory?.riskFactors?.join(', ') || 'None';
 
-    // 4. Chief Complaint / Reason
-    const reason = selectedPatient.diagnosisSummary || latestHistory?.summary || 'General clinical monitoring';
+    // 4. Chief Complaint / Reason / JSON Parsing
+    let rawReason = selectedPatient.diagnosisSummary || latestHistory?.summary || latestHistory?.diagnosis || 'General clinical monitoring';
+    let diagnosis = '';
+    let subjective = '';
+    let notes = '';
+
+    if (rawReason && rawReason.trim().startsWith('{')) {
+      try {
+        const parsed = JSON.parse(rawReason);
+        diagnosis = parsed.diagnosis || parsed.chiefComplaint || parsed.reasonForVisit || '';
+        subjective = parsed.subjective || '';
+        notes = parsed.notes || parsed.objective || '';
+      } catch (e) {
+        diagnosis = rawReason;
+      }
+    } else {
+      diagnosis = rawReason;
+    }
 
     // 5. Language/Race
     const language = selectedPatient.language || 'English';
@@ -80,7 +96,9 @@ const HospitalCalendar: React.FC = () => {
     return {
       age: calculatedAge,
       allergies,
-      reason,
+      diagnosis: diagnosis || 'General clinical monitoring',
+      subjective,
+      notes,
       language
     };
   }, [selectedPatient, medicalHistory]);
@@ -1146,13 +1164,26 @@ const HospitalCalendar: React.FC = () => {
             </div>
 
             {/* Medical Brief */}
-            <div style={{ background: '#ecfeff', border: '1px solid #cffafe', padding: '0.85rem', borderRadius: '0.75rem', fontSize: '0.8rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0891b2', fontWeight: '700', marginBottom: '0.35rem', fontSize: '0.75rem' }}>
-                <Activity size={14} /> Chief Complaint / Visit Reason
+            <div style={{ background: '#ecfeff', border: '1px solid #cffafe', padding: '0.85rem', borderRadius: '0.75rem', fontSize: '0.8rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: '#0891b2', fontWeight: '700', fontSize: '0.75rem' }}>
+                <Activity size={14} /> Clinical Summary & Diagnosis
               </div>
-              <p style={{ margin: 0, color: '#155e75', fontWeight: '600', lineHeight: '1.4' }}>
-                {patientDetails?.reason || 'No clinical reason recorded.'}
-              </p>
+              <div>
+                <span style={{ fontWeight: '700', color: '#0f172a', display: 'block', fontSize: '0.78rem' }}>Diagnosis:</span>
+                <span style={{ color: '#155e75', fontWeight: '600' }}>{patientDetails?.diagnosis || 'General clinical monitoring'}</span>
+              </div>
+              {patientDetails?.subjective && (
+                <div>
+                  <span style={{ fontWeight: '700', color: '#0f172a', display: 'block', fontSize: '0.78rem', marginTop: '0.25rem' }}>Subjective Symptoms:</span>
+                  <span style={{ color: '#1e293b', fontStyle: 'italic' }}>{patientDetails.subjective}</span>
+                </div>
+              )}
+              {patientDetails?.notes && (
+                <div>
+                  <span style={{ fontWeight: '700', color: '#0f172a', display: 'block', fontSize: '0.78rem', marginTop: '0.25rem' }}>Clinical Notes:</span>
+                  <span style={{ color: '#475569', fontSize: '0.78rem' }}>{patientDetails.notes}</span>
+                </div>
+              )}
             </div>
 
             {/* Close Button Footer */}
