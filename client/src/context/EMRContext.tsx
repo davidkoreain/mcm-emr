@@ -22,11 +22,12 @@ export type Appointment = {
   status: AppointmentStatus;
   notes?: string;
   createdAt: string;
-  // Change-request fields: populated when patient requests to change a Confirmed appointment
+  // Change-request fields: populated when patient or doctor requests to change a Confirmed appointment
   requestedStartTime?: string;
   requestedEndTime?: string;
   requestedDoctorId?: number;
   changeReason?: string;
+  changeRequestedBy?: 'Patient' | 'Doctor';
   confirmedAt?: string;
   confirmedBy?: string;
 };

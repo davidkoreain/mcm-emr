@@ -3,7 +3,7 @@ import {
   ChevronLeft, ChevronRight, Calendar as CalendarIcon, 
   Clock, User, MoreVertical, Plus, CheckCircle, 
   Search, Filter, LayoutGrid, List as ListIcon,
-  Activity, Stethoscope, X, Trash2
+  Activity, Stethoscope, X, Trash2, RefreshCw
 } from 'lucide-react';
 import { useEMR, type MedicalHistoryItem } from '../context/EMRContext';
 import Avatar from './Avatar';
@@ -33,7 +33,7 @@ interface DoctorDashboardProps {
 }
 
 const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelectMrn, onStartConsult, onViewHistory, onNewAppointment }) => {
-  const { appointments, patients, currentStaff, role, medicalHistory, deleteMedicalHistory, addAppointment, calendarEvents, addCalendarEvent, deleteCalendarEvent } = useEMR();
+  const { appointments, patients, currentStaff, role, medicalHistory, deleteMedicalHistory, addAppointment, updateAppointment, calendarEvents, addCalendarEvent, deleteCalendarEvent } = useEMR();
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<MedicalHistoryItem | null>(null);
@@ -44,14 +44,15 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const [categoryFilter, setCategoryFilter] = useState<Record<string, boolean>>({ Appointment: true, Consultation: true, Seminar: true, Meeting: true, Training: true, Event: true });
   const [calendarSearch, setCalendarSearch] = useState('');
   const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [changeRequest, setChangeRequest] = useState<{ appointmentId: number; date: string; time: string; reason: string } | null>(null);
 
   const CATEGORY_META: Record<string, { label: string; color: string; bg: string }> = {
-    Appointment:  { label: '환자 진료', color: '#1d4ed8', bg: '#dbeafe' },
-    Consultation: { label: '진료',      color: '#0e7490', bg: '#cffafe' },
-    Seminar:      { label: '세미나',    color: '#6d28d9', bg: '#ede9fe' },
-    Meeting:      { label: '회의',      color: '#c2410c', bg: '#ffedd5' },
-    Training:     { label: '교육',      color: '#15803d', bg: '#dcfce7' },
-    Event:        { label: '행사',      color: '#be185d', bg: '#fce7f3' },
+    Appointment:  { label: 'Patient Care', color: '#1d4ed8', bg: '#dbeafe' },
+    Consultation: { label: 'Consultation', color: '#0e7490', bg: '#cffafe' },
+    Seminar:      { label: 'Seminar',      color: '#6d28d9', bg: '#ede9fe' },
+    Meeting:      { label: 'Meeting',      color: '#c2410c', bg: '#ffedd5' },
+    Training:     { label: 'Training',     color: '#15803d', bg: '#dcfce7' },
+    Event:        { label: 'Event',        color: '#be185d', bg: '#fce7f3' },
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -169,6 +170,39 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const selectedAppointment = useMemo(() => {
     return displayAppointments.find(app => app.mrn === selectedMrn);
   }, [selectedMrn, displayAppointments]);
+
+  // Original Appointment row (with status, etc.) — needed for change-request flow.
+  const selectedAppointmentRow = useMemo(() => {
+    if (!selectedAppointment) return null;
+    return appointments.find(a => a.id === selectedAppointment.id) ?? null;
+  }, [selectedAppointment, appointments]);
+
+  const canRequestAppointmentChange = !!selectedAppointmentRow && (
+    selectedAppointmentRow.status === 'Confirmed' ||
+    selectedAppointmentRow.status === 'ChangeConfirmed' ||
+    selectedAppointmentRow.status === 'Scheduled'
+  );
+
+  const submitDoctorChangeRequest = async () => {
+    if (!changeRequest) return;
+    const { appointmentId, date, time, reason } = changeRequest;
+    if (!date || !time) { alert('Please pick a new date and time.'); return; }
+    const [h, m] = time.split(':');
+    const start = new Date(date);
+    start.setHours(parseInt(h), parseInt(m), 0, 0);
+    const end = new Date(start.getTime() + 30 * 60000);
+    try {
+      await updateAppointment(appointmentId, {
+        status: 'ChangeApplied',
+        requestedStartTime: start.toISOString(),
+        requestedEndTime: end.toISOString(),
+        changeReason: reason,
+        changeRequestedBy: 'Doctor',
+      });
+      setChangeRequest(null);
+      alert('Change request submitted. A manager will review it shortly.');
+    } catch (e) { alert('Failed to submit change request.'); }
+  };
 
   const selectedPatient = useMemo(() => {
     if (selectedAppointment?.patient) return selectedAppointment.patient;
@@ -702,14 +736,38 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               </div>
             </div>
 
-            <div style={{ marginTop: 'auto', display: 'flex', gap: '1rem' }}>
+            <div style={{ marginTop: 'auto', display: 'flex', gap: '0.5rem' }}>
               <button
                 className="btn-primary"
-                style={{ width: '100%', padding: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', fontSize: '1rem' }}
+                style={{ flex: 1.4, padding: '1rem 0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.95rem' }}
                 onClick={() => onStartConsult && onStartConsult({ mrn: selectedPatient.mrn, name: selectedPatient.name, amharic: selectedPatient.amharic })}
               >
-                <Stethoscope size={22} /> Start Consult
+                <Stethoscope size={20} /> Start Consult
               </button>
+              {selectedAppointmentRow && (
+                <button
+                  style={{
+                    flex: 1, padding: '1rem 0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                    fontSize: '0.9rem', fontWeight: 800, cursor: canRequestAppointmentChange ? 'pointer' : 'not-allowed',
+                    border: '1px solid #fed7aa', background: canRequestAppointmentChange ? '#fff7ed' : '#f1f5f9',
+                    color: canRequestAppointmentChange ? '#9a3412' : '#94a3b8', borderRadius: '0.65rem',
+                  }}
+                  disabled={!canRequestAppointmentChange}
+                  title={canRequestAppointmentChange ? 'Submit a schedule-change request to the manager' : 'Only confirmed appointments can be changed'}
+                  onClick={() => {
+                    if (!selectedAppointmentRow) return;
+                    const d = new Date(selectedAppointmentRow.startTime);
+                    setChangeRequest({
+                      appointmentId: selectedAppointmentRow.id,
+                      date: d.toISOString().split('T')[0],
+                      time: d.toTimeString().slice(0, 5),
+                      reason: '',
+                    });
+                  }}
+                >
+                  <RefreshCw size={18} /> Request Change
+                </button>
+              )}
             </div>
               </div>
             ) : null}
@@ -836,7 +894,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                   type="text"
                   value={newEvent.title}
                   onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-                  placeholder="e.g. 외래 진료 / 부서 회의 / 심포지엄"
+                  placeholder="e.g. Outpatient clinic / Dept meeting / Symposium"
                   style={{ width: '100%', padding: '0.7rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', boxSizing: 'border-box', fontSize: '0.9rem' }}
                 />
               </div>
@@ -868,7 +926,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                   type="text"
                   value={newEvent.location}
                   onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
-                  placeholder="e.g. 회의실 A, Zoom"
+                  placeholder="e.g. Room A, Zoom"
                   style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: '#f8fafc', boxSizing: 'border-box', fontSize: '0.85rem' }}
                 />
               </div>
@@ -909,6 +967,51 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                   Add Event
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Doctor Change-Request Modal */}
+      {changeRequest && (
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050, backdropFilter: 'blur(4px)', padding: '1rem' }} onClick={() => setChangeRequest(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ background: 'white', padding: '1.75rem', borderRadius: '1.25rem', width: '440px', maxWidth: '100%' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 900, color: '#0f172a' }}>Request Appointment Change</h3>
+            <p style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.4rem' }}>Submit a new date and time. A manager will review your request.</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1.25rem' }}>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                New date
+                <input type="date" value={changeRequest.date}
+                  onChange={(e) => setChangeRequest({ ...changeRequest, date: e.target.value })}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', marginTop: '0.3rem', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                />
+              </label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                New time
+                <input type="time" value={changeRequest.time}
+                  onChange={(e) => setChangeRequest({ ...changeRequest, time: e.target.value })}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', marginTop: '0.3rem', fontSize: '0.85rem', boxSizing: 'border-box' }}
+                />
+              </label>
+              <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#475569' }}>
+                Reason (optional)
+                <textarea value={changeRequest.reason}
+                  onChange={(e) => setChangeRequest({ ...changeRequest, reason: e.target.value })}
+                  rows={3}
+                  placeholder="e.g. surgery scheduled at the same time"
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', marginTop: '0.3rem', fontSize: '0.85rem', boxSizing: 'border-box', resize: 'vertical', fontFamily: 'inherit' }}
+                />
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+              <button onClick={() => setChangeRequest(null)}
+                style={{ padding: '0.6rem 1.1rem', borderRadius: '0.6rem', border: '1px solid #e2e8f0', background: 'white', fontWeight: 700, color: '#475569', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={submitDoctorChangeRequest}
+                style={{ padding: '0.6rem 1.1rem', borderRadius: '0.6rem', border: 'none', background: '#fb923c', color: 'white', fontWeight: 800, cursor: 'pointer' }}>
+                Submit Request
+              </button>
             </div>
           </div>
         </div>

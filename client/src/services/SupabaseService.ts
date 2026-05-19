@@ -59,6 +59,7 @@ function rowToAppointment(r: Record<string, unknown>): Appointment {
     requestedEndTime: (r.requested_end_time as string) ?? undefined,
     requestedDoctorId: (r.requested_doctor_id as number) ?? undefined,
     changeReason: (r.change_reason as string) ?? undefined,
+    changeRequestedBy: (r.change_requested_by as 'Patient' | 'Doctor') ?? undefined,
     confirmedAt: (r.confirmed_at as string) ?? undefined,
     confirmedBy: (r.confirmed_by as string) ?? undefined,
   };
@@ -661,6 +662,7 @@ export class SupabaseService implements IDBService {
     if (changes.requestedEndTime !== undefined) row.requested_end_time = changes.requestedEndTime;
     if (changes.requestedDoctorId !== undefined) row.requested_doctor_id = changes.requestedDoctorId;
     if (changes.changeReason !== undefined) row.change_reason = changes.changeReason;
+    if (changes.changeRequestedBy !== undefined) row.change_requested_by = changes.changeRequestedBy;
     if (changes.confirmedAt !== undefined) row.confirmed_at = changes.confirmedAt;
     if (changes.confirmedBy !== undefined) row.confirmed_by = changes.confirmedBy;
     const { error } = await this.client.from('appointments').update(row).eq('id', id);

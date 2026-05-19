@@ -455,11 +455,22 @@ const ManagerDashboard: React.FC = () => {
                         </span>
                         <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{apt.patientMrn}</span>
                       </div>
-                      <span style={{
-                        background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`,
-                        fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '999px',
-                        textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap'
-                      }}>{meta.label}</span>
+                      <div style={{ display: 'flex', gap: '0.3rem', alignItems: 'center' }}>
+                        {isChange && apt.changeRequestedBy && (
+                          <span style={{
+                            background: apt.changeRequestedBy === 'Doctor' ? '#e0f2fe' : '#fef3c7',
+                            color:      apt.changeRequestedBy === 'Doctor' ? '#0369a1' : '#92400e',
+                            border:    `1px solid ${apt.changeRequestedBy === 'Doctor' ? '#7dd3fc' : '#fbbf24'}`,
+                            fontSize: '0.6rem', fontWeight: 800, padding: '0.15rem 0.45rem', borderRadius: '999px',
+                            textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap'
+                          }}>From {apt.changeRequestedBy}</span>
+                        )}
+                        <span style={{
+                          background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`,
+                          fontSize: '0.65rem', fontWeight: 800, padding: '0.15rem 0.5rem', borderRadius: '999px',
+                          textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap'
+                        }}>{meta.label}</span>
+                      </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.78rem', color: '#475569', flexWrap: 'wrap' }}>
                       <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>

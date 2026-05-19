@@ -383,6 +383,7 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
         requestedStartTime: start.toISOString(),
         requestedEndTime: end.toISOString(),
         changeReason: reason,
+        changeRequestedBy: 'Patient',
       });
       setChangeRequestForm(null);
       setSelectedScheduleEvent(null);
