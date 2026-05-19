@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Activity, Pill, ClipboardList, CheckSquare, Plus, BedDouble, 
   Clock, CheckCircle, ShieldAlert, AlertCircle, Sparkles, Check, 
@@ -75,7 +75,7 @@ const fmt = (iso: string) => {
 };
 
 const NurseDashboard: React.FC = () => {
-  const { patients, updatePatient, addVitals } = useEMR();
+  const { patients, updatePatient, addVitals, medicalHistory, addMedicalHistory } = useEMR();
 
   // Inpatient Bed Placement requested patients (unassigned ward)
   const pendingPlacement = patients.filter(p => p.bedPlacementRequested || (p.status === 'Inpatient' && !p.assignedWard));
@@ -89,7 +89,23 @@ const NurseDashboard: React.FC = () => {
   
   const [activeView, setActiveView] = useState<'overview' | 'calendar'>('overview');
   const [tab, setTab] = useState<'vitals' | 'mar' | 'notes' | 'tasks'>('vitals');
-  const [nurseData, setNurseData] = useState<Record<string, PatientNurseRecord>>({});
+  const [nurseData, setNurseData] = useState<Record<string, PatientNurseRecord>>(() => {
+    try {
+      const saved = localStorage.getItem('nurse_records');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('nurse_records', JSON.stringify(nurseData));
+    } catch (e) {
+      console.error('Failed to save nurse records to localStorage:', e);
+    }
+  }, [nurseData]);
+
   const [vitalsForm, setVitalsForm] = useState<Partial<VitalsRecord>>(EMPTY_VITALS);
   const [savingVitals, setSavingVitals] = useState(false);
   const [noteText, setNoteText] = useState('');
@@ -209,13 +225,22 @@ const NurseDashboard: React.FC = () => {
     setVitalsForm(EMPTY_VITALS);
   };
 
-  const addNote = () => {
+  const addNote = async () => {
     if (!selectedMrn || !noteText.trim()) return;
-    const cur = getNurse(selectedMrn);
-    patchNurse(selectedMrn, {
-      notes: [...cur.notes, { id: Date.now().toString(), text: noteText.trim(), time: new Date().toISOString() }],
-    });
-    setNoteText('');
+    try {
+      await addMedicalHistory({
+        patientMrn: selectedMrn,
+        date: new Date().toISOString().split('T')[0],
+        doctor: 'Nurse Martha Kassa',
+        diagnosis: 'Nursing Note',
+        summary: noteText.trim(),
+        riskFactors: [],
+        lifestyle: {},
+      });
+      setNoteText('');
+    } catch (err) {
+      console.error('Failed to add nursing note:', err);
+    }
   };
 
   const addTask = (taskText: string) => {
@@ -366,65 +391,111 @@ const NurseDashboard: React.FC = () => {
         /* Main Grid Workspace */
         <div className="nurse-workspace-grid">
         
-        {/* COLUMN 1: Bed Placement Waiting List */}
-        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
-            <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
-              <Clock size={18} style={{ color: '#0891b2' }} />
-              Bed Placement Pending ({pendingPlacement.length})
-            </div>
-            <span style={badgeStyle('#e0f2fe', '#0369a1')}>Placement Request</span>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-            {pendingPlacement.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
-                <CheckCircle size={32} style={{ color: '#10b981', marginBottom: '0.5rem' }} />
-                <div style={{ fontSize: '0.8rem', fontWeight: '500' }}>No patients waiting for placement.</div>
+        {/* COLUMN 1: Bed Placement Waiting List & Focus Care Patients */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%' }}>
+          {/* Bed Placement Waiting List Card */}
+          <div style={{ ...cardStyle, flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+              <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+                <Clock size={18} style={{ color: '#0891b2' }} />
+                Bed Placement Pending ({pendingPlacement.length})
               </div>
-            ) : (
-              pendingPlacement.map(p => (
-                <div key={p.mrn} style={{
-                  padding: '0.85rem',
-                  borderRadius: '0.75rem',
-                  background: '#f8fafc',
-                  border: '1px dashed #cbd5e1',
-                  transition: 'all 0.2s',
-                }}>
-                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <Avatar name={p.name} photoUrl={p.photoUrl} size={36} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn}</div>
+              <span style={badgeStyle('#e0f2fe', '#0369a1')}>Placement Request</span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {pendingPlacement.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}>
+                  <CheckCircle size={28} style={{ color: '#10b981', marginBottom: '0.5rem' }} />
+                  <div style={{ fontSize: '0.78rem', fontWeight: '500' }}>No patients waiting for placement.</div>
+                </div>
+              ) : (
+                pendingPlacement.map(p => (
+                  <div key={p.mrn} style={{
+                    padding: '0.85rem',
+                    borderRadius: '0.75rem',
+                    background: '#f8fafc',
+                    border: '1px dashed #cbd5e1',
+                    transition: 'all 0.2s',
+                  }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <Avatar name={p.name} photoUrl={p.photoUrl} size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>{p.mrn}</div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+                      <span style={{ fontSize: '0.75rem', color: '#f43f5e', fontWeight: '600' }}>
+                        {p.visitType} Waiting
+                      </span>
+                      <button
+                        onClick={() => setAllocationPatient(p)}
+                        style={{
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: '0.5rem',
+                          background: '#0891b2',
+                          color: 'white',
+                          border: 'none',
+                          fontSize: '0.75rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem',
+                          boxShadow: '0 2px 4px rgba(8, 145, 178, 0.2)',
+                        }}
+                      >
+                        <Plus size={12} /> Allocate Bed
+                      </button>
                     </div>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
-                    <span style={{ fontSize: '0.75rem', color: '#f43f5e', fontWeight: '600' }}>
-                      {p.visitType} Waiting
-                    </span>
-                    <button
-                      onClick={() => setAllocationPatient(p)}
-                      style={{
-                        padding: '0.35rem 0.75rem',
-                        borderRadius: '0.5rem',
-                        background: '#0891b2',
-                        color: 'white',
-                        border: 'none',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.25rem',
-                        boxShadow: '0 2px 4px rgba(8, 145, 178, 0.2)',
-                      }}
-                    >
-                      <Plus size={12} /> Allocate Bed
-                    </button>
-                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Focus Care Patients Card */}
+          <div style={{ ...cardStyle, flex: 1, display: 'flex', flexDirection: 'column', boxSizing: 'border-box', minHeight: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem' }}>
+              <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+                <ShieldAlert size={18} style={{ color: '#f43f5e' }} />
+                Focus Care Patients ({patients.filter(p => p.status === 'Admitted' && p.isIntensiveCare).length})
+              </div>
+              <span style={badgeStyle('#fff1f2', '#f43f5e')}>Critical Monitoring</span>
+            </div>
+
+            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+              {patients.filter(p => p.status === 'Admitted' && p.isIntensiveCare).length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8' }}>
+                  <CheckCircle size={28} style={{ color: '#10b981', marginBottom: '0.5rem' }} />
+                  <div style={{ fontSize: '0.78rem', fontWeight: '500' }}>No focus care patients currently.</div>
                 </div>
-              ))
-            )}
+              ) : (
+                patients.filter(p => p.status === 'Admitted' && p.isIntensiveCare).map(p => (
+                  <div 
+                    key={p.mrn} 
+                    onClick={() => setSelectedMrn(p.mrn)}
+                    style={{
+                      padding: '0.85rem',
+                      borderRadius: '0.75rem',
+                      background: selectedMrn === p.mrn ? '#fff1f2' : '#f8fafc',
+                      border: `1px solid ${selectedMrn === p.mrn ? '#f43f5e' : '#e2e8f0'}`,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <Avatar name={p.name} photoUrl={p.photoUrl} size={36} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: '700', fontSize: '0.85rem', color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#64748b' }}>Ward: {p.assignedWard} / Bed: {p.assignedBed}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         </div>
 
@@ -768,7 +839,7 @@ const NurseDashboard: React.FC = () => {
                 )}
 
                 {/* TAB: Notes */}
-                {tab === 'notes' && nd && (
+                {tab === 'notes' && selected && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                       <textarea
@@ -793,20 +864,30 @@ const NurseDashboard: React.FC = () => {
                     </div>
                     
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem' }}>
-                      {nd.notes.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                          No nursing notes recorded yet.
-                        </div>
-                      ) : (
-                        [...nd.notes].reverse().map(note => (
+                      {(() => {
+                        const dbNotes = (medicalHistory ?? [])
+                          .filter(h => h.patientMrn === selected.mrn && h.diagnosis === 'Nursing Note');
+                        
+                        if (dbNotes.length === 0) {
+                          return (
+                            <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                              No nursing notes recorded yet.
+                            </div>
+                          );
+                        }
+                        
+                        return [...dbNotes].reverse().map(note => (
                           <div key={note.id} style={{ padding: '0.85rem', background: '#f8fafc', borderRadius: '0.5rem', border: '1px solid #e2e8f0' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1.25rem' }}>
-                              <div style={{ fontSize: '0.82rem', lineHeight: '1.5', color: '#1e293b' }}>{note.text}</div>
-                              <span style={{ fontSize: '0.68rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{fmt(note.time)}</span>
+                              <div style={{ fontSize: '0.82rem', lineHeight: '1.5', color: '#1e293b' }}>{note.summary}</div>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.2rem' }}>
+                                <span style={{ fontSize: '0.68rem', fontWeight: '600', color: '#64748b' }}>{note.doctor}</span>
+                                <span style={{ fontSize: '0.65rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>{fmt(note.createdAt || new Date().toISOString())}</span>
+                              </div>
                             </div>
                           </div>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </div>
                   </div>
                 )}
