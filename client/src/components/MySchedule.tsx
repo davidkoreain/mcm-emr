@@ -22,7 +22,7 @@ const MY_SCHEDULE_CATEGORIES: Record<string, { label: string; color: string; bg:
 
 const MySchedule: React.FC = () => {
   const { 
-    currentStaff, appointments, surgeries, calendarEvents, staffLeave, patients,
+    currentStaff, appointments, surgeries, calendarEvents, staffLeave, patients, staff,
     addCalendarEvent, deleteCalendarEvent, addStaffLeave
   } = useEMR();
 
@@ -52,6 +52,29 @@ const MySchedule: React.FC = () => {
     );
   }
 
+  // Determine user role types
+  const isNurse = currentStaff.role.toLowerCase().includes('nurse');
+  const isManager = currentStaff.role.toLowerCase().includes('manager');
+  const isDoctor = !isNurse && !isManager && currentStaff.role !== 'Pharmacist';
+
+  // Find doctors in the same department (specialization) for Nurses/Managers
+  const deptDoctorIds = useMemo(() => {
+    if (!staff || isDoctor) return [];
+    return staff
+      .filter(s => {
+        const roleLower = s.role.toLowerCase();
+        const isDoc = roleLower.includes('doctor') || roleLower.includes('md') || roleLower.includes('surgeon') || roleLower.includes('medicine') || roleLower.includes('pediatrician') || roleLower.includes('gynecologist') || roleLower.includes('radiologist') || roleLower.includes('anesthesiologist') || roleLower.includes('cardiologist');
+        return isDoc && s.specialization === currentStaff.specialization;
+      })
+      .map(s => s.id);
+  }, [staff, currentStaff, isDoctor]);
+
+  // Helper to get Doctor/Surgeon name by ID
+  const getDoctorName = (id: number) => {
+    const doc = staff?.find(s => s.id === id);
+    return doc ? doc.name : `Dr. (ID: ${id})`;
+  };
+
   // Helpers
   const getPatientName = (mrn: string) => {
     const p = patients.find(x => x.mrn === mrn);
@@ -59,7 +82,7 @@ const MySchedule: React.FC = () => {
   };
 
   const getSurgeonName = (id: number) => {
-    return currentStaff.id === id ? currentStaff.name : 'Attending Surgeon';
+    return currentStaff.id === id ? currentStaff.name : getDoctorName(id);
   };
 
   // Compile all schedules relating to this currentStaff member
@@ -69,18 +92,32 @@ const MySchedule: React.FC = () => {
     // 1. Appointments (Official)
     if (filters.Appointment && appointments) {
       appointments
-        .filter(apt => apt.doctorId === currentStaff.id && apt.status !== 'Cancelled')
+        .filter(apt => {
+          if (apt.status === 'Cancelled') return false;
+          if (isDoctor) {
+            return apt.doctorId === currentStaff.id;
+          } else {
+            // Nurse or Manager: filter by same specialization doctors, or fallback to all if none in dept
+            if (deptDoctorIds.length > 0) {
+              return deptDoctorIds.includes(apt.doctorId);
+            }
+            return true; // Fallback to all appointments if no matching department doctors
+          }
+        })
         .forEach(apt => {
+          const docName = getDoctorName(apt.doctorId);
           eventsList.push({
             id: `apt-${apt.id}`,
             realId: apt.id,
             type: 'Appointment',
             category: 'Appointment',
-            title: `Appointment: ${getPatientName(apt.patientMrn)}`,
+            title: isDoctor 
+              ? `Appointment: ${getPatientName(apt.patientMrn)}`
+              : `Apt: ${getPatientName(apt.patientMrn)} (${docName})`,
             startTime: apt.startTime,
             endTime: apt.endTime,
             dateStr: apt.startTime.includes('T') ? apt.startTime.split('T')[0] : apt.startTime.split(' ')[0],
-            details: `Patient: ${getPatientName(apt.patientMrn)} (MRN: ${apt.patientMrn}). Status: ${apt.status}. Notes: ${apt.notes || 'None'}`
+            details: `Patient: ${getPatientName(apt.patientMrn)} (MRN: ${apt.patientMrn}). Doctor: ${docName}. Status: ${apt.status}. Notes: ${apt.notes || 'None'}`
           });
         });
     }
@@ -88,18 +125,32 @@ const MySchedule: React.FC = () => {
     // 2. Surgeries (Official)
     if (filters.Surgery && surgeries) {
       surgeries
-        .filter(surg => surg.surgeonId === currentStaff.id && surg.status !== 'Cancelled')
+        .filter(surg => {
+          if (surg.status === 'Cancelled') return false;
+          if (isDoctor) {
+            return surg.surgeonId === currentStaff.id;
+          } else {
+            // Nurse or Manager: filter by same specialization doctors, or fallback to all if none in dept
+            if (deptDoctorIds.length > 0) {
+              return deptDoctorIds.includes(surg.surgeonId);
+            }
+            return true;
+          }
+        })
         .forEach(surg => {
+          const surgName = getDoctorName(surg.surgeonId);
           eventsList.push({
             id: `surg-${surg.id}`,
             realId: surg.id,
             type: 'Surgery',
             category: 'Surgery',
-            title: `Surgery: ${surg.operationName}`,
+            title: isDoctor
+              ? `Surgery: ${surg.operationName}`
+              : `Surgery: ${surg.operationName} (${surgName})`,
             startTime: surg.startTime,
             endTime: surg.endTime,
             dateStr: surg.startTime.includes('T') ? surg.startTime.split('T')[0] : surg.startTime.split(' ')[0],
-            details: `Operation: ${surg.operationName} in Room ${surg.roomNumber}. Surgeon: Dr. ${getSurgeonName(surg.surgeonId)}. Status: ${surg.status}`
+            details: `Operation: ${surg.operationName} in Room ${surg.roomNumber}. Surgeon: ${surgName}. Status: ${surg.status}`
           });
         });
     }
