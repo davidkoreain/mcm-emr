@@ -79,7 +79,7 @@ const MySchedule: React.FC = () => {
             title: `Appointment: ${getPatientName(apt.patientMrn)}`,
             startTime: apt.startTime,
             endTime: apt.endTime,
-            dateStr: apt.startTime.split('T')[0],
+            dateStr: apt.startTime.includes('T') ? apt.startTime.split('T')[0] : apt.startTime.split(' ')[0],
             details: `Patient: ${getPatientName(apt.patientMrn)} (MRN: ${apt.patientMrn}). Status: ${apt.status}. Notes: ${apt.notes || 'None'}`
           });
         });
@@ -98,7 +98,7 @@ const MySchedule: React.FC = () => {
             title: `Surgery: ${surg.operationName}`,
             startTime: surg.startTime,
             endTime: surg.endTime,
-            dateStr: surg.startTime.split('T')[0],
+            dateStr: surg.startTime.includes('T') ? surg.startTime.split('T')[0] : surg.startTime.split(' ')[0],
             details: `Operation: ${surg.operationName} in Room ${surg.roomNumber}. Surgeon: Dr. ${getSurgeonName(surg.surgeonId)}. Status: ${surg.status}`
           });
         });
@@ -120,7 +120,7 @@ const MySchedule: React.FC = () => {
             title: ev.title,
             startTime: ev.startTime,
             endTime: ev.endTime,
-            dateStr: ev.startTime.split('T')[0],
+            dateStr: ev.startTime.includes('T') ? ev.startTime.split('T')[0] : ev.startTime.split(' ')[0],
             location: ev.location,
             details: ev.notes || 'No description provided.'
           });
@@ -466,7 +466,7 @@ const MySchedule: React.FC = () => {
                             onMouseLeave={e => e.currentTarget.style.transform = 'none'}
                           >
                             <span style={{ marginRight: '4px', opacity: 0.8 }}>
-                              {ev.startTime.includes('T') ? ev.startTime.split('T')[1].substring(0, 5) : 'All Day'}
+                              {ev.startTime.includes('T') ? ev.startTime.split('T')[1].substring(0, 5) : (ev.startTime.includes(' ') ? ev.startTime.split(' ')[1].substring(0, 5) : 'All Day')}
                             </span>
                             {ev.title}
                           </div>
@@ -510,7 +510,7 @@ const MySchedule: React.FC = () => {
                       <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#64748b' }}>{ev.details.slice(0, 100)}</p>
                     </div>
                     <div style={{ fontSize: '0.75rem', color: '#94a3b8', fontWeight: '700' }}>
-                      {ev.startTime.includes('T') ? ev.startTime.split('T')[1].substring(0, 5) : 'All Day'}
+                      {ev.startTime.includes('T') ? ev.startTime.split('T')[1].substring(0, 5) : (ev.startTime.includes(' ') ? ev.startTime.split(' ')[1].substring(0, 5) : 'All Day')}
                     </div>
                   </div>
                 );
