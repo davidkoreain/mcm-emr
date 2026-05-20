@@ -32,7 +32,7 @@ export type Appointment = {
   confirmedBy?: string;
 };
 
-export type CalendarEventCategory = 'Consultation' | 'Seminar' | 'Meeting' | 'Training' | 'Event';
+export type CalendarEventCategory = 'Consultation' | 'Seminar' | 'Meeting' | 'Training' | 'Event' | 'Personal' | 'Leave';
 
 export type CalendarEvent = {
   id: number;

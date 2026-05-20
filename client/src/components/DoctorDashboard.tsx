@@ -166,7 +166,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
 
     const leaves = (staffLeave || [])
       .filter(l => l.staffId === currentStaff.id && l.status === 'Confirmed' && categoryFilter.Leave)
-      .filter(l => !q || l.reason.toLowerCase().includes(q))
+      .filter(l => !q || (l.reason || '').toLowerCase().includes(q))
       .map(l => {
         const start = new Date(`${l.leaveDate}T09:00:00`);
         const end = new Date(`${l.leaveDate}T18:00:00`);
