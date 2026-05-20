@@ -16,11 +16,7 @@ const fmtStaffId = (id: number) => `STF-${String(id).padStart(3, '0')}`;
 type LeaveRequest = { id: number; name: string; type: string; duration: string; status: string; date: string };
 type PerformanceRecord = { id: number; name: string; type: string; title: string; date: string };
 
-const initialLeave: LeaveRequest[] = [
-  { id: 1, name: 'Nurse Tigist Hailu', type: 'Annual Leave', duration: '5 days', status: 'Pending', date: '2026-05-10' },
-  { id: 2, name: 'Dr. Fitsum Ayele', type: 'Sick Leave', duration: '2 days', status: 'Approved', date: '2026-05-08' },
-  { id: 3, name: 'Nurse Martha Kassa', type: 'Annual Leave', duration: '7 days', status: 'Pending', date: '2026-05-05' },
-];
+// Removed hardcoded mock leaves
 
 const initialPerf: PerformanceRecord[] = [
   { id: 1, name: 'Dr. Solomon Tsegaye', type: 'Award', title: 'Physician of the Year', date: '2026-01-15' },
@@ -38,7 +34,7 @@ interface StaffManagementProps {
 }
 
 const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, autoOpenId, onModalClose }) => {
-  const { staff, addStaff, updateStaff, role } = useEMR();
+  const { staff, addStaff, updateStaff, role, staffLeave, updateStaffLeaveStatus } = useEMR();
   const [internalTab, setInternalTab] = useState<'leave' | 'performance' | 'portfolio'>('portfolio');
   
   // Use prop if provided, otherwise fallback to internal state
@@ -58,7 +54,19 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
   });
   const [selectedStaff, setSelectedStaff] = useState<number | null>(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>(initialLeave);
+  const leaveRequests = useMemo<LeaveRequest[]>(() => {
+    return (staffLeave || []).map(l => {
+      const s = staff.find(x => x.id === l.staffId);
+      return {
+        id: l.id,
+        name: s ? s.name : `Staff #${l.staffId}`,
+        type: l.reason || 'Vacation/Leave',
+        duration: '1 day',
+        status: l.status === 'Confirmed' ? 'Approved' : l.status === 'Rejected' ? 'Rejected' : 'Pending',
+        date: l.leaveDate
+      };
+    });
+  }, [staffLeave, staff]);
   const [reviewModal, setReviewModal] = useState<LeaveRequest | null>(null);
   const [logsModal, setLogsModal] = useState<Staff | null>(null);
   const [addStaffModal, setAddStaffModal] = useState(false);
@@ -155,10 +163,15 @@ const StaffManagement: React.FC<StaffManagementProps> = ({ activeTab: propTab, a
     return [...result].sort((a, b) => perfSort === 'date_asc' ? a.date.localeCompare(b.date) : b.date.localeCompare(a.date));
   }, [perfSearch, perfFilters, perfSort]);
 
-  const handleReviewLeave = (action: 'Approved' | 'Rejected') => {
+  const handleReviewLeave = async (action: 'Approved' | 'Rejected') => {
     if (!reviewModal) return;
-    setLeaveRequests((prev) => prev.map((l) => l.id === reviewModal.id ? { ...l, status: action } : l));
-    setReviewModal(null);
+    const dbStatus = action === 'Approved' ? 'Confirmed' : 'Rejected';
+    try {
+      await updateStaffLeaveStatus(reviewModal.id, dbStatus);
+      setReviewModal(null);
+    } catch (err) {
+      alert('Failed to update leave status.');
+    }
   };
 
   const overlayStyle: React.CSSProperties = { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 };

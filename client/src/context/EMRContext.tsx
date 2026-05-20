@@ -411,6 +411,8 @@ type EMRContextType = {
   updateAppointment: (id: number, changes: Partial<Appointment>) => Promise<void>;
   addCalendarEvent: (ev: Omit<CalendarEvent, 'id' | 'createdAt'>) => Promise<void>;
   deleteCalendarEvent: (id: number) => Promise<void>;
+  addStaffLeave: (l: Omit<StaffLeave, 'id'>) => Promise<void>;
+  updateStaffLeaveStatus: (id: number, status: 'Pending' | 'Confirmed' | 'Rejected') => Promise<void>;
   // Surgeries
   addSurgery: (s: Omit<Surgery, 'id' | 'createdAt'>) => Promise<void>;
   updateSurgery: (id: number, changes: Partial<Surgery>) => Promise<void>;
@@ -904,6 +906,16 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     await refreshData();
   };
 
+  const addStaffLeave = async (l: Omit<StaffLeave, 'id'>) => {
+    await db.insertStaffLeave(l);
+    await refreshData();
+  };
+
+  const updateStaffLeaveStatus = async (id: number, status: 'Pending' | 'Confirmed' | 'Rejected') => {
+    await db.updateStaffLeaveStatus(id, status);
+    await refreshData();
+  };
+
   return (
     <EMRContext.Provider value={{
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions,
@@ -912,7 +924,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
-      addAppointment, updateAppointment, addCalendarEvent, deleteCalendarEvent, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian, fetchAppSetting, saveAppSetting,
+      addAppointment, updateAppointment, addCalendarEvent, deleteCalendarEvent, addStaffLeave, updateStaffLeaveStatus, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian, fetchAppSetting, saveAppSetting,
       dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
       submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, updateLabOrderResultStatus, addMedicalHistory
     }}>

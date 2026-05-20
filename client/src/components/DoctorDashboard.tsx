@@ -33,17 +33,17 @@ interface DoctorDashboardProps {
 }
 
 const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelectMrn, onStartConsult, onViewHistory, onNewAppointment }) => {
-  const { appointments, patients, currentStaff, role, medicalHistory, deleteMedicalHistory, addAppointment, updateAppointment, calendarEvents, addCalendarEvent, deleteCalendarEvent } = useEMR();
+  const { appointments, patients, currentStaff, role, medicalHistory, deleteMedicalHistory, addAppointment, updateAppointment, calendarEvents, addCalendarEvent, deleteCalendarEvent, staffLeave, addStaffLeave } = useEMR();
   const [viewType, setViewType] = useState<'day' | 'week' | 'month'>('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedHistoryItem, setSelectedHistoryItem] = useState<MedicalHistoryItem | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showNewModal, setShowNewModal] = useState(false);
-  const [newEvent, setNewEvent] = useState<{ category: 'Consultation' | 'Seminar' | 'Meeting' | 'Training' | 'Event'; title: string; startTime: string; endTime: string; location: string; notes: string }>({ category: 'Consultation', title: '', startTime: '', endTime: '', location: '', notes: '' });
+  const [newEvent, setNewEvent] = useState<{ category: 'Consultation' | 'Seminar' | 'Meeting' | 'Training' | 'Event' | 'Leave' | 'Personal'; title: string; startTime: string; endTime: string; location: string; notes: string }>({ category: 'Consultation', title: '', startTime: '', endTime: '', location: '', notes: '' });
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [categoryFilter, setCategoryFilter] = useState<Record<string, boolean>>({ Appointment: true, Consultation: true, Seminar: true, Meeting: true, Training: true, Event: true });
+  const [categoryFilter, setCategoryFilter] = useState<Record<string, boolean>>({ Appointment: true, Consultation: true, Seminar: true, Meeting: true, Training: true, Event: true, Leave: true, Personal: true });
   const [calendarSearch, setCalendarSearch] = useState('');
-  const [selectedEventId, setSelectedEventId] = useState<number | null>(null);
+  const [selectedEventId, setSelectedEventId] = useState<number | string | null>(null);
   const [changeRequest, setChangeRequest] = useState<{ appointmentId: number; date: string; time: string; reason: string } | null>(null);
 
   const CATEGORY_META: Record<string, { label: string; color: string; bg: string }> = {
@@ -53,6 +53,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
     Meeting:      { label: 'Meeting',      color: '#c2410c', bg: '#ffedd5' },
     Training:     { label: 'Training',     color: '#15803d', bg: '#dcfce7' },
     Event:        { label: 'Event',        color: '#be185d', bg: '#fce7f3' },
+    Leave:        { label: 'Leave',        color: '#dc2626', bg: '#fef2f2' },
+    Personal:     { label: 'Personal',     color: '#7c3aed', bg: '#f5f3ff' },
   };
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -150,7 +152,8 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
   const displayEvents = useMemo(() => {
     if (!currentStaff) return [];
     const q = calendarSearch.trim().toLowerCase();
-    return calendarEvents
+    
+    const normal = calendarEvents
       .filter(ev => ev.doctorId === currentStaff.id)
       .filter(ev => categoryFilter[ev.category])
       .filter(ev => !q || ev.title.toLowerCase().includes(q) || (ev.location ?? '').toLowerCase().includes(q))
@@ -158,14 +161,52 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
         const start = new Date(ev.startTime);
         const end = new Date(ev.endTime);
         const durationHours = Math.max(0.25, (end.getTime() - start.getTime()) / 3_600_000);
-        return { ...ev, date: start, durationHours };
+        return { ...ev, id: ev.id, date: start, durationHours, isLeave: false };
       });
-  }, [calendarEvents, currentStaff, categoryFilter, calendarSearch]);
 
-  const selectedEvent = useMemo(
-    () => (selectedEventId != null ? calendarEvents.find(e => e.id === selectedEventId) ?? null : null),
-    [selectedEventId, calendarEvents]
-  );
+    const leaves = (staffLeave || [])
+      .filter(l => l.staffId === currentStaff.id && l.status === 'Confirmed' && categoryFilter.Leave)
+      .filter(l => !q || l.reason.toLowerCase().includes(q))
+      .map(l => {
+        const start = new Date(`${l.leaveDate}T09:00:00`);
+        const end = new Date(`${l.leaveDate}T18:00:00`);
+        return {
+          id: `leave-${l.id}`,
+          doctorId: l.staffId,
+          category: 'Leave',
+          title: `On Leave: ${l.reason || 'Vacation'}`,
+          startTime: `${l.leaveDate}T09:00:00`,
+          endTime: `${l.leaveDate}T18:00:00`,
+          location: 'Out of Office',
+          notes: l.reason,
+          date: start,
+          durationHours: 9,
+          isLeave: true
+        };
+      });
+
+    return [...normal, ...leaves];
+  }, [calendarEvents, staffLeave, currentStaff, categoryFilter, calendarSearch]);
+
+  const selectedEvent = useMemo(() => {
+    if (selectedEventId == null) return null;
+    if (typeof selectedEventId === 'string' && selectedEventId.startsWith('leave-')) {
+      const lid = parseInt(selectedEventId.replace('leave-', ''), 10);
+      const leave = staffLeave.find(l => l.id === lid);
+      if (!leave) return null;
+      return {
+        id: `leave-${leave.id}`,
+        doctorId: leave.staffId,
+        category: 'Leave',
+        title: `On Leave: ${leave.reason || 'Vacation'}`,
+        startTime: `${leave.leaveDate}T09:00:00`,
+        endTime: `${leave.leaveDate}T18:00:00`,
+        location: 'Out of Office',
+        notes: leave.reason
+      } as any;
+    }
+    return calendarEvents.find(e => e.id === selectedEventId) ?? null;
+  }, [selectedEventId, calendarEvents, staffLeave]);
 
   const selectedAppointment = useMemo(() => {
     return displayAppointments.find(app => app.mrn === selectedMrn);
@@ -878,7 +919,7 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
               <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: '#64748b', marginBottom: '0.4rem' }}>Category</label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                  {(['Consultation','Seminar','Meeting','Training','Event'] as const).map(cat => {
+                  {(['Consultation','Seminar','Meeting','Training','Event','Leave','Personal'] as const).map(cat => {
                     const meta = CATEGORY_META[cat];
                     const active = newEvent.category === cat;
                     return (
@@ -960,17 +1001,34 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
                   disabled={!newEvent.title || !newEvent.startTime || !newEvent.endTime}
                   onClick={async () => {
                     if (!currentStaff) return;
-                    const start = new Date(newEvent.startTime);
-                    const end = newEvent.endTime ? new Date(newEvent.endTime) : new Date(start.getTime() + 30 * 60000);
-                    await addCalendarEvent({
-                      doctorId: currentStaff.id,
-                      category: newEvent.category,
-                      title: newEvent.title.trim(),
-                      startTime: start.toISOString(),
-                      endTime: end.toISOString(),
-                      location: newEvent.location.trim() || undefined,
-                      notes: newEvent.notes.trim() || undefined,
-                    });
+                    if (newEvent.category === 'Leave') {
+                      const start = new Date(newEvent.startTime);
+                      const end = newEvent.endTime ? new Date(newEvent.endTime) : start;
+                      const tempDate = new Date(start);
+                      while (tempDate <= end) {
+                        const dateStr = tempDate.toISOString().split('T')[0];
+                        await addStaffLeave({
+                          staffId: currentStaff.id,
+                          leaveDate: dateStr,
+                          status: 'Pending',
+                          reason: newEvent.title.trim() || 'Vacation/Leave Request'
+                        });
+                        tempDate.setDate(tempDate.getDate() + 1);
+                      }
+                      alert('Leave request submitted successfully. Waiting for manager approval.');
+                    } else {
+                      const start = new Date(newEvent.startTime);
+                      const end = newEvent.endTime ? new Date(newEvent.endTime) : new Date(start.getTime() + 30 * 60000);
+                      await addCalendarEvent({
+                        doctorId: currentStaff.id,
+                        category: newEvent.category,
+                        title: newEvent.title.trim(),
+                        startTime: start.toISOString(),
+                        endTime: end.toISOString(),
+                        location: newEvent.location.trim() || undefined,
+                        notes: newEvent.notes.trim() || undefined,
+                      });
+                    }
                     setShowNewModal(false);
                     setNewEvent({ category: 'Consultation', title: '', startTime: '', endTime: '', location: '', notes: '' });
                   }}

@@ -37,6 +37,7 @@ import FlowBoard from './components/FlowBoard';
 import RolePermissions from './components/RolePermissions';
 import MenuConfiguration from './components/MenuConfiguration';
 import AdjustmentSettings from './components/AdjustmentSettings';
+import MySchedule from './components/MySchedule';
 
 const ICON_COMPONENTS: Record<string, any> = {
   LayoutDashboard, Users, UserPlus, Package, Pill, Scissors, Beaker,
@@ -128,7 +129,20 @@ const App: React.FC = () => {
   const [menuStructure, setMenuStructure] = useState<MenuItem[]>(() => {
     const saved = localStorage.getItem('emr_custom_menu_structure');
     if (saved) {
-      try { return JSON.parse(saved); } catch { return MENU_STRUCTURE; }
+      try {
+        const parsed = JSON.parse(saved) as MenuItem[];
+        if (!parsed.some(m => m.key === 'my_schedule')) {
+          const idx = parsed.findIndex(m => m.key === 'dashboard');
+          if (idx !== -1) {
+            parsed.splice(idx + 1, 0, { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
+          } else {
+            parsed.push({ key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
+          }
+        }
+        return parsed;
+      } catch {
+        return MENU_STRUCTURE;
+      }
     }
     return MENU_STRUCTURE;
   });
@@ -136,8 +150,17 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchAppSetting('emr_custom_menu_structure').then((remote) => {
       if (remote) {
-        setMenuStructure(remote);
-        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(remote));
+        const parsed = Array.isArray(remote) ? remote : [];
+        if (!parsed.some(m => m.key === 'my_schedule')) {
+          const idx = parsed.findIndex(m => m.key === 'dashboard');
+          if (idx !== -1) {
+            parsed.splice(idx + 1, 0, { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
+          } else {
+            parsed.push({ key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
+          }
+        }
+        setMenuStructure(parsed);
+        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(parsed));
       }
     }).catch(() => {});
   }, []);
@@ -374,6 +397,7 @@ const App: React.FC = () => {
               />
             )}
             {view === 'inpatient' && <InpatientManagement />}
+            {view === 'my_schedule' && <MySchedule />}
             {view === 'staff' && <StaffManagement activeTab={staffTab} autoOpenId={autoOpenId} onModalClose={() => setAutoOpenId(null)} />}
             {view === 'lab' && <LabManagement activeTab={labTab} />}
             {view === 'operation' && <OperationManagement activeTab={operationTab} />}

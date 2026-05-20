@@ -12,6 +12,7 @@ export interface MenuItem {
 
 export const MENU_STRUCTURE: MenuItem[] = [
   { key: 'dashboard', label: 'Flow Board', icon: 'LayoutDashboard' },
+  { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' },
   { key: 'patients',  label: 'Patient Details', icon: 'Users' },
   { key: 'calendar',  label: 'Appointments', icon: 'CalendarDays' },
   { key: 'inpatient', label: 'Inpatient Ward', icon: 'Bed' },
@@ -77,7 +78,7 @@ export const PATIENT_PORTAL_MENU_STRUCTURE: MenuItem[] = [
 
 export const DEFAULT_PERMISSIONS: AllPerms = {
   Admin: {
-    dashboard: true, patients: true, calendar: true, inpatient: true, billing: true,
+    dashboard: true, my_schedule: true, patients: true, calendar: true, inpatient: true, billing: true,
     staff: true, 'staff.portfolio': true, 'staff.leave': true, 'staff.performance': true,
     lab: true, 'lab.orders': true, 'lab.results': true,
     operation: true, 'operation.schedule': true, 'operation.resources': true, 'operation.supplies': true,
@@ -86,7 +87,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     settings: true, 'settings.permissions': true, 'settings.menu_config': true, 'settings.adjustment': true,
   },
   Manager: {
-    dashboard: true, patients: true, calendar: true, inpatient: false, billing: false,
+    dashboard: true, my_schedule: true, patients: true, calendar: true, inpatient: false, billing: false,
     staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
     lab: false, 'lab.orders': false, 'lab.results': false,
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
@@ -95,7 +96,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Doctor: {
-    dashboard: true, patients: true, calendar: true, inpatient: true, billing: true,
+    dashboard: true, my_schedule: true, patients: true, calendar: true, inpatient: true, billing: true,
     staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
     lab: true, 'lab.orders': true, 'lab.results': true,
     operation: true, 'operation.schedule': true, 'operation.resources': false, 'operation.supplies': false,
@@ -104,7 +105,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Nurse: {
-    dashboard: true, patients: true, calendar: true, inpatient: true, billing: false,
+    dashboard: true, my_schedule: true, patients: true, calendar: true, inpatient: true, billing: false,
     staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
     lab: true, 'lab.orders': false, 'lab.results': true,
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
@@ -113,7 +114,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Pharmacist: {
-    dashboard: true, patients: true, calendar: false, inpatient: false, billing: false,
+    dashboard: true, my_schedule: true, patients: true, calendar: false, inpatient: false, billing: false,
     staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
     lab: false, 'lab.orders': false, 'lab.results': false,
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
@@ -122,7 +123,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   LabTech: {
-    dashboard: true, patients: true, calendar: false, inpatient: false, billing: false,
+    dashboard: true, my_schedule: true, patients: true, calendar: false, inpatient: false, billing: false,
     staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
     lab: true, 'lab.orders': true, 'lab.results': true,
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,
@@ -131,7 +132,7 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
     settings: false, 'settings.permissions': false, 'settings.menu_config': false, 'settings.adjustment': false,
   },
   Cashier: {
-    dashboard: true, patients: true, calendar: true, inpatient: false, billing: true,
+    dashboard: true, my_schedule: true, patients: true, calendar: true, inpatient: false, billing: true,
     staff: false, 'staff.portfolio': false, 'staff.leave': false, 'staff.performance': false,
     lab: false, 'lab.orders': false, 'lab.results': false,
     operation: false, 'operation.schedule': false, 'operation.resources': false, 'operation.supplies': false,

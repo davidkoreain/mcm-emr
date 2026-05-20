@@ -142,5 +142,13 @@ export class LocalService implements IDBService {
     return null;
   }
 
-  async fetchStaffLeave(): Promise<StaffLeave[]> { return []; }
+  private staffLeave: StaffLeave[] = [];
+
+  async fetchStaffLeave(): Promise<StaffLeave[]> { return [...this.staffLeave]; }
+  async insertStaffLeave(l: Omit<StaffLeave, 'id'>): Promise<void> {
+    this.staffLeave.push({ ...l, id: Date.now() });
+  }
+  async updateStaffLeaveStatus(id: number, status: 'Pending' | 'Confirmed' | 'Rejected'): Promise<void> {
+    this.staffLeave = this.staffLeave.map(x => x.id === id ? { ...x, status } : x);
+  }
 }

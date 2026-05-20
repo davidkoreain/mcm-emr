@@ -1180,6 +1180,21 @@ export class SupabaseService implements IDBService {
     return (data || []).map(rowToStaffLeave);
   }
 
+  async insertStaffLeave(l: Omit<StaffLeave, 'id'>): Promise<void> {
+    const { error } = await this.client.from('staff_leave').insert({
+      staff_id: l.staffId,
+      leave_date: l.leaveDate,
+      status: l.status,
+      reason: l.reason,
+    });
+    if (error) throw error;
+  }
+
+  async updateStaffLeaveStatus(id: number, status: 'Pending' | 'Confirmed' | 'Rejected'): Promise<void> {
+    const { error } = await this.client.from('staff_leave').update({ status }).eq('id', id);
+    if (error) throw error;
+  }
+
   async fetchAppSetting(key: string): Promise<any | null> {
     const { data } = await this.client
       .from('app_settings')
