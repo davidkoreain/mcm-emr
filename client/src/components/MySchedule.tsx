@@ -31,7 +31,7 @@ const MySchedule: React.FC = () => {
 
   // Navigation states
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<'month' | 'list'>('month');
+  const [viewMode, setViewMode] = useState<'month' | 'week' | 'day' | 'list'>('month');
   
   // Modal states
   const [showLeaveModal, setShowLeaveModal] = useState(false);
@@ -276,6 +276,68 @@ const MySchedule: React.FC = () => {
     });
   }, [currentDate]);
 
+  const weekDays = useMemo(() => {
+    const start = new Date(currentDate);
+    start.setDate(start.getDate() - start.getDay()); // Sunday
+    
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      return d;
+    });
+  }, [currentDate]);
+
+  const handlePrev = () => {
+    if (viewMode === 'month' || viewMode === 'list') {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
+    } else if (viewMode === 'week') {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 7);
+      setCurrentDate(d);
+    } else if (viewMode === 'day') {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() - 1);
+      setCurrentDate(d);
+    }
+  };
+
+  const handleNext = () => {
+    if (viewMode === 'month' || viewMode === 'list') {
+      setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+    } else if (viewMode === 'week') {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 7);
+      setCurrentDate(d);
+    } else if (viewMode === 'day') {
+      const d = new Date(currentDate);
+      d.setDate(d.getDate() + 1);
+      setCurrentDate(d);
+    }
+  };
+
+  const dateLabel = useMemo(() => {
+    if (viewMode === 'month' || viewMode === 'list') {
+      return currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
+    } else if (viewMode === 'week') {
+      const start = new Date(currentDate);
+      start.setDate(start.getDate() - start.getDay());
+      const end = new Date(start);
+      end.setDate(end.getDate() + 6);
+      
+      const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+      const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+      const startYear = start.getFullYear();
+      const endYear = end.getFullYear();
+      
+      if (startYear !== endYear) {
+        return `${startMonth} ${start.getDate()}, ${startYear} – ${endMonth} ${end.getDate()}, ${endYear}`.toUpperCase();
+      }
+      return `${startMonth} ${start.getDate()} – ${endMonth} ${end.getDate()}, ${startYear}`.toUpperCase();
+    } else {
+      return currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+    }
+  }, [currentDate, viewMode]);
+
   // Handle Leave Submission
   const handleLeaveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -437,31 +499,47 @@ const MySchedule: React.FC = () => {
             <button 
               onClick={() => setViewMode('month')} 
               style={{ 
-                padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
+                padding: '0.5rem 0.85rem', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
                 background: viewMode === 'month' ? 'white' : 'transparent', color: viewMode === 'month' ? '#1e293b' : '#64748b', boxShadow: viewMode === 'month' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.15s'
               }}
             >Month</button>
             <button 
+              onClick={() => setViewMode('week')} 
+              style={{ 
+                padding: '0.5rem 0.85rem', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
+                background: viewMode === 'week' ? 'white' : 'transparent', color: viewMode === 'week' ? '#1e293b' : '#64748b', boxShadow: viewMode === 'week' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s'
+              }}
+            >Week</button>
+            <button 
+              onClick={() => setViewMode('day')} 
+              style={{ 
+                padding: '0.5rem 0.85rem', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
+                background: viewMode === 'day' ? 'white' : 'transparent', color: viewMode === 'day' ? '#1e293b' : '#64748b', boxShadow: viewMode === 'day' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+                transition: 'all 0.15s'
+              }}
+            >Day</button>
+            <button 
               onClick={() => setViewMode('list')} 
               style={{ 
-                padding: '0.5rem 1rem', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
+                padding: '0.5rem 0.85rem', border: 'none', borderRadius: '0.5rem', fontSize: '0.8rem', fontWeight: '800', cursor: 'pointer',
                 background: viewMode === 'list' ? 'white' : 'transparent', color: viewMode === 'list' ? '#1e293b' : '#64748b', boxShadow: viewMode === 'list' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
                 transition: 'all 0.15s'
               }}
-            >List View</button>
+            >List</button>
           </div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <button 
-              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}
+              onClick={handlePrev}
               style={{ padding: '0.5rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', cursor: 'pointer', color: '#64748b' }}
             >&lt;</button>
-            <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#1e293b', minWidth: '110px', textAlign: 'center' }}>
-              {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
+            <span style={{ fontSize: '0.95rem', fontWeight: '900', color: '#1e293b', minWidth: '180px', textAlign: 'center' }}>
+              {dateLabel}
             </span>
             <button 
-              onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}
+              onClick={handleNext}
               style={{ padding: '0.5rem', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', cursor: 'pointer', color: '#64748b' }}
             >&gt;</button>
           </div>
@@ -526,7 +604,7 @@ const MySchedule: React.FC = () => {
       {/* Main Calendar View Area */}
       <div style={{ background: 'white', borderRadius: '1.25rem', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02)' }}>
         
-        {viewMode === 'month' ? (
+        {viewMode === 'month' && (
           <div>
             {/* Calendar Days Header */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
@@ -591,8 +669,180 @@ const MySchedule: React.FC = () => {
               })}
             </div>
           </div>
-        ) : (
-          /* List View */
+        )}
+
+        {viewMode === 'week' && (
+          <div>
+            {/* Week Headers */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid #f1f5f9', background: '#f8fafc' }}>
+              {weekDays.map((date, idx) => {
+                const isToday = date.toDateString() === new Date().toDateString();
+                const isSunday = date.getDay() === 0;
+                return (
+                  <div key={idx} style={{ 
+                    padding: '1rem 0.5rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.25rem',
+                    background: isToday ? '#f5f3ff' : 'transparent', borderBottom: isToday ? '3px solid #7c3aed' : 'none'
+                  }}>
+                    <span style={{ fontSize: '0.7rem', fontWeight: '900', color: isToday ? '#7c3aed' : (isSunday ? '#ef4444' : '#64748b'), textTransform: 'uppercase' }}>
+                      {date.toLocaleDateString('en-US', { weekday: 'short' })}
+                    </span>
+                    <span style={{ 
+                      fontSize: '1.2rem', fontWeight: '950', 
+                      background: isToday ? '#7c3aed' : 'transparent',
+                      color: isToday ? 'white' : (isSunday ? '#ef4444' : '#1e293b'),
+                      width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%'
+                    }}>
+                      {date.getDate()}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Week Columns content */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', minHeight: '450px' }}>
+              {weekDays.map((date, idx) => {
+                const dateStr = date.toISOString().split('T')[0];
+                const dayEvents = allEvents
+                  .filter(e => e.dateStr === dateStr)
+                  .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+                const isToday = date.toDateString() === new Date().toDateString();
+
+                return (
+                  <div key={idx} style={{
+                    borderRight: idx < 6 ? '1px solid #f1f5f9' : 'none',
+                    padding: '0.75rem 0.5rem',
+                    background: isToday ? '#faf5ff' : 'white',
+                    display: 'flex', flexDirection: 'column', gap: '0.5rem', minWidth: 0
+                  }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, overflowY: 'auto' }}>
+                      {dayEvents.map(ev => {
+                        const meta = MY_SCHEDULE_CATEGORIES[ev.category] || MY_SCHEDULE_CATEGORIES['Event'];
+                        return (
+                          <div
+                            key={ev.id}
+                            onClick={() => setSelectedEvent(ev)}
+                            style={{
+                              fontSize: '0.7rem', fontWeight: '800', background: `${meta.bg}`, color: meta.color,
+                              borderLeft: `3px solid ${meta.color}`, padding: '6px 8px', borderRadius: '6px', cursor: 'pointer',
+                              display: 'flex', flexDirection: 'column', gap: '2px', transition: 'all 0.15s',
+                              boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                            }}
+                            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-1px)'}
+                            onMouseLeave={e => e.currentTarget.style.transform = 'none'}
+                          >
+                            <span style={{ fontSize: '0.65rem', fontWeight: '900', opacity: 0.8 }}>
+                              {ev.startTime.includes('T') ? ev.startTime.split('T')[1].substring(0, 5) : 'All Day'}
+                            </span>
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                              {ev.title}
+                            </span>
+                          </div>
+                        );
+                      })}
+                      {dayEvents.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: '2rem 0.5rem', color: '#cbd5e1', fontSize: '0.65rem', fontWeight: '700' }}>
+                          No Events
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'day' && (
+          <div style={{ padding: '2rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderBottom: '2px solid #f1f5f9', paddingBottom: '1.5rem', marginBottom: '2rem' }}>
+              <div style={{ 
+                background: '#7c3aed', color: 'white', width: '56px', height: '56px', borderRadius: '1rem',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px -4px rgba(124, 58, 237, 0.3)'
+              }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: '900', textTransform: 'uppercase', opacity: 0.9 }}>
+                  {currentDate.toLocaleDateString('en-US', { weekday: 'short' })}
+                </span>
+                <span style={{ fontSize: '1.4rem', fontWeight: '950', marginTop: '-2px' }}>
+                  {currentDate.getDate()}
+                </span>
+              </div>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: '900', color: '#1e293b' }}>
+                  {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                </h3>
+                <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.8rem', color: '#64748b', fontWeight: '800' }}>
+                  {allEvents.filter(e => e.dateStr === currentDate.toISOString().split('T')[0]).length} Schedules for today
+                </p>
+              </div>
+            </div>
+
+            {/* Timeline Layout */}
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Vertical line through timeline */}
+              <div style={{ position: 'absolute', left: '100px', top: '10px', bottom: '10px', width: '2px', background: '#e2e8f0', zIndex: 0 }} />
+
+              {allEvents
+                .filter(e => e.dateStr === currentDate.toISOString().split('T')[0])
+                .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime())
+                .map((ev) => {
+                  const meta = MY_SCHEDULE_CATEGORIES[ev.category] || MY_SCHEDULE_CATEGORIES['Event'];
+                  const timeStr = ev.startTime.includes('T') ? ev.startTime.split('T')[1].substring(0, 5) : 'All Day';
+                  const endTimeStr = ev.endTime && ev.endTime.includes('T') ? ev.endTime.split('T')[1].substring(0, 5) : '';
+
+                  return (
+                    <div key={ev.id} style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', position: 'relative', zIndex: 1 }}>
+                      {/* Left: Time Label */}
+                      <div style={{ width: '80px', textAlign: 'right', display: 'flex', flexDirection: 'column', gap: '2px', paddingTop: '0.5rem' }}>
+                        <span style={{ fontSize: '0.9rem', fontWeight: '900', color: '#1e293b' }}>{timeStr}</span>
+                        {endTimeStr && <span style={{ fontSize: '0.75rem', fontWeight: '800', color: '#94a3b8' }}>to {endTimeStr}</span>}
+                      </div>
+
+                      {/* Middle: Dot on vertical line */}
+                      <div style={{ 
+                        width: '16px', height: '16px', borderRadius: '50%', background: 'white', border: `3px solid ${meta.color}`,
+                        boxShadow: `0 0 0 4px ${meta.bg}`, marginTop: '0.7rem', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      }} />
+
+                      {/* Right: Event Detail Card */}
+                      <div 
+                        onClick={() => setSelectedEvent(ev)}
+                        style={{
+                          flex: 1, background: '#f8fafc', border: '1px solid #e2e8f0', borderLeft: `5px solid ${meta.color}`,
+                          padding: '1.2rem', borderRadius: '1rem', cursor: 'pointer', transition: 'all 0.2s',
+                          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.01)'
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.04)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.01)'; }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                          <span style={{ 
+                            fontSize: '0.65rem', fontWeight: '900', textTransform: 'uppercase', padding: '0.2rem 0.5rem', borderRadius: '999px',
+                            background: meta.bg, color: meta.color, border: `1px solid ${meta.border}`
+                          }}>
+                            {meta.label}
+                          </span>
+                        </div>
+                        <h4 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '900', color: '#1e293b' }}>{ev.title}</h4>
+                        <p style={{ margin: 0, fontSize: '0.85rem', color: '#475569', lineHeight: '1.5' }}>{ev.details}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+
+              {allEvents.filter(e => e.dateStr === currentDate.toISOString().split('T')[0]).length === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '1rem' }}>
+                  <CalendarDays size={48} style={{ color: '#cbd5e1' }} />
+                  <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.9rem', fontWeight: '800' }}>
+                    No schedules planned for this day.
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {viewMode === 'list' && (
           <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '1rem', fontWeight: '800', color: '#1e293b' }}>Upcoming Schedules</h3>
             
