@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Activity, Pill, ClipboardList, CheckSquare, Plus, BedDouble, 
   Clock, CheckCircle, ShieldAlert, AlertCircle, Sparkles, Check, 
@@ -110,6 +110,12 @@ const NurseDashboard: React.FC = () => {
   const [newTask, setNewTask] = useState('');
   const [newTaskTime, setNewTaskTime] = useState('');
   const [filterMode, setFilterMode] = useState<'all' | 'intensive'>('all');
+
+  // Ward Patients search, filter, sort & pagination states
+  const [wardSearch, setWardSearch] = useState('');
+  const [wardFilter, setWardFilter] = useState('All'); // 'All', 'Ward A', 'General Ward B', 'Pediatric Ward', 'ICU', 'Focus Care', 'Meds Due'
+  const [wardSort, setWardSort] = useState('name-asc'); // 'name-asc', 'name-desc', 'room-asc', 'meds-desc'
+  const [visibleCount, setVisibleCount] = useState(5);
 
   // Allocation state
   const [allocationPatient, setAllocationPatient] = useState<Patient | null>(null);
@@ -272,8 +278,66 @@ const NurseDashboard: React.FC = () => {
     });
   };
 
-  // Filtered active inpatient list (All active inpatients, since Focus Care has a dedicated card)
-  const filteredInpatients = activeInpatients;
+  // Filtered active inpatient list with search, filter, and sort
+  const filteredInpatients = useMemo(() => {
+    let result = [...activeInpatients];
+
+    // 1. Search
+    if (wardSearch.trim()) {
+      const searchLower = wardSearch.toLowerCase();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(searchLower) || 
+        p.mrn.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // 2. Filter
+    if (wardFilter !== 'All') {
+      if (wardFilter === 'Focus Care') {
+        result = result.filter(p => p.isIntensiveCare);
+      } else if (wardFilter === 'Meds Due') {
+        result = result.filter(p => {
+          const pnd = getNurse(p.mrn);
+          const administered = pnd.mar.map(m => m.medId);
+          const dueMedsCount = (p.medications ?? []).filter(m => !administered.includes(m.id)).length;
+          return dueMedsCount > 0;
+        });
+      } else {
+        result = result.filter(p => (p.assignedWard || p.ward) === wardFilter);
+      }
+    }
+
+    // 3. Sort
+    result.sort((a, b) => {
+      if (wardSort === 'name-asc') {
+        return a.name.localeCompare(b.name);
+      } else if (wardSort === 'name-desc') {
+        return b.name.localeCompare(a.name);
+      } else if (wardSort === 'room-asc') {
+        const roomA = a.assignedBed || '—';
+        const roomB = b.assignedBed || '—';
+        return roomA.localeCompare(roomB);
+      } else if (wardSort === 'meds-desc') {
+        const pndA = getNurse(a.mrn);
+        const administeredA = pndA.mar.map(m => m.medId);
+        const dueCountA = (a.medications ?? []).filter(m => !administeredA.includes(m.id)).length;
+
+        const pndB = getNurse(b.mrn);
+        const administeredB = pndB.mar.map(m => m.medId);
+        const dueCountB = (b.medications ?? []).filter(m => !administeredB.includes(m.id)).length;
+
+        return dueCountB - dueCountA;
+      }
+      return 0;
+    });
+
+    return result;
+  }, [activeInpatients, wardSearch, wardFilter, wardSort, nurseData]);
+
+  // Visible slice of inpatients for pagination
+  const slicedInpatients = useMemo(() => {
+    return filteredInpatients.slice(0, visibleCount);
+  }, [filteredInpatients, visibleCount]);
 
   const tabBtn = (key: typeof tab, icon: React.ReactNode, title: string) => (
     <button
@@ -446,25 +510,112 @@ const NurseDashboard: React.FC = () => {
         <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', height: '100%', boxSizing: 'border-box' }}>
           
           {/* Header & Filter */}
-          <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.75rem', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ fontWeight: '700', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
+          <div style={{ borderBottom: '1px solid #f1f5f9', paddingBottom: '0.85rem', marginBottom: '0.85rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+              <div style={{ fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#0f172a' }}>
                 <BedDouble size={18} style={{ color: '#6366f1' }} />
                 Ward Patients ({filteredInpatients.length})
               </div>
             </div>
 
+            {/* Search Input */}
+            <div style={{ position: 'relative', marginBottom: '0.65rem' }}>
+              <input
+                type="text"
+                placeholder="Search by name or MRN..."
+                value={wardSearch}
+                onChange={e => {
+                  setWardSearch(e.target.value);
+                  setVisibleCount(5);
+                }}
+                style={{
+                  ...inputStyle,
+                  paddingLeft: '2.25rem',
+                  height: '38px',
+                  fontSize: '0.82rem',
+                }}
+              />
+              <span style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', display: 'flex', alignItems: 'center' }}>
+                <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </span>
+              {wardSearch && (
+                <button
+                  onClick={() => { setWardSearch(''); setVisibleCount(5); }}
+                  style={{
+                    position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
+                    border: 'none', background: 'transparent', cursor: 'pointer', color: '#94a3b8',
+                    display: 'flex', alignItems: 'center', padding: '0.2rem'
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Filter & Sort Row */}
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {/* Filter Dropdown */}
+              <div style={{ flex: 1 }}>
+                <select
+                  value={wardFilter}
+                  onChange={e => {
+                    setWardFilter(e.target.value);
+                    setVisibleCount(5);
+                  }}
+                  style={{
+                    ...inputStyle,
+                    height: '36px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.78rem',
+                    background: '#f8fafc',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="All">All Wards</option>
+                  <option value="Ward A">Ward A</option>
+                  <option value="General Ward B">General Ward B</option>
+                  <option value="Pediatric Ward">Pediatric Ward</option>
+                  <option value="ICU">ICU</option>
+                  <option value="Focus Care">Focus Care</option>
+                  <option value="Meds Due">Meds Due</option>
+                </select>
+              </div>
+
+              {/* Sort Dropdown */}
+              <div style={{ flex: 1 }}>
+                <select
+                  value={wardSort}
+                  onChange={e => {
+                    setWardSort(e.target.value);
+                    setVisibleCount(5);
+                  }}
+                  style={{
+                    ...inputStyle,
+                    height: '36px',
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.78rem',
+                    background: '#f8fafc',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="name-asc">Name (A-Z)</option>
+                  <option value="name-desc">Name (Z-A)</option>
+                  <option value="room-asc">Room No</option>
+                  <option value="meds-desc">Meds Due (Max)</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           {/* List Wrapper */}
           <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {filteredInpatients.length === 0 ? (
+            {slicedInpatients.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#94a3b8' }}>
                 <AlertCircle size={28} style={{ marginBottom: '0.5rem', color: '#cbd5e1' }} />
-                <div style={{ fontSize: '0.8rem' }}>No active inpatients in this ward.</div>
+                <div style={{ fontSize: '0.8rem' }}>No active inpatients found.</div>
               </div>
             ) : (
-              filteredInpatients.map(p => {
+              slicedInpatients.map(p => {
                 const active = selectedMrn === p.mrn;
                 const pnd = getNurse(p.mrn);
                 const administered = pnd.mar.map(m => m.medId);
@@ -510,6 +661,41 @@ const NurseDashboard: React.FC = () => {
                   </div>
                 );
               })
+            )}
+
+            {/* "More" button */}
+            {filteredInpatients.length > visibleCount && (
+              <button
+                onClick={() => setVisibleCount(prev => prev + 10)}
+                style={{
+                  width: '100%',
+                  padding: '0.65rem',
+                  borderRadius: '0.75rem',
+                  border: '1px solid #cbd5e1',
+                  background: 'white',
+                  color: '#475569',
+                  fontSize: '0.8rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  marginTop: '0.5rem',
+                  transition: 'all 0.15s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.35rem',
+                  flexShrink: 0
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#f8fafc';
+                  e.currentTarget.style.borderColor = '#94a3b8';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.borderColor = '#cbd5e1';
+                }}
+              >
+                More ({filteredInpatients.length - visibleCount} left)
+              </button>
             )}
           </div>
         </div>
