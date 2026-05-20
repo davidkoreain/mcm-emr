@@ -22,7 +22,7 @@ const PRIORITY_COLORS: Record<NonNullable<Surgery['priority']>, { bg: string; fg
 
 const TEAM_ROLES = ['Primary Surgeon', 'Assistant Surgeon', 'Anesthesiologist', 'Scrub Nurse', 'Circulating Nurse', 'Technician'] as const;
 
-const DEFAULT_CHECKLIST_TEMPLATE: { phase: SurgeryChecklistItem['phase']; label: string }[] = [
+export const DEFAULT_CHECKLIST_TEMPLATE: { phase: SurgeryChecklistItem['phase']; label: string }[] = [
   { phase: 'PreOp',   label: 'Patient identity & consent verified' },
   { phase: 'PreOp',   label: 'Surgical site marked' },
   { phase: 'PreOp',   label: 'NPO status confirmed' },

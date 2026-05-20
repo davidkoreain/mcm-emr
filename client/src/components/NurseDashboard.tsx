@@ -1126,11 +1126,16 @@ const NurseDashboard: React.FC = () => {
                       recordedBy: currentStaff?.name,
                     });
                     try {
-                      if (stage === 'OT') {
-                        await updatePatient(selected.mrn, { assignedBed: loc.trim(), assignedWard: 'OT' });
-                      } else {
-                        await updatePatient(selected.mrn, { assignedBed: loc.trim() });
-                      }
+                      // Keep the patient's ward in sync with the current stage so other
+                      // modules (Inpatient list, Flow Board) reflect where the patient is.
+                      const wardForStage =
+                        stage === 'OT' ? 'OT'
+                        : stage === 'PostOp' ? 'PACU'
+                        : (selected.ward || selected.assignedWard || undefined);
+                      await updatePatient(selected.mrn, {
+                        assignedBed: loc.trim(),
+                        ...(wardForStage ? { assignedWard: wardForStage } : {}),
+                      });
                     } catch { /* non-fatal */ }
                   };
                   return (

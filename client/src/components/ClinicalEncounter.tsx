@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import type { Patient } from '../context/EMRContext';
+import { DEFAULT_CHECKLIST_TEMPLATE } from './OperationManagement';
 
 interface ClinicalEncounterProps {
   onClose: () => void;
@@ -70,7 +71,8 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
     patients, updatePatient, role, currentStaff,
     drugs, prescriptions, labOrders, labResults, surgeries, staff,
     addPrescription, addSurgery, addLabOrder, submitLabResult, addAppointment,
-    createMedicationSchedule, addMedicalHistory, updateLabOrderStatus
+    createMedicationSchedule, addMedicalHistory, updateLabOrderStatus,
+    addSurgeryTeamMember, addSurgeryChecklistItem,
   } = useEMR();
 
   const currentPatient = patientMrn
@@ -294,6 +296,35 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
             notes: `[Surgery] ${surgName}${surgSite ? ' — ' + surgSite : ''}`,
           });
         } catch { /* non-fatal: surgery row is the source of truth */ }
+
+        // Seed the default Pre/Intra/Post-op checklist so it shows up
+        // immediately in the Operations module.
+        try {
+          for (let i = 0; i < DEFAULT_CHECKLIST_TEMPLATE.length; i++) {
+            const t = DEFAULT_CHECKLIST_TEMPLATE[i];
+            await addSurgeryChecklistItem({
+              surgeryId: newSurg.id,
+              phase: t.phase,
+              label: t.label,
+              isDone: false,
+              sortOrder: i,
+            });
+          }
+        } catch { /* non-fatal */ }
+
+        // Auto-assign the chosen surgeon to the team as Primary Surgeon.
+        try {
+          const surg = staff.find(s => s.id === surgeonIdNum);
+          if (surg) {
+            await addSurgeryTeamMember({
+              surgeryId: newSurg.id,
+              staffId: surg.id,
+              staffName: surg.name,
+              role: 'Primary Surgeon',
+              department: 'Surgery',
+            });
+          }
+        } catch { /* non-fatal */ }
       }
       alert('Surgery scheduled successfully.');
     } catch (err) {
