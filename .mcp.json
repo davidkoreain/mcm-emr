@@ -11,6 +11,10 @@
         "GDRIVE_OAUTH_PATH": "C:\\Users\\dbstj\\.claude\\gcp-oauth.keys.json",
         "GDRIVE_CREDENTIALS_PATH": "C:\\Users\\dbstj\\.claude\\gdrive-server-credentials.json"
       }
+    },
+    "supabase": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@supabase/mcp-server-supabase@latest", "--read-only", "--project-ref=ljfzlwjlhihtvcrcvovi"]
     }
   }
 }

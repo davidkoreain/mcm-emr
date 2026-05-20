@@ -25,7 +25,7 @@ const MY_SCHEDULE_CATEGORIES: Record<string, { label: string; color: string; bg:
 
 const MySchedule: React.FC = () => {
   const { 
-    currentStaff, appointments, surgeries, calendarEvents, staffLeave, patients, staff, labOrders,
+    currentStaff, appointments, surgeries, calendarEvents, staffLeave, patients, staff, labOrders, surgeryTeam,
     addCalendarEvent, deleteCalendarEvent, addStaffLeave
   } = useEMR();
 
@@ -129,30 +129,40 @@ const MySchedule: React.FC = () => {
         });
     }
 
-    // 2. Surgeries (Official)
+    // 2. Surgeries (Official) — show to:
+    //    - the surgeon (surgeonId match)
+    //    - any staff explicitly assigned to surgery_team for this surgery
+    //    - other staff fall back to seeing all non-cancelled surgeries
     if (filters.Surgery && surgeries) {
+      const myTeamSurgeryIds = new Set(
+        (surgeryTeam || []).filter(t => t.staffId === currentStaff.id).map(t => t.surgeryId)
+      );
       surgeries
         .filter(surg => {
           if (surg.status === 'Cancelled') return false;
           if (isDoctor) {
-            return surg.surgeonId === currentStaff.id;
+            return surg.surgeonId === currentStaff.id || myTeamSurgeryIds.has(surg.id);
           }
-          return true; // Non-doctors see all official surgeries
+          // For non-doctor staff: prefer team-assigned surgeries when any exist,
+          // otherwise show all (so a fresh deploy without team data still shows surgeries).
+          if (myTeamSurgeryIds.size > 0) return myTeamSurgeryIds.has(surg.id);
+          return true;
         })
         .forEach(surg => {
           const surgName = getDoctorName(surg.surgeonId);
+          const myRole = (surgeryTeam || []).find(t => t.staffId === currentStaff.id && t.surgeryId === surg.id)?.role;
           eventsList.push({
             id: `surg-${surg.id}`,
             realId: surg.id,
             type: 'Surgery',
             category: 'Surgery',
             title: isDoctor
-              ? `Surgery: ${surg.operationName}`
-              : `Surgery: ${surg.operationName} (${surgName})`,
+              ? `Surgery: ${surg.operationName}${myRole && surg.surgeonId !== currentStaff.id ? ` (${myRole})` : ''}`
+              : `Surgery: ${surg.operationName}${myRole ? ` (${myRole})` : ` (${surgName})`}`,
             startTime: surg.startTime,
             endTime: surg.endTime,
             dateStr: surg.startTime.includes('T') ? surg.startTime.split('T')[0] : surg.startTime.split(' ')[0],
-            details: `Operation: ${surg.operationName} in Room ${surg.roomNumber}. Surgeon: ${surgName}. Status: ${surg.status}`
+            details: `Operation: ${surg.operationName} in Room ${surg.roomNumber}. Surgeon: ${surgName}. Status: ${surg.status}${myRole ? `. Your role: ${myRole}` : ''}`
           });
         });
     }
@@ -270,7 +280,7 @@ const MySchedule: React.FC = () => {
     }
 
     return eventsList;
-  }, [appointments, surgeries, calendarEvents, staffLeave, currentStaff, filters, patients, labOrders, staff, deptDoctorIds, isDoctor]);
+  }, [appointments, surgeries, calendarEvents, staffLeave, currentStaff, filters, patients, labOrders, staff, deptDoctorIds, isDoctor, surgeryTeam]);
 
   // Calendar calculations
   const monthDays = useMemo(() => {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Activity, Pill, ClipboardList, CheckSquare, Plus, BedDouble, 
-  Clock, CheckCircle, ShieldAlert, AlertCircle, Sparkles, Check, 
-  LogOut, Star, UserCheck, Calendar, RefreshCw
+  Activity, Pill, ClipboardList, CheckSquare, Plus, BedDouble,
+  Clock, CheckCircle, ShieldAlert, AlertCircle, Sparkles, Check,
+  LogOut, Star, UserCheck, Calendar, RefreshCw, Scissors, MapPin
 } from 'lucide-react';
 import { useEMR } from '../context/EMRContext';
 import type { Patient, VitalsRecord } from '../context/EMRContext';
@@ -74,7 +74,7 @@ const fmt = (iso: string) => {
 };
 
 const NurseDashboard: React.FC = () => {
-  const { patients, updatePatient, addVitals, medicalHistory, addMedicalHistory } = useEMR();
+  const { patients, updatePatient, addVitals, medicalHistory, addMedicalHistory, surgeries, surgeryBedTrace, addSurgeryBedTrace, updateSurgeryBedTrace, currentStaff } = useEMR();
 
   // Inpatient Bed Placement requested patients (unassigned ward)
   const pendingPlacement = patients.filter(p => p.bedPlacementRequested || (p.status === 'Inpatient' && !p.assignedWard));
@@ -86,7 +86,7 @@ const NurseDashboard: React.FC = () => {
     activeInpatients.length > 0 ? activeInpatients[0].mrn : null
   );
   
-  const [tab, setTab] = useState<'vitals' | 'mar' | 'notes' | 'tasks'>('vitals');
+  const [tab, setTab] = useState<'vitals' | 'mar' | 'notes' | 'tasks' | 'surgery'>('vitals');
   const [nurseData, setNurseData] = useState<Record<string, PatientNurseRecord>>(() => {
     try {
       const saved = localStorage.getItem('nurse_records');
@@ -620,7 +620,8 @@ const NurseDashboard: React.FC = () => {
                 const pnd = getNurse(p.mrn);
                 const administered = pnd.mar.map(m => m.medId);
                 const dueMedsCount = (p.medications ?? []).filter(m => !administered.includes(m.id)).length;
-                
+                const activeSurg = surgeries.find(s => s.patientMrn === p.mrn && (s.status === 'Scheduled' || s.status === 'In Progress'));
+
                 return (
                   <div
                     key={p.mrn}
@@ -648,15 +649,25 @@ const NurseDashboard: React.FC = () => {
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingLeft: '2.6rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingLeft: '2.6rem', gap: '0.35rem' }}>
                       <span style={{ fontSize: '0.72rem', color: '#0369a1', fontWeight: '700' }}>
                         📍 {p.assignedWard || p.ward || 'Unassigned'} - Room {p.assignedBed || '—'}
                       </span>
-                      {dueMedsCount > 0 && (
-                        <span style={badgeStyle('#fee2e2', '#ef4444')}>
-                          {dueMedsCount} Meds Due
-                        </span>
-                      )}
+                      <div style={{ display: 'flex', gap: '0.3rem', flexShrink: 0 }}>
+                        {activeSurg && (
+                          <span style={badgeStyle(
+                            activeSurg.status === 'In Progress' ? '#fef3c7' : '#ede9fe',
+                            activeSurg.status === 'In Progress' ? '#92400e' : '#6d28d9'
+                          )}>
+                            {activeSurg.status === 'In Progress' ? '🔪 In OR' : '🩺 Surgery'}
+                          </span>
+                        )}
+                        {dueMedsCount > 0 && (
+                          <span style={badgeStyle('#fee2e2', '#ef4444')}>
+                            {dueMedsCount} Meds Due
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -801,6 +812,7 @@ const NurseDashboard: React.FC = () => {
                 {tabBtn('mar',    <Pill size={15} />,     'MAR Log')}
                 {tabBtn('notes',  <ClipboardList size={15} />, 'Nursing Notes')}
                 {tabBtn('tasks',  <CheckSquare size={15} />,   'Care Tasks')}
+                {tabBtn('surgery',<Scissors size={15} />,      'Surgery')}
               </div>
 
               {/* Tab Content Panels */}
@@ -1082,6 +1094,122 @@ const NurseDashboard: React.FC = () => {
                     </div>
                   </div>
                 )}
+
+                {/* TAB: Surgery (active surgery + bed trace controls) */}
+                {tab === 'surgery' && selected && (() => {
+                  const patientSurgeries = surgeries
+                    .filter(s => s.patientMrn === selected.mrn && s.status !== 'Cancelled')
+                    .sort((a, b) => new Date(b.startTime).getTime() - new Date(a.startTime).getTime());
+                  const focus = patientSurgeries.find(s => s.status === 'Scheduled' || s.status === 'In Progress') || patientSurgeries[0];
+                  if (!focus) {
+                    return (
+                      <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#94a3b8' }}>
+                        <Scissors size={28} style={{ marginBottom: '0.5rem', color: '#cbd5e1' }} />
+                        <div style={{ fontSize: '0.85rem' }}>No surgery scheduled for this patient.</div>
+                      </div>
+                    );
+                  }
+                  const trace = surgeryBedTrace
+                    .filter(b => b.surgeryId === focus.id)
+                    .sort((a, b) => new Date(a.enteredAt).getTime() - new Date(b.enteredAt).getTime());
+                  const openTrace = trace.find(t => !t.exitedAt);
+                  const recordMove = async (stage: 'PreOp' | 'OT' | 'PostOp', defaultLoc: string) => {
+                    const loc = window.prompt(`Location for ${stage}?`, defaultLoc);
+                    if (!loc) return;
+                    const now = new Date().toISOString();
+                    if (openTrace) await updateSurgeryBedTrace(openTrace.id, { exitedAt: now });
+                    await addSurgeryBedTrace({
+                      surgeryId: focus.id,
+                      patientMrn: focus.patientMrn,
+                      stage, location: loc.trim(),
+                      enteredAt: now,
+                      recordedBy: currentStaff?.name,
+                    });
+                    try {
+                      if (stage === 'OT') {
+                        await updatePatient(selected.mrn, { assignedBed: loc.trim(), assignedWard: 'OT' });
+                      } else {
+                        await updatePatient(selected.mrn, { assignedBed: loc.trim() });
+                      }
+                    } catch { /* non-fatal */ }
+                  };
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* Focus surgery summary */}
+                      <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '0.75rem', padding: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#991b1b' }}>{focus.operationName}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#7f1d1d', marginTop: '0.15rem' }}>
+                              {focus.operationSite ? `${focus.operationSite} · ` : ''}{focus.technique || focus.anesthesiaType} · Room {focus.roomNumber}
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#7f1d1d', marginTop: '0.15rem' }}>
+                              {new Date(focus.startTime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </div>
+                          </div>
+                          <span style={badgeStyle(
+                            focus.status === 'In Progress' ? '#fef3c7' : focus.status === 'Completed' ? '#dcfce7' : '#ede9fe',
+                            focus.status === 'In Progress' ? '#92400e' : focus.status === 'Completed' ? '#166534' : '#6d28d9'
+                          )}>{focus.status}</span>
+                        </div>
+                        {focus.description && (
+                          <div style={{ fontSize: '0.8rem', color: '#1e293b', marginTop: '0.6rem' }}>{focus.description}</div>
+                        )}
+                      </div>
+
+                      {/* Quick move buttons */}
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#475569', marginBottom: '0.5rem' }}>Record bed movement</div>
+                        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                          <button onClick={() => recordMove('PreOp', selected.assignedBed || selected.ward || 'Pre-op holding')}
+                            style={{ padding: '0.55rem 0.9rem', border: '1px solid #c7d2fe', borderRadius: '0.5rem', background: '#eef2ff', color: '#3730a3', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <MapPin size={14} /> Pre-Op
+                          </button>
+                          <button onClick={() => recordMove('OT', focus.roomNumber || 'OT 1')}
+                            style={{ padding: '0.55rem 0.9rem', border: '1px solid #fde68a', borderRadius: '0.5rem', background: '#fef3c7', color: '#92400e', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <MapPin size={14} /> OT
+                          </button>
+                          <button onClick={() => recordMove('PostOp', 'PACU')}
+                            style={{ padding: '0.55rem 0.9rem', border: '1px solid #bbf7d0', borderRadius: '0.5rem', background: '#dcfce7', color: '#166534', fontWeight: 700, fontSize: '0.78rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                            <MapPin size={14} /> Post-Op
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Trace timeline */}
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '0.8rem', color: '#475569', marginBottom: '0.5rem' }}>Movement history</div>
+                        {trace.length === 0 ? (
+                          <div style={{ fontSize: '0.8rem', color: '#94a3b8', padding: '0.75rem', background: '#f8fafc', borderRadius: '0.5rem' }}>
+                            No movement recorded yet.
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            {trace.map(b => (
+                              <div key={b.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '0.5rem', padding: '0.5rem 0.75rem' }}>
+                                <div>
+                                  <div style={{ fontWeight: 700, fontSize: '0.82rem' }}>{b.stage} · {b.location}</div>
+                                  <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>
+                                    {new Date(b.enteredAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                                    {b.exitedAt ? ` → ${new Date(b.exitedAt).toLocaleString('en-US', { dateStyle: 'short', timeStyle: 'short' })}` : ' · current'}
+                                    {b.recordedBy ? ` · ${b.recordedBy}` : ''}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {focus.postOpPlan && (
+                        <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '0.75rem', padding: '0.9rem' }}>
+                          <div style={{ fontWeight: 700, fontSize: '0.78rem', color: '#166534', marginBottom: '0.25rem' }}>Post-op care</div>
+                          <div style={{ fontSize: '0.82rem', color: '#1e293b' }}>{focus.postOpPlan}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
               </div>
 

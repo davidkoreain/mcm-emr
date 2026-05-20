@@ -40,7 +40,7 @@
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { IDBService } from './IDBService';
-import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog, CalendarEvent } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, MedOrder, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog, CalendarEvent, SurgeryTeamMember, SurgerySupplyItem, SurgeryEquipmentItem, SurgeryChecklistItem, SurgeryBedTrace } from '../context/EMRContext';
 import { initialPatients, initialStaff, initialAssets } from '../data/mockData';
 
 // ── row ↔ type mappers ──────────────────────────────────────────
@@ -244,6 +244,17 @@ function rowToSurgery(r: Record<string, unknown>): Surgery {
     endTime: r.end_time as string,
     status: r.status as 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled',
     createdAt: r.created_at as string,
+    priority: (r.priority as 'Elective' | 'Urgent' | 'Emergency') || undefined,
+    operationSite: (r.operation_site as string) || undefined,
+    technique: (r.technique as string) || undefined,
+    description: (r.description as string) || undefined,
+    appointmentId: (r.appointment_id as number) || undefined,
+    outcomeSummary: (r.outcome_summary as string) || undefined,
+    outcomeFindings: (r.outcome_findings as string) || undefined,
+    postOpPlan: (r.post_op_plan as string) || undefined,
+    complications: (r.complications as string) || undefined,
+    outcomeRecordedAt: (r.outcome_recorded_at as string) || undefined,
+    outcomeRecordedBy: (r.outcome_recorded_by as string) || undefined,
   };
 }
 
@@ -1098,8 +1109,8 @@ export class SupabaseService implements IDBService {
     return (data ?? []).map(rowToSurgery);
   }
 
-  async insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<void> {
-    const { error } = await this.client.from('surgeries').insert({
+  async insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<Surgery | null> {
+    const { data, error } = await this.client.from('surgeries').insert({
       patient_mrn: s.patientMrn,
       patient_name: s.patientName,
       operation_name: s.operationName,
@@ -1109,8 +1120,14 @@ export class SupabaseService implements IDBService {
       start_time: s.startTime,
       end_time: s.endTime,
       status: s.status,
-    });
+      priority: s.priority,
+      operation_site: s.operationSite,
+      technique: s.technique,
+      description: s.description,
+      appointment_id: s.appointmentId,
+    }).select('*').single();
     if (error) throw new Error(error.message);
+    return data ? rowToSurgery(data) : null;
   }
 
   async updateSurgery(id: number, changes: Partial<Surgery>): Promise<void> {
@@ -1119,7 +1136,247 @@ export class SupabaseService implements IDBService {
     if (changes.roomNumber !== undefined) row.room_number = changes.roomNumber;
     if (changes.startTime !== undefined) row.start_time = changes.startTime;
     if (changes.endTime !== undefined) row.end_time = changes.endTime;
+    if (changes.operationName !== undefined) row.operation_name = changes.operationName;
+    if (changes.surgeonId !== undefined) row.surgeon_id = changes.surgeonId;
+    if (changes.anesthesiaType !== undefined) row.anesthesia_type = changes.anesthesiaType;
+    if (changes.priority !== undefined) row.priority = changes.priority;
+    if (changes.operationSite !== undefined) row.operation_site = changes.operationSite;
+    if (changes.technique !== undefined) row.technique = changes.technique;
+    if (changes.description !== undefined) row.description = changes.description;
+    if (changes.appointmentId !== undefined) row.appointment_id = changes.appointmentId;
+    if (changes.outcomeSummary !== undefined) row.outcome_summary = changes.outcomeSummary;
+    if (changes.outcomeFindings !== undefined) row.outcome_findings = changes.outcomeFindings;
+    if (changes.postOpPlan !== undefined) row.post_op_plan = changes.postOpPlan;
+    if (changes.complications !== undefined) row.complications = changes.complications;
+    if (changes.outcomeRecordedAt !== undefined) row.outcome_recorded_at = changes.outcomeRecordedAt;
+    if (changes.outcomeRecordedBy !== undefined) row.outcome_recorded_by = changes.outcomeRecordedBy;
     const { error } = await this.client.from('surgeries').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Surgery Team ──────────────────────────────────────────────
+  async fetchSurgeryTeam(): Promise<SurgeryTeamMember[]> {
+    const { data, error } = await this.client.from('surgery_team').select('*').order('id');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(r => ({
+      id: r.id as number,
+      surgeryId: r.surgery_id as number,
+      staffId: r.staff_id as number,
+      staffName: r.staff_name as string,
+      role: r.role as string,
+      department: (r.department as string) || undefined,
+      notes: (r.notes as string) || undefined,
+      createdAt: r.created_at as string,
+    }));
+  }
+
+  async insertSurgeryTeamMember(m: Omit<SurgeryTeamMember, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('surgery_team').insert({
+      surgery_id: m.surgeryId,
+      staff_id: m.staffId,
+      staff_name: m.staffName,
+      role: m.role,
+      department: m.department,
+      notes: m.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async deleteSurgeryTeamMember(id: number): Promise<void> {
+    const { error } = await this.client.from('surgery_team').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Surgery Supplies ──────────────────────────────────────────
+  async fetchSurgerySupplies(): Promise<SurgerySupplyItem[]> {
+    const { data, error } = await this.client.from('surgery_supplies').select('*').order('id');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(r => ({
+      id: r.id as number,
+      surgeryId: r.surgery_id as number,
+      itemName: r.item_name as string,
+      category: (r.category as 'Drug' | 'Supply' | 'Consumable') ?? 'Supply',
+      source: (r.source as string) || undefined,
+      drugId: (r.drug_id as number) || undefined,
+      quantity: Number(r.quantity ?? 1),
+      unit: (r.unit as string) || undefined,
+      status: (r.status as SurgerySupplyItem['status']) ?? 'Requested',
+      requestedBy: (r.requested_by as string) || undefined,
+      preparedBy: (r.prepared_by as string) || undefined,
+      notes: (r.notes as string) || undefined,
+      createdAt: r.created_at as string,
+      updatedAt: (r.updated_at as string) || undefined,
+    }));
+  }
+
+  async insertSurgerySupply(s: Omit<SurgerySupplyItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+    const { error } = await this.client.from('surgery_supplies').insert({
+      surgery_id: s.surgeryId,
+      item_name: s.itemName,
+      category: s.category,
+      source: s.source,
+      drug_id: s.drugId,
+      quantity: s.quantity,
+      unit: s.unit,
+      status: s.status,
+      requested_by: s.requestedBy,
+      prepared_by: s.preparedBy,
+      notes: s.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async updateSurgerySupply(id: number, changes: Partial<SurgerySupplyItem>): Promise<void> {
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (changes.itemName !== undefined) row.item_name = changes.itemName;
+    if (changes.category !== undefined) row.category = changes.category;
+    if (changes.source !== undefined) row.source = changes.source;
+    if (changes.drugId !== undefined) row.drug_id = changes.drugId;
+    if (changes.quantity !== undefined) row.quantity = changes.quantity;
+    if (changes.unit !== undefined) row.unit = changes.unit;
+    if (changes.status !== undefined) row.status = changes.status;
+    if (changes.requestedBy !== undefined) row.requested_by = changes.requestedBy;
+    if (changes.preparedBy !== undefined) row.prepared_by = changes.preparedBy;
+    if (changes.notes !== undefined) row.notes = changes.notes;
+    const { error } = await this.client.from('surgery_supplies').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async deleteSurgerySupply(id: number): Promise<void> {
+    const { error } = await this.client.from('surgery_supplies').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Surgery Equipment ─────────────────────────────────────────
+  async fetchSurgeryEquipment(): Promise<SurgeryEquipmentItem[]> {
+    const { data, error } = await this.client.from('surgery_equipment').select('*').order('id');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(r => ({
+      id: r.id as number,
+      surgeryId: r.surgery_id as number,
+      assetId: r.asset_id as string,
+      assetName: r.asset_name as string,
+      status: (r.status as SurgeryEquipmentItem['status']) ?? 'Requested',
+      requestedBy: (r.requested_by as string) || undefined,
+      notes: (r.notes as string) || undefined,
+      createdAt: r.created_at as string,
+      updatedAt: (r.updated_at as string) || undefined,
+    }));
+  }
+
+  async insertSurgeryEquipment(e: Omit<SurgeryEquipmentItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> {
+    const { error } = await this.client.from('surgery_equipment').insert({
+      surgery_id: e.surgeryId,
+      asset_id: e.assetId,
+      asset_name: e.assetName,
+      status: e.status,
+      requested_by: e.requestedBy,
+      notes: e.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async updateSurgeryEquipment(id: number, changes: Partial<SurgeryEquipmentItem>): Promise<void> {
+    const row: Record<string, unknown> = { updated_at: new Date().toISOString() };
+    if (changes.status !== undefined) row.status = changes.status;
+    if (changes.notes !== undefined) row.notes = changes.notes;
+    const { error } = await this.client.from('surgery_equipment').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async deleteSurgeryEquipment(id: number): Promise<void> {
+    const { error } = await this.client.from('surgery_equipment').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Surgery Checklist ─────────────────────────────────────────
+  async fetchSurgeryChecklist(): Promise<SurgeryChecklistItem[]> {
+    const { data, error } = await this.client.from('surgery_checklist').select('*').order('phase').order('sort_order');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(r => ({
+      id: r.id as number,
+      surgeryId: r.surgery_id as number,
+      phase: r.phase as 'PreOp' | 'IntraOp' | 'PostOp',
+      label: r.label as string,
+      isDone: !!r.is_done,
+      doneBy: (r.done_by as string) || undefined,
+      doneAt: (r.done_at as string) || undefined,
+      notes: (r.notes as string) || undefined,
+      sortOrder: (r.sort_order as number) ?? 0,
+      createdAt: r.created_at as string,
+    }));
+  }
+
+  async insertSurgeryChecklist(c: Omit<SurgeryChecklistItem, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('surgery_checklist').insert({
+      surgery_id: c.surgeryId,
+      phase: c.phase,
+      label: c.label,
+      is_done: c.isDone,
+      done_by: c.doneBy,
+      done_at: c.doneAt,
+      notes: c.notes,
+      sort_order: c.sortOrder,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async updateSurgeryChecklist(id: number, changes: Partial<SurgeryChecklistItem>): Promise<void> {
+    const row: Record<string, unknown> = {};
+    if (changes.label !== undefined) row.label = changes.label;
+    if (changes.isDone !== undefined) row.is_done = changes.isDone;
+    if (changes.doneBy !== undefined) row.done_by = changes.doneBy;
+    if (changes.doneAt !== undefined) row.done_at = changes.doneAt;
+    if (changes.notes !== undefined) row.notes = changes.notes;
+    if (changes.sortOrder !== undefined) row.sort_order = changes.sortOrder;
+    const { error } = await this.client.from('surgery_checklist').update(row).eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  async deleteSurgeryChecklist(id: number): Promise<void> {
+    const { error } = await this.client.from('surgery_checklist').delete().eq('id', id);
+    if (error) throw new Error(error.message);
+  }
+
+  // ── Surgery Bed Trace ─────────────────────────────────────────
+  async fetchSurgeryBedTrace(): Promise<SurgeryBedTrace[]> {
+    const { data, error } = await this.client.from('surgery_bed_trace').select('*').order('entered_at');
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(r => ({
+      id: r.id as number,
+      surgeryId: r.surgery_id as number,
+      patientMrn: r.patient_mrn as string,
+      stage: r.stage as 'PreOp' | 'OT' | 'PostOp',
+      location: r.location as string,
+      enteredAt: r.entered_at as string,
+      exitedAt: (r.exited_at as string) || undefined,
+      recordedBy: (r.recorded_by as string) || undefined,
+      notes: (r.notes as string) || undefined,
+      createdAt: r.created_at as string,
+    }));
+  }
+
+  async insertSurgeryBedTrace(b: Omit<SurgeryBedTrace, 'id' | 'createdAt'>): Promise<void> {
+    const { error } = await this.client.from('surgery_bed_trace').insert({
+      surgery_id: b.surgeryId,
+      patient_mrn: b.patientMrn,
+      stage: b.stage,
+      location: b.location,
+      entered_at: b.enteredAt,
+      exited_at: b.exitedAt,
+      recorded_by: b.recordedBy,
+      notes: b.notes,
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  async updateSurgeryBedTrace(id: number, changes: Partial<SurgeryBedTrace>): Promise<void> {
+    const row: Record<string, unknown> = {};
+    if (changes.location !== undefined) row.location = changes.location;
+    if (changes.stage !== undefined) row.stage = changes.stage;
+    if (changes.exitedAt !== undefined) row.exited_at = changes.exitedAt;
+    if (changes.notes !== undefined) row.notes = changes.notes;
+    const { error } = await this.client.from('surgery_bed_trace').update(row).eq('id', id);
     if (error) throw new Error(error.message);
   }
 

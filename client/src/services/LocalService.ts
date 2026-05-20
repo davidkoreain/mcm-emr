@@ -86,8 +86,10 @@ export class LocalService implements IDBService {
     this.labOrders = this.labOrders.map(o => o.id === id ? { ...o, status } : o);
   }
   async fetchSurgeries() { return [...this.surgeries]; }
-  async insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>) {
-    this.surgeries.push({ ...s, id: Date.now(), createdAt: new Date().toISOString() } as Surgery);
+  async insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<Surgery | null> {
+    const row: Surgery = { ...s, id: Date.now(), createdAt: new Date().toISOString() } as Surgery;
+    this.surgeries.push(row);
+    return row;
   }
   async updateSurgery(id: number, changes: Partial<Surgery>) {
     this.surgeries = this.surgeries.map(s => s.id === id ? { ...s, ...changes } : s);

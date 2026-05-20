@@ -186,6 +186,83 @@ export type Surgery = {
   endTime: string;
   status: 'Scheduled' | 'In Progress' | 'Completed' | 'Cancelled';
   createdAt: string;
+  priority?: 'Elective' | 'Urgent' | 'Emergency';
+  operationSite?: string;
+  technique?: string;
+  description?: string;
+  appointmentId?: number;
+  outcomeSummary?: string;
+  outcomeFindings?: string;
+  postOpPlan?: string;
+  complications?: string;
+  outcomeRecordedAt?: string;
+  outcomeRecordedBy?: string;
+};
+
+export type SurgeryTeamMember = {
+  id: number;
+  surgeryId: number;
+  staffId: number;
+  staffName: string;
+  role: string;
+  department?: string;
+  notes?: string;
+  createdAt: string;
+};
+
+export type SurgerySupplyItem = {
+  id: number;
+  surgeryId: number;
+  itemName: string;
+  category: 'Drug' | 'Supply' | 'Consumable';
+  source?: string;
+  drugId?: number;
+  quantity: number;
+  unit?: string;
+  status: 'Requested' | 'Prepared' | 'Issued' | 'Returned' | 'Cancelled';
+  requestedBy?: string;
+  preparedBy?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type SurgeryEquipmentItem = {
+  id: number;
+  surgeryId: number;
+  assetId: string;
+  assetName: string;
+  status: 'Requested' | 'Allocated' | 'In Use' | 'Returned';
+  requestedBy?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export type SurgeryChecklistItem = {
+  id: number;
+  surgeryId: number;
+  phase: 'PreOp' | 'IntraOp' | 'PostOp';
+  label: string;
+  isDone: boolean;
+  doneBy?: string;
+  doneAt?: string;
+  notes?: string;
+  sortOrder: number;
+  createdAt: string;
+};
+
+export type SurgeryBedTrace = {
+  id: number;
+  surgeryId: number;
+  patientMrn: string;
+  stage: 'PreOp' | 'OT' | 'PostOp';
+  location: string;
+  enteredAt: string;
+  exitedAt?: string;
+  recordedBy?: string;
+  notes?: string;
+  createdAt: string;
 };
 
 export type StaffLeave = {
@@ -378,6 +455,11 @@ type EMRContextType = {
   assets: Asset[];
   appointments: Appointment[];
   surgeries: Surgery[];
+  surgeryTeam: SurgeryTeamMember[];
+  surgerySupplies: SurgerySupplyItem[];
+  surgeryEquipment: SurgeryEquipmentItem[];
+  surgeryChecklist: SurgeryChecklistItem[];
+  surgeryBedTrace: SurgeryBedTrace[];
   guardians: GuardianUser[];
   drugs: Drug[];
   prescriptions: Prescription[];
@@ -414,8 +496,26 @@ type EMRContextType = {
   addStaffLeave: (l: Omit<StaffLeave, 'id'>) => Promise<void>;
   updateStaffLeaveStatus: (id: number, status: 'Pending' | 'Confirmed' | 'Rejected') => Promise<void>;
   // Surgeries
-  addSurgery: (s: Omit<Surgery, 'id' | 'createdAt'>) => Promise<void>;
+  addSurgery: (s: Omit<Surgery, 'id' | 'createdAt'>) => Promise<Surgery | null>;
   updateSurgery: (id: number, changes: Partial<Surgery>) => Promise<void>;
+  // Surgery team
+  addSurgeryTeamMember: (m: Omit<SurgeryTeamMember, 'id' | 'createdAt'>) => Promise<void>;
+  removeSurgeryTeamMember: (id: number) => Promise<void>;
+  // Surgery supplies
+  addSurgerySupply: (s: Omit<SurgerySupplyItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateSurgerySupply: (id: number, changes: Partial<SurgerySupplyItem>) => Promise<void>;
+  removeSurgerySupply: (id: number) => Promise<void>;
+  // Surgery equipment
+  addSurgeryEquipment: (e: Omit<SurgeryEquipmentItem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  updateSurgeryEquipment: (id: number, changes: Partial<SurgeryEquipmentItem>) => Promise<void>;
+  removeSurgeryEquipment: (id: number) => Promise<void>;
+  // Surgery checklist
+  addSurgeryChecklistItem: (c: Omit<SurgeryChecklistItem, 'id' | 'createdAt'>) => Promise<void>;
+  updateSurgeryChecklistItem: (id: number, changes: Partial<SurgeryChecklistItem>) => Promise<void>;
+  removeSurgeryChecklistItem: (id: number) => Promise<void>;
+  // Surgery bed trace
+  addSurgeryBedTrace: (b: Omit<SurgeryBedTrace, 'id' | 'createdAt'>) => Promise<void>;
+  updateSurgeryBedTrace: (id: number, changes: Partial<SurgeryBedTrace>) => Promise<void>;
   // Guardians
   registerGuardian: (g: Omit<GuardianUser, 'id' | 'createdAt'>) => Promise<void>;
   updatePrivacy: (guardianId: string, settings: GuardianUser['privacySettings']) => Promise<void>;
@@ -505,6 +605,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [labResults, setLabResults] = useState<LabResult[]>([]);
   const [labTestCatalog, setLabTestCatalog] = useState<LabTestCatalog[]>([]);
   const [surgeries, setSurgeries] = useState<Surgery[]>([]);
+  const [surgeryTeam, setSurgeryTeam] = useState<SurgeryTeamMember[]>([]);
+  const [surgerySupplies, setSurgerySupplies] = useState<SurgerySupplyItem[]>([]);
+  const [surgeryEquipment, setSurgeryEquipment] = useState<SurgeryEquipmentItem[]>([]);
+  const [surgeryChecklist, setSurgeryChecklist] = useState<SurgeryChecklistItem[]>([]);
+  const [surgeryBedTrace, setSurgeryBedTrace] = useState<SurgeryBedTrace[]>([]);
   const [guardians, setGuardians] = useState<GuardianUser[]>([]);
   const [medicalHistory, setMedicalHistory] = useState<MedicalHistoryItem[]>([]);
   const [staffLeave, setStaffLeave] = useState<StaffLeave[]>([]);
@@ -593,7 +698,7 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         try { return await promise; } catch (e) { console.warn("Fetch failed, using fallback:", e); return fallback; }
       };
 
-      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh, ltc, ce] = await Promise.all([
+      const [p, s, a, app, dr, rx, lo, lr, sur, gd, mh, l, dsup, msch, dord, invh, ltc, ce, sTeam, sSup, sEq, sChk, sBed] = await Promise.all([
         safeFetch(db.fetchPatients(), []),
         safeFetch(db.fetchStaff(), []),
         safeFetch(db.fetchAssets(), []),
@@ -612,6 +717,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         safeFetch(db.fetchInventoryHistory ? db.fetchInventoryHistory() : Promise.resolve([] as InventoryHistory[]), [] as InventoryHistory[]),
         safeFetch(db.fetchLabTestCatalog ? db.fetchLabTestCatalog() : Promise.resolve([] as LabTestCatalog[]), [] as LabTestCatalog[]),
         safeFetch(db.fetchCalendarEvents ? db.fetchCalendarEvents() : Promise.resolve([] as CalendarEvent[]), [] as CalendarEvent[]),
+        safeFetch(db.fetchSurgeryTeam ? db.fetchSurgeryTeam() : Promise.resolve([] as SurgeryTeamMember[]), [] as SurgeryTeamMember[]),
+        safeFetch(db.fetchSurgerySupplies ? db.fetchSurgerySupplies() : Promise.resolve([] as SurgerySupplyItem[]), [] as SurgerySupplyItem[]),
+        safeFetch(db.fetchSurgeryEquipment ? db.fetchSurgeryEquipment() : Promise.resolve([] as SurgeryEquipmentItem[]), [] as SurgeryEquipmentItem[]),
+        safeFetch(db.fetchSurgeryChecklist ? db.fetchSurgeryChecklist() : Promise.resolve([] as SurgeryChecklistItem[]), [] as SurgeryChecklistItem[]),
+        safeFetch(db.fetchSurgeryBedTrace ? db.fetchSurgeryBedTrace() : Promise.resolve([] as SurgeryBedTrace[]), [] as SurgeryBedTrace[]),
       ]);
       
       // Always merge demo data to ensure a rich demo experience
@@ -631,6 +741,11 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setLabOrders(lo);
       setLabResults(lr);
       setSurgeries(sur);
+      setSurgeryTeam(sTeam);
+      setSurgerySupplies(sSup);
+      setSurgeryEquipment(sEq);
+      setSurgeryChecklist(sChk);
+      setSurgeryBedTrace(sBed);
       setGuardians(gd);
       setMedicalHistory(mh);
       setStaffLeave(l);
@@ -732,13 +847,84 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return await db.loginStaff(name, passwordHash);
   };
 
-  const addSurgery = async (s: Omit<Surgery, 'id' | 'createdAt'>) => {
-    await db.insertSurgery(s);
+  const addSurgery = async (s: Omit<Surgery, 'id' | 'createdAt'>): Promise<Surgery | null> => {
+    const inserted = await db.insertSurgery(s);
     await refreshData();
+    return inserted ?? null;
   };
 
   const updateSurgery = async (id: number, changes: Partial<Surgery>) => {
     await db.updateSurgery(id, changes);
+    await refreshData();
+  };
+
+  const addSurgeryTeamMember = async (m: Omit<SurgeryTeamMember, 'id' | 'createdAt'>) => {
+    if (!db.insertSurgeryTeamMember) return;
+    await db.insertSurgeryTeamMember(m);
+    await refreshData();
+  };
+  const removeSurgeryTeamMember = async (id: number) => {
+    if (!db.deleteSurgeryTeamMember) return;
+    await db.deleteSurgeryTeamMember(id);
+    await refreshData();
+  };
+
+  const addSurgerySupply = async (s: Omit<SurgerySupplyItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!db.insertSurgerySupply) return;
+    await db.insertSurgerySupply(s);
+    await refreshData();
+  };
+  const updateSurgerySupply = async (id: number, changes: Partial<SurgerySupplyItem>) => {
+    if (!db.updateSurgerySupply) return;
+    await db.updateSurgerySupply(id, changes);
+    await refreshData();
+  };
+  const removeSurgerySupply = async (id: number) => {
+    if (!db.deleteSurgerySupply) return;
+    await db.deleteSurgerySupply(id);
+    await refreshData();
+  };
+
+  const addSurgeryEquipment = async (e: Omit<SurgeryEquipmentItem, 'id' | 'createdAt' | 'updatedAt'>) => {
+    if (!db.insertSurgeryEquipment) return;
+    await db.insertSurgeryEquipment(e);
+    await refreshData();
+  };
+  const updateSurgeryEquipment = async (id: number, changes: Partial<SurgeryEquipmentItem>) => {
+    if (!db.updateSurgeryEquipment) return;
+    await db.updateSurgeryEquipment(id, changes);
+    await refreshData();
+  };
+  const removeSurgeryEquipment = async (id: number) => {
+    if (!db.deleteSurgeryEquipment) return;
+    await db.deleteSurgeryEquipment(id);
+    await refreshData();
+  };
+
+  const addSurgeryChecklistItem = async (c: Omit<SurgeryChecklistItem, 'id' | 'createdAt'>) => {
+    if (!db.insertSurgeryChecklist) return;
+    await db.insertSurgeryChecklist(c);
+    await refreshData();
+  };
+  const updateSurgeryChecklistItem = async (id: number, changes: Partial<SurgeryChecklistItem>) => {
+    if (!db.updateSurgeryChecklist) return;
+    await db.updateSurgeryChecklist(id, changes);
+    await refreshData();
+  };
+  const removeSurgeryChecklistItem = async (id: number) => {
+    if (!db.deleteSurgeryChecklist) return;
+    await db.deleteSurgeryChecklist(id);
+    await refreshData();
+  };
+
+  const addSurgeryBedTrace = async (b: Omit<SurgeryBedTrace, 'id' | 'createdAt'>) => {
+    if (!db.insertSurgeryBedTrace) return;
+    await db.insertSurgeryBedTrace(b);
+    await refreshData();
+  };
+  const updateSurgeryBedTrace = async (id: number, changes: Partial<SurgeryBedTrace>) => {
+    if (!db.updateSurgeryBedTrace) return;
+    await db.updateSurgeryBedTrace(id, changes);
     await refreshData();
   };
 
@@ -921,12 +1107,18 @@ export const EMRProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       patients, staff, assets, appointments, surgeries, guardians, drugs, prescriptions,
       drugSuppliers, medicationSchedules, drugOrders, inventoryHistory,
       labOrders, labResults, labTestCatalog, medicalHistory, staffLeave, calendarEvents,
+      surgeryTeam, surgerySupplies, surgeryEquipment, surgeryChecklist, surgeryBedTrace,
       loading, error, role, setRole,
       currentUser, setCurrentUser, currentGuardian, setCurrentGuardian, currentStaff, setCurrentStaff,
       addPatient, updatePatient, addVitals, addStaff, updateStaff, addAsset, updateAsset, addDrug, updateDrug,
       addAppointment, updateAppointment, addCalendarEvent, deleteCalendarEvent, addStaffLeave, updateStaffLeaveStatus, addSurgery, updateSurgery, registerGuardian, updatePrivacy, matchPatient, registerPatientUser, loginPortalUser, isPortalUserRegistered, loginStaff, loginGuardian, fetchAppSetting, saveAppSetting,
       dispenseMedication, cancelPrescription, addPrescription, addDrugSupplier, createDrugOrder, markMedicationTaken, createMedicationSchedule,
-      submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, updateLabOrderResultStatus, addMedicalHistory
+      submitLabResult, deleteMedicalHistory, addLabOrder, updateLabOrderStatus, updateLabOrderResultStatus, addMedicalHistory,
+      addSurgeryTeamMember, removeSurgeryTeamMember,
+      addSurgerySupply, updateSurgerySupply, removeSurgerySupply,
+      addSurgeryEquipment, updateSurgeryEquipment, removeSurgeryEquipment,
+      addSurgeryChecklistItem, updateSurgeryChecklistItem, removeSurgeryChecklistItem,
+      addSurgeryBedTrace, updateSurgeryBedTrace,
     }}>
       {children}
     </EMRContext.Provider>

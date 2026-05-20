@@ -1,4 +1,4 @@
-import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog, CalendarEvent } from '../context/EMRContext';
+import type { Patient, StaffMember, Asset, VitalsRecord, Appointment, Drug, Prescription, LabOrder, LabResult, Surgery, GuardianUser, MedicalHistoryItem, StaffLeave, DrugSupplier, MedicationSchedule, DrugOrder, InventoryHistory, LabTestCatalog, CalendarEvent, SurgeryTeamMember, SurgerySupplyItem, SurgeryEquipmentItem, SurgeryChecklistItem, SurgeryBedTrace } from '../context/EMRContext';
 
 /**
  * Database service interface.
@@ -66,8 +66,31 @@ export interface IDBService {
   fetchLabTestCatalog?(): Promise<LabTestCatalog[]>;
   // surgery
   fetchSurgeries(): Promise<Surgery[]>;
-  insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<void>;
+  insertSurgery(s: Omit<Surgery, 'id' | 'createdAt'>): Promise<Surgery | null>;
   updateSurgery(id: number, changes: Partial<Surgery>): Promise<void>;
+  // surgery team
+  fetchSurgeryTeam?(): Promise<SurgeryTeamMember[]>;
+  insertSurgeryTeamMember?(m: Omit<SurgeryTeamMember, 'id' | 'createdAt'>): Promise<void>;
+  deleteSurgeryTeamMember?(id: number): Promise<void>;
+  // surgery supplies
+  fetchSurgerySupplies?(): Promise<SurgerySupplyItem[]>;
+  insertSurgerySupply?(s: Omit<SurgerySupplyItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<void>;
+  updateSurgerySupply?(id: number, changes: Partial<SurgerySupplyItem>): Promise<void>;
+  deleteSurgerySupply?(id: number): Promise<void>;
+  // surgery equipment
+  fetchSurgeryEquipment?(): Promise<SurgeryEquipmentItem[]>;
+  insertSurgeryEquipment?(e: Omit<SurgeryEquipmentItem, 'id' | 'createdAt' | 'updatedAt'>): Promise<void>;
+  updateSurgeryEquipment?(id: number, changes: Partial<SurgeryEquipmentItem>): Promise<void>;
+  deleteSurgeryEquipment?(id: number): Promise<void>;
+  // surgery checklist
+  fetchSurgeryChecklist?(): Promise<SurgeryChecklistItem[]>;
+  insertSurgeryChecklist?(c: Omit<SurgeryChecklistItem, 'id' | 'createdAt'>): Promise<void>;
+  updateSurgeryChecklist?(id: number, changes: Partial<SurgeryChecklistItem>): Promise<void>;
+  deleteSurgeryChecklist?(id: number): Promise<void>;
+  // surgery bed trace
+  fetchSurgeryBedTrace?(): Promise<SurgeryBedTrace[]>;
+  insertSurgeryBedTrace?(b: Omit<SurgeryBedTrace, 'id' | 'createdAt'>): Promise<void>;
+  updateSurgeryBedTrace?(id: number, changes: Partial<SurgeryBedTrace>): Promise<void>;
   // guardian
   fetchGuardians(): Promise<GuardianUser[]>;
   insertGuardian(g: Omit<GuardianUser, 'id' | 'createdAt'>): Promise<void>;

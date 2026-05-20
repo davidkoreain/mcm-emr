@@ -158,6 +158,10 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
   const [surgRoom, setSurgRoom] = useState('OR-1');
   const [surgStart, setSurgStart] = useState('');
   const [surgEnd, setSurgEnd] = useState('');
+  const [surgSite, setSurgSite] = useState('');
+  const [surgTechnique, setSurgTechnique] = useState('');
+  const [surgDescription, setSurgDescription] = useState('');
+  const [surgPriority, setSurgPriority] = useState<'Elective' | 'Urgent' | 'Emergency'>('Elective');
 
   // --- Plan (Admission) inputs ---
   const [requiresAdmission, setRequiresAdmission] = useState(false);
@@ -255,17 +259,42 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
     e.preventDefault();
     if (!currentPatient) return;
     try {
-      await addSurgery({
+      const surgeonIdNum = Number(surgSurgeonId);
+      const startIso = surgStart ? new Date(surgStart).toISOString() : new Date().toISOString();
+      const endIso = surgEnd
+        ? new Date(surgEnd).toISOString()
+        : new Date(new Date(startIso).getTime() + 2 * 60 * 60 * 1000).toISOString();
+
+      const newSurg = await addSurgery({
         patientMrn: currentPatient.mrn,
         patientName: currentPatient.name,
         operationName: surgName,
-        surgeonId: Number(surgSurgeonId),
+        surgeonId: surgeonIdNum,
         anesthesiaType: surgAnesthesia,
         roomNumber: surgRoom,
-        startTime: surgStart,
-        endTime: surgEnd,
-        status: 'Scheduled'
+        startTime: startIso,
+        endTime: endIso,
+        status: 'Scheduled',
+        priority: surgPriority,
+        operationSite: surgSite || undefined,
+        technique: surgTechnique || undefined,
+        description: surgDescription || undefined,
       });
+
+      // Auto-create a linked appointment so the surgery appears in
+      // the appointments calendar and the patient portal calendar.
+      if (newSurg && surgeonIdNum) {
+        try {
+          await addAppointment({
+            patientMrn: currentPatient.mrn,
+            doctorId: surgeonIdNum,
+            startTime: startIso,
+            endTime: endIso,
+            status: 'Confirmed',
+            notes: `[Surgery] ${surgName}${surgSite ? ' — ' + surgSite : ''}`,
+          });
+        } catch { /* non-fatal: surgery row is the source of truth */ }
+      }
       alert('Surgery scheduled successfully.');
     } catch (err) {
       alert('Failed to schedule surgery.');
@@ -873,6 +902,28 @@ const ClinicalEncounter: React.FC<ClinicalEncounterProps> = ({ onClose, patientN
                           <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>End Time</label>
                           <input type="datetime-local" value={surgEnd} onChange={e => setSurgEnd(e.target.value)} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
                         </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1.2fr 1.2fr 1fr', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>Operation Site</label>
+                          <input type="text" value={surgSite} onChange={e => setSurgSite(e.target.value)} placeholder="e.g. Right upper abdomen" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>Technique</label>
+                          <input type="text" value={surgTechnique} onChange={e => setSurgTechnique(e.target.value)} placeholder="e.g. Laparoscopic" style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>Priority</label>
+                          <select value={surgPriority} onChange={e => setSurgPriority(e.target.value as 'Elective' | 'Urgent' | 'Emergency')} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', background: 'white', fontSize: '0.8rem' }}>
+                            <option value="Elective">Elective</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Emergency">Emergency</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <label style={{ fontSize: '0.7rem', fontWeight: '700', color: '#64748b' }}>Description (shown to patient)</label>
+                        <textarea value={surgDescription} onChange={e => setSurgDescription(e.target.value)} placeholder="Short, patient-friendly description of the procedure" rows={2} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', borderRadius: '0.375rem', border: '1px solid #cbd5e1', fontSize: '0.8rem', resize: 'vertical' }} />
                       </div>
                       <button type="button" onClick={handleScheduleSurgery} className="btn-primary" style={{ width: '100%', padding: '0.5rem', background: '#8b5cf6', borderColor: '#8b5cf6', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', marginTop: '0.5rem' }}>
                         <PlusCircle size={16} /> Schedule Operation Room

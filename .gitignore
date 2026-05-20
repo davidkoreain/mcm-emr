@@ -13,6 +13,9 @@ server/dist/
 .env.*.local
 server/.env
 
+# MCP server config (contains tokens)
+.mcp.json
+
 # Logs
 *.log
 npm-debug.log*

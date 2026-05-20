@@ -187,7 +187,17 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
             dateStr,
             timeStr,
             color: '#ef4444',
-            details: `Scheduled operation: ${s.operationName} in Room ${s.roomNumber}. Surgeon: ${getSurgeonName(s.surgeonId)}. Anesthesia: ${s.anesthesiaType}. Status: ${s.status}`
+            details: s.description || `Scheduled operation: ${s.operationName} in Room ${s.roomNumber}. Surgeon: ${getSurgeonName(s.surgeonId)}. Anesthesia: ${s.anesthesiaType}. Status: ${s.status}`,
+            surgeryId: s.id,
+            operationName: s.operationName,
+            operationSite: s.operationSite,
+            technique: s.technique,
+            surgeonName: getSurgeonName(s.surgeonId),
+            roomNumber: s.roomNumber,
+            anesthesiaType: s.anesthesiaType,
+            surgeryStatus: s.status,
+            outcomeSummary: s.outcomeSummary,
+            postOpPlan: s.postOpPlan,
           });
         });
     }
@@ -1568,6 +1578,63 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
                           {selectedScheduleEvent.details}
                         </p>
                       </div>
+
+                      {/* Surgery-specific detail block */}
+                      {selectedScheduleEvent.type === 'Surgery' && (
+                        <div style={{ marginTop: '1.25rem', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '1.25rem', padding: '1.25rem' }}>
+                          <h5 style={{ fontSize: '0.8rem', fontWeight: '800', color: '#991b1b', margin: '0 0 0.75rem 0', letterSpacing: '0.03em' }}>SURGERY DETAILS</h5>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem 1rem' }}>
+                            {selectedScheduleEvent.operationName && (
+                              <div>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Procedure</div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{selectedScheduleEvent.operationName}</div>
+                              </div>
+                            )}
+                            {selectedScheduleEvent.surgeonName && (
+                              <div>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Surgeon</div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{selectedScheduleEvent.surgeonName}</div>
+                              </div>
+                            )}
+                            {selectedScheduleEvent.operationSite && (
+                              <div>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Site</div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{selectedScheduleEvent.operationSite}</div>
+                              </div>
+                            )}
+                            {selectedScheduleEvent.technique && (
+                              <div>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Technique</div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{selectedScheduleEvent.technique}</div>
+                              </div>
+                            )}
+                            {selectedScheduleEvent.anesthesiaType && (
+                              <div>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Anesthesia</div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{selectedScheduleEvent.anesthesiaType}</div>
+                              </div>
+                            )}
+                            {selectedScheduleEvent.roomNumber && (
+                              <div>
+                                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase' }}>Room</div>
+                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#1e293b' }}>{selectedScheduleEvent.roomNumber}</div>
+                              </div>
+                            )}
+                          </div>
+                          {selectedScheduleEvent.outcomeSummary && (
+                            <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px dashed #fecaca' }}>
+                              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Outcome</div>
+                              <div style={{ fontSize: '0.88rem', color: '#1e293b', lineHeight: 1.55 }}>{selectedScheduleEvent.outcomeSummary}</div>
+                            </div>
+                          )}
+                          {selectedScheduleEvent.postOpPlan && (
+                            <div style={{ marginTop: '0.75rem' }}>
+                              <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', marginBottom: '0.25rem' }}>Post-op Care</div>
+                              <div style={{ fontSize: '0.88rem', color: '#1e293b', lineHeight: 1.55 }}>{selectedScheduleEvent.postOpPlan}</div>
+                            </div>
+                          )}
+                        </div>
+                      )}
 
                       {(selectedScheduleEvent.status === 'Confirmed' || selectedScheduleEvent.status === 'ChangeConfirmed' || selectedScheduleEvent.status === 'Scheduled') && selectedScheduleEvent.appointmentId && (
                         <button
