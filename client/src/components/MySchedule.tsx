@@ -8,7 +8,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 // Calendar Category Styling configuration
 const MY_SCHEDULE_CATEGORIES: Record<string, { label: string; color: string; bg: string; border: string }> = {
   Appointment: { label: 'Appointment', color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
-  Surgery: { label: 'Surgery', color: '#0891b2', bg: '#ecfeff', border: '#c5f2f7' },
+  Surgery: { label: 'Surgery', color: '#ef4444', bg: '#fef2f2', border: '#fca5a5' },
+  Admission: { label: 'Admission', color: '#3b82f6', bg: '#eff6ff', border: '#bfdbfe' },
+  Discharge: { label: 'Discharge', color: '#10b981', bg: '#ecfdf5', border: '#a7f3d0' },
+  Lab: { label: 'Lab Test', color: '#8b5cf6', bg: '#f5f3ff', border: '#ddd6fe' },
   Consultation: { label: 'Consultation', color: '#4f46e5', bg: '#e0e7ff', border: '#c7d2fe' },
   Seminar: { label: 'Seminar', color: '#16a34a', bg: '#f0fdf4', border: '#bbf7d0' },
   Meeting: { label: 'Meeting', color: '#ca8a04', bg: '#fef9c3', border: '#fef08a' },
@@ -22,7 +25,7 @@ const MY_SCHEDULE_CATEGORIES: Record<string, { label: string; color: string; bg:
 
 const MySchedule: React.FC = () => {
   const { 
-    currentStaff, appointments, surgeries, calendarEvents, staffLeave, patients, staff,
+    currentStaff, appointments, surgeries, calendarEvents, staffLeave, patients, staff, labOrders,
     addCalendarEvent, deleteCalendarEvent, addStaffLeave
   } = useEMR();
 
@@ -41,7 +44,7 @@ const MySchedule: React.FC = () => {
 
   // Filter state
   const [filters, setFilters] = useState<Record<string, boolean>>({
-    Appointment: true, Surgery: true, HospitalEvent: true, Personal: true, Leave: true
+    Appointment: true, Surgery: true, Admission: true, Discharge: true, Lab: true, HospitalEvent: true, Personal: true, Leave: true
   });
 
   if (!currentStaff) {
@@ -198,8 +201,80 @@ const MySchedule: React.FC = () => {
         });
     }
 
+    // 5. Admissions (Official)
+    if (filters.Admission && patients) {
+      patients.forEach(p => {
+        const admissionDate = p.actualAdmissionDate || p.admissionDate;
+        if (admissionDate) {
+          const assignedDoc = staff?.find(s => s.name === p.doctor || s.id === p.doctorId);
+          const isDocMatch = isDoctor ? (assignedDoc?.id === currentStaff.id) : true;
+          const isDeptMatch = !isDoctor ? (deptDoctorIds.length === 0 || (assignedDoc && deptDoctorIds.includes(assignedDoc.id))) : true;
+
+          if (isDocMatch && isDeptMatch) {
+            eventsList.push({
+              id: `admission-${p.mrn}-${admissionDate}`,
+              realId: p.mrn,
+              type: 'Admission',
+              category: 'Admission',
+              title: `[Admission] ${p.name} (Ward: ${p.assignedWard || p.ward || 'N/A'})`,
+              startTime: `${admissionDate}T09:00:00`,
+              endTime: `${admissionDate}T10:00:00`,
+              dateStr: admissionDate,
+              details: `Admission for patient ${p.name} (MRN: ${p.mrn}) to Ward ${p.assignedWard || p.ward || 'N/A'}. Attending: ${p.doctor || 'N/A'}`
+            });
+          }
+        }
+      });
+    }
+
+    // 6. Discharges (Official)
+    if (filters.Discharge && patients) {
+      patients.forEach(p => {
+        const dischargeDate = p.actualDischargeDate || p.dischargeDate;
+        if (dischargeDate) {
+          const assignedDoc = staff?.find(s => s.name === p.doctor || s.id === p.doctorId);
+          const isDocMatch = isDoctor ? (assignedDoc?.id === currentStaff.id) : true;
+          const isDeptMatch = !isDoctor ? (deptDoctorIds.length === 0 || (assignedDoc && deptDoctorIds.includes(assignedDoc.id))) : true;
+
+          if (isDocMatch && isDeptMatch) {
+            eventsList.push({
+              id: `discharge-${p.mrn}-${dischargeDate}`,
+              realId: p.mrn,
+              type: 'Discharge',
+              category: 'Discharge',
+              title: `[Discharge] ${p.name}`,
+              startTime: `${dischargeDate}T11:00:00`,
+              endTime: `${dischargeDate}T12:00:00`,
+              dateStr: dischargeDate,
+              details: `Discharge scheduled for patient ${p.name} (MRN: ${p.mrn}). Attending: ${p.doctor || 'N/A'}`
+            });
+          }
+        }
+      });
+    }
+
+    // 7. Lab Orders (Official)
+    if (filters.Lab && labOrders) {
+      labOrders.forEach(o => {
+        const datePart = o.scheduledDate || o.createdAt?.split('T')[0];
+        if (datePart) {
+          eventsList.push({
+            id: `lab-${o.id}`,
+            realId: o.id,
+            type: 'Lab',
+            category: 'Lab',
+            title: `[Lab] ${o.patientName} - ${o.tests.join(', ')}`,
+            startTime: `${datePart}T10:00:00`,
+            endTime: `${datePart}T11:00:00`,
+            dateStr: datePart,
+            details: `Lab Test: ${o.tests.join(', ')} for patient ${o.patientName} (MRN: ${o.patientMrn}). Priority: ${o.priority}. Status: ${o.status}`
+          });
+        }
+      });
+    }
+
     return eventsList;
-  }, [appointments, surgeries, calendarEvents, staffLeave, currentStaff, filters, patients]);
+  }, [appointments, surgeries, calendarEvents, staffLeave, currentStaff, filters, patients, labOrders, staff, deptDoctorIds, isDoctor]);
 
   // Calendar calculations
   const monthDays = useMemo(() => {
@@ -408,7 +483,7 @@ const MySchedule: React.FC = () => {
         {/* Legend Filters */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
           {Object.entries({
-            Appointment: 'Appointments', Surgery: 'Surgeries', HospitalEvent: 'Hospital Events', Personal: 'Personal', Leave: 'Leaves'
+            Appointment: 'Appointments', Surgery: 'Surgeries', Admission: 'Admissions', Discharge: 'Discharges', Lab: 'Labs', HospitalEvent: 'Hospital Events', Personal: 'Personal', Leave: 'Leaves'
           }).map(([key, label]) => {
             const sampleCategory = key === 'Leave' ? 'LeaveConfirmed' : key === 'HospitalEvent' ? 'Seminar' : key;
             const meta = MY_SCHEDULE_CATEGORIES[sampleCategory];
