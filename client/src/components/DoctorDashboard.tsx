@@ -617,9 +617,33 @@ const DoctorDashboard: React.FC<DoctorDashboardProps> = ({ selectedMrn, onSelect
             <button className={viewType === 'month' ? 'active' : ''} onClick={() => setViewType('month')}>Month</button>
           </div>
         </div>
-        <p style={{ fontSize: '0.9rem', color: '#64748b', margin: 0 }}>
-          {viewType === 'day' ? selectedDate.toDateString() : viewType === 'week' ? `Week of ${weekDays[0].toDateString()}` : 'Monthly Overview'}
-        </p>
+        <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: '800', color: '#64748b' }}>
+          {(() => {
+            if (viewType === 'day') {
+              const year = selectedDate.getFullYear();
+              const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+              const day = String(selectedDate.getDate()).padStart(2, '0');
+              return `${year}.${month}.${day}`;
+            } else if (viewType === 'week') {
+              const start = weekDays[0];
+              const end = weekDays[6];
+              
+              const startYear = start.getFullYear();
+              const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+              const startDay = String(start.getDate()).padStart(2, '0');
+              
+              const endYear = end.getFullYear();
+              const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+              const endDay = String(end.getDate()).padStart(2, '0');
+              
+              return `${startYear}.${startMonth}.${startDay} – ${endYear}.${endMonth}.${endDay}`;
+            } else {
+              const year = selectedDate.getFullYear();
+              const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+              return `${year}.${month}`;
+            }
+          })()}
+        </h3>
 
         {/* Category filter chips + search bar */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.85rem', flexWrap: 'wrap' }}>
