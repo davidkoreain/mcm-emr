@@ -113,7 +113,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
       if (ptSort === 'date_asc') return (a.registeredAt || '').localeCompare(b.registeredAt || '');
       return a.name.localeCompare(b.name);
     });
-  }, [patients, ptSearch, ptFilters, ptSort]);
+  }, [patients, ptSearch, ptFilters, ptSort, isInpatientOnly]);
 
   const paginatedPatients = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
