@@ -205,22 +205,17 @@ const MySchedule: React.FC = () => {
       patients.forEach(p => {
         const admissionDate = p.actualAdmissionDate || p.admissionDate;
         if (admissionDate) {
-          const assignedDoc = staff?.find(s => s.name === p.doctor || s.id === p.doctorId);
-          const isDocMatch = isDoctor ? (assignedDoc?.id === currentStaff.id) : true;
-
-          if (isDocMatch) {
-            eventsList.push({
-              id: `admission-${p.mrn}-${admissionDate}`,
-              realId: p.mrn,
-              type: 'Admission',
-              category: 'Admission',
-              title: `[Admission] ${p.name} (Ward: ${p.assignedWard || p.ward || 'N/A'})`,
-              startTime: `${admissionDate}T09:00:00`,
-              endTime: `${admissionDate}T10:00:00`,
-              dateStr: admissionDate,
-              details: `Admission for patient ${p.name} (MRN: ${p.mrn}) to Ward ${p.assignedWard || p.ward || 'N/A'}. Attending: ${p.doctor || 'N/A'}`
-            });
-          }
+          eventsList.push({
+            id: `admission-${p.mrn}-${admissionDate}`,
+            realId: p.mrn,
+            type: 'Admission',
+            category: 'Admission',
+            title: `[Admission] ${p.name} (Ward: ${p.assignedWard || p.ward || 'N/A'})`,
+            startTime: `${admissionDate}T09:00:00`,
+            endTime: `${admissionDate}T10:00:00`,
+            dateStr: admissionDate,
+            details: `Admission for patient ${p.name} (MRN: ${p.mrn}) to Ward ${p.assignedWard || p.ward || 'N/A'}.`
+          });
         }
       });
     }
@@ -230,22 +225,17 @@ const MySchedule: React.FC = () => {
       patients.forEach(p => {
         const dischargeDate = p.actualDischargeDate || p.dischargeDate;
         if (dischargeDate) {
-          const assignedDoc = staff?.find(s => s.name === p.doctor || s.id === p.doctorId);
-          const isDocMatch = isDoctor ? (assignedDoc?.id === currentStaff.id) : true;
-
-          if (isDocMatch) {
-            eventsList.push({
-              id: `discharge-${p.mrn}-${dischargeDate}`,
-              realId: p.mrn,
-              type: 'Discharge',
-              category: 'Discharge',
-              title: `[Discharge] ${p.name}`,
-              startTime: `${dischargeDate}T11:00:00`,
-              endTime: `${dischargeDate}T12:00:00`,
-              dateStr: dischargeDate,
-              details: `Discharge scheduled for patient ${p.name} (MRN: ${p.mrn}). Attending: ${p.doctor || 'N/A'}`
-            });
-          }
+          eventsList.push({
+            id: `discharge-${p.mrn}-${dischargeDate}`,
+            realId: p.mrn,
+            type: 'Discharge',
+            category: 'Discharge',
+            title: `[Discharge] ${p.name}`,
+            startTime: `${dischargeDate}T11:00:00`,
+            endTime: `${dischargeDate}T12:00:00`,
+            dateStr: dischargeDate,
+            details: `Discharge scheduled for patient ${p.name} (MRN: ${p.mrn}).`
+          });
         }
       });
     }
