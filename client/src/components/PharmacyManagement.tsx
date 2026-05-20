@@ -1675,7 +1675,14 @@ const InventoryHistoryTab: React.FC<{
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#1e293b' }}>
-              {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {(() => {
+                const d = new Date(selectedDate + 'T00:00:00');
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                const weekday = d.toLocaleDateString('en-US', { weekday: 'long' });
+                return `${year}. ${month}. ${day} (${weekday})`;
+              })()}
             </div>
             <span style={{ background: '#eef2ff', color: '#4f46e5', borderRadius: '1rem', padding: '0.2rem 0.75rem', fontSize: '0.78rem', fontWeight: 700 }}>
               {selectedEvents.length} dispense{selectedEvents.length !== 1 ? 's' : ''}

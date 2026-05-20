@@ -315,22 +315,29 @@ const HospitalCalendar: React.FC = () => {
   // Helper: Month header label
   const headerLabel = useMemo(() => {
     if (viewMode === 'month') {
-      return `${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      return `${year}.${month}`;
     } else if (viewMode === 'week') {
       const start = new Date(currentDate);
       start.setDate(start.getDate() - start.getDay()); // Sunday
       const end = new Date(start);
       end.setDate(end.getDate() + 6); // Saturday
       
-      if (start.getMonth() === end.getMonth()) {
-        return `${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()}`;
-      } else if (start.getFullYear() === end.getFullYear()) {
-        return `${MONTH_NAMES[start.getMonth()]} - ${MONTH_NAMES[end.getMonth()]} ${start.getFullYear()}`;
-      } else {
-        return `${MONTH_NAMES[start.getMonth()]} ${start.getFullYear()} - ${MONTH_NAMES[end.getMonth()]} ${end.getFullYear()}`;
-      }
+      const startYear = start.getFullYear();
+      const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+      const startDay = String(start.getDate()).padStart(2, '0');
+      
+      const endYear = end.getFullYear();
+      const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+      const endDay = String(end.getDate()).padStart(2, '0');
+      
+      return `${startYear}.${startMonth}.${startDay} – ${endYear}.${endMonth}.${endDay}`;
     } else {
-      return `${currentDate.getDate()} ${MONTH_NAMES[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      return `${year}.${month}.${day}`;
     }
   }, [currentDate, viewMode]);
 
@@ -730,18 +737,17 @@ const HospitalCalendar: React.FC = () => {
           <div />
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             <span style={{ 
-              fontSize: '1.5rem', 
+              fontSize: '1.25rem', 
               fontWeight: '800', 
               color: isSunday ? '#ef4444' : '#1e293b' 
             }}>
-              {WEEK_DAYS[currentDate.getDay()]}
-            </span>
-            <span style={{ 
-              fontSize: '1.25rem', 
-              fontWeight: '500', 
-              color: '#64748b' 
-            }}>
-              {currentDate.getDate()} {MONTH_NAMES[currentDate.getMonth()]}
+              {(() => {
+                const year = currentDate.getFullYear();
+                const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const day = String(currentDate.getDate()).padStart(2, '0');
+                const weekday = WEEK_DAYS[currentDate.getDay()];
+                return `${year}. ${month}. ${day} (${weekday})`;
+              })()}
             </span>
           </div>
         </div>

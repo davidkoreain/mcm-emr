@@ -738,7 +738,13 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
       <div style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>
-            {scheduleSelectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            {(() => {
+              const year = scheduleSelectedDate.getFullYear();
+              const month = String(scheduleSelectedDate.getMonth() + 1).padStart(2, '0');
+              const day = String(scheduleSelectedDate.getDate()).padStart(2, '0');
+              const weekday = scheduleSelectedDate.toLocaleDateString('en-US', { weekday: 'long' });
+              return `${year}. ${month}. ${day} (${weekday})`;
+            })()}
           </h3>
           <span style={{ background: '#eff6ff', color: '#2563eb', padding: '0.35rem 0.85rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: '800' }}>
             {dayEvents.length} events scheduled
@@ -1437,7 +1443,33 @@ const PatientPortal: React.FC<PortalProps> = ({ onLogout, isGuardianView = false
               <div style={{ background: 'white', borderRadius: '2rem', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.02)' }}>
                 <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
                   <h3 style={{ fontSize: '1.25rem', fontWeight: '900', color: '#1e293b', margin: 0 }}>
-                    {`${scheduleSelectedDate.getFullYear()}. ${String(scheduleSelectedDate.getMonth() + 1).padStart(2, '0')}`}
+                    {(() => {
+                      if (scheduleViewType === 'month') {
+                        const year = scheduleSelectedDate.getFullYear();
+                        const month = String(scheduleSelectedDate.getMonth() + 1).padStart(2, '0');
+                        return `${year}.${month}`;
+                      } else if (scheduleViewType === 'week') {
+                        const start = new Date(scheduleSelectedDate);
+                        start.setDate(start.getDate() - start.getDay());
+                        const end = new Date(start);
+                        end.setDate(end.getDate() + 6);
+                        
+                        const startYear = start.getFullYear();
+                        const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+                        const startDay = String(start.getDate()).padStart(2, '0');
+                        
+                        const endYear = end.getFullYear();
+                        const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+                        const endDay = String(end.getDate()).padStart(2, '0');
+                        
+                        return `${startYear}.${startMonth}.${startDay} – ${endYear}.${endMonth}.${endDay}`;
+                      } else {
+                        const year = scheduleSelectedDate.getFullYear();
+                        const month = String(scheduleSelectedDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(scheduleSelectedDate.getDate()).padStart(2, '0');
+                        return `${year}.${month}.${day}`;
+                      }
+                    })()}
                   </h3>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.75rem', fontWeight: '800', padding: '0.25rem 0.75rem', borderRadius: '99px', background: '#e0f2fe', color: '#0369a1' }}>

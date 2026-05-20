@@ -335,17 +335,20 @@ const MySchedule: React.FC = () => {
       const end = new Date(start);
       end.setDate(end.getDate() + 6);
       
-      const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
-      const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
       const startYear = start.getFullYear();
-      const endYear = end.getFullYear();
+      const startMonth = String(start.getMonth() + 1).padStart(2, '0');
+      const startDay = String(start.getDate()).padStart(2, '0');
       
-      if (startYear !== endYear) {
-        return `${startMonth} ${start.getDate()}, ${startYear} – ${endMonth} ${end.getDate()}, ${endYear}`.toUpperCase();
-      }
-      return `${startMonth} ${start.getDate()} – ${endMonth} ${end.getDate()}, ${startYear}`.toUpperCase();
+      const endYear = end.getFullYear();
+      const endMonth = String(end.getMonth() + 1).padStart(2, '0');
+      const endDay = String(end.getDate()).padStart(2, '0');
+      
+      return `${startYear}.${startMonth}.${startDay} – ${endYear}.${endMonth}.${endDay}`;
     } else {
-      return currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const day = String(currentDate.getDate()).padStart(2, '0');
+      return `${year}.${month}.${day}`;
     }
   }, [currentDate, viewMode]);
 
@@ -777,7 +780,13 @@ const MySchedule: React.FC = () => {
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: isMobile ? '1rem' : '1.25rem', fontWeight: '900', color: '#1e293b' }}>
-                  {currentDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+                  {(() => {
+                    const year = currentDate.getFullYear();
+                    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(currentDate.getDate()).padStart(2, '0');
+                    const weekday = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+                    return `${year}. ${month}. ${day} (${weekday})`;
+                  })()}
                 </h3>
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', color: '#64748b', fontWeight: '800' }}>
                   {allEvents.filter(e => e.dateStr === currentDate.toISOString().split('T')[0]).length} Schedules for today
