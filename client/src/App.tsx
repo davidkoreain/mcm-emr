@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEMR } from './context/EMRContext';
-import { DEFAULT_PERMISSIONS, STORAGE_KEY, MENU_STRUCTURE, type AllPerms, type MenuItem } from './config/permissions';
+import { DEFAULT_PERMISSIONS, STORAGE_KEY, MENU_STRUCTURE, mergeMenuStructures, type AllPerms, type MenuItem } from './config/permissions';
 
 // Portals
 import RoleLogin from './components/RoleLogin';
@@ -131,15 +131,7 @@ const App: React.FC = () => {
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as MenuItem[];
-        if (!parsed.some(m => m.key === 'my_schedule')) {
-          const idx = parsed.findIndex(m => m.key === 'dashboard');
-          if (idx !== -1) {
-            parsed.splice(idx + 1, 0, { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
-          } else {
-            parsed.push({ key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
-          }
-        }
-        return parsed;
+        return mergeMenuStructures(parsed, MENU_STRUCTURE);
       } catch {
         return MENU_STRUCTURE;
       }
@@ -150,17 +142,10 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchAppSetting('emr_custom_menu_structure').then((remote) => {
       if (remote) {
-        const parsed = Array.isArray(remote) ? [...remote] : [];
-        if (!parsed.some(m => m.key === 'my_schedule')) {
-          const idx = parsed.findIndex(m => m.key === 'dashboard');
-          if (idx !== -1) {
-            parsed.splice(idx + 1, 0, { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
-          } else {
-            parsed.push({ key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
-          }
-        }
-        setMenuStructure(parsed);
-        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(parsed));
+        const remoteParsed = Array.isArray(remote) ? remote : [];
+        const merged = mergeMenuStructures(remoteParsed, MENU_STRUCTURE);
+        setMenuStructure(merged);
+        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(merged));
       }
     }).catch(() => {});
   }, []);

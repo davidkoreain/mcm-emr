@@ -144,3 +144,37 @@ export const DEFAULT_PERMISSIONS: AllPerms = {
 
 // v2: includes sub-menu keys
 export const STORAGE_KEY = 'emr_role_permissions_v2';
+
+export const mergeMenuStructures = (remote: MenuItem[], base: MenuItem[]): MenuItem[] => {
+  const merged = [...remote];
+  base.forEach((baseItem, baseIdx) => {
+    const exists = merged.some(m => m.key === baseItem.key);
+    if (!exists) {
+      if (baseIdx === 0) {
+        merged.unshift({ ...baseItem });
+      } else {
+        const prevKey = base[baseIdx - 1].key;
+        const prevIdxInMerged = merged.findIndex(m => m.key === prevKey);
+        if (prevIdxInMerged !== -1) {
+          merged.splice(prevIdxInMerged + 1, 0, { ...baseItem });
+        } else {
+          merged.push({ ...baseItem });
+        }
+      }
+    } else {
+      const mergedItemIdx = merged.findIndex(m => m.key === baseItem.key);
+      const mergedItem = merged[mergedItemIdx];
+      if (baseItem.children && baseItem.children.length > 0) {
+        const mergedChildren = [...(mergedItem.children || [])];
+        baseItem.children.forEach((baseChild) => {
+          const childExists = mergedChildren.some(c => c.key === baseChild.key);
+          if (!childExists) {
+            mergedChildren.push({ ...baseChild });
+          }
+        });
+        merged[mergedItemIdx] = { ...mergedItem, children: mergedChildren };
+      }
+    }
+  });
+  return merged;
+};

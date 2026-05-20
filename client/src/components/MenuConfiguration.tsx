@@ -5,7 +5,7 @@ import {
   Scissors, Pill, Package, CreditCard, Shield, Settings, HelpCircle,
   Info, FileText, Heart, Activity
 } from 'lucide-react';
-import { MENU_STRUCTURE, PATIENT_PORTAL_MENU_STRUCTURE, type MenuItem } from '../config/permissions';
+import { MENU_STRUCTURE, PATIENT_PORTAL_MENU_STRUCTURE, mergeMenuStructures, type MenuItem } from '../config/permissions';
 import { useEMR } from '../context/EMRContext';
 
 const tryParse = <T,>(json: string, fallback: T): T => {
@@ -29,7 +29,7 @@ const MenuConfiguration: React.FC = () => {
     const loadMenus = async () => {
       // Load from localStorage first (instant), then override with Supabase (authoritative)
       const localMain = localStorage.getItem('emr_custom_menu_structure');
-      setMainMenus(localMain ? tryParse(localMain, MENU_STRUCTURE) : MENU_STRUCTURE);
+      setMainMenus(localMain ? mergeMenuStructures(tryParse(localMain, MENU_STRUCTURE), MENU_STRUCTURE) : MENU_STRUCTURE);
       const localPatient = localStorage.getItem('emr_patient_portal_menu_structure');
       setPatientMenus(localPatient ? tryParse(localPatient, PATIENT_PORTAL_MENU_STRUCTURE) : PATIENT_PORTAL_MENU_STRUCTURE);
 
@@ -38,17 +38,10 @@ const MenuConfiguration: React.FC = () => {
         fetchAppSetting('emr_patient_portal_menu_structure'),
       ]);
       if (remoteMain) {
-        const parsed = Array.isArray(remoteMain) ? [...remoteMain] : [];
-        if (!parsed.some(m => m.key === 'my_schedule')) {
-          const idx = parsed.findIndex(m => m.key === 'dashboard');
-          if (idx !== -1) {
-            parsed.splice(idx + 1, 0, { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
-          } else {
-            parsed.push({ key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
-          }
-        }
-        setMainMenus(parsed);
-        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(parsed));
+        const remoteParsed = Array.isArray(remoteMain) ? remoteMain : [];
+        const merged = mergeMenuStructures(remoteParsed, MENU_STRUCTURE);
+        setMainMenus(merged);
+        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(merged));
       }
       if (remotePatient) { setPatientMenus(remotePatient); localStorage.setItem('emr_patient_portal_menu_structure', JSON.stringify(remotePatient)); }
     };
