@@ -37,7 +37,19 @@ const MenuConfiguration: React.FC = () => {
         fetchAppSetting('emr_custom_menu_structure'),
         fetchAppSetting('emr_patient_portal_menu_structure'),
       ]);
-      if (remoteMain) { setMainMenus(remoteMain); localStorage.setItem('emr_custom_menu_structure', JSON.stringify(remoteMain)); }
+      if (remoteMain) {
+        const parsed = Array.isArray(remoteMain) ? [...remoteMain] : [];
+        if (!parsed.some(m => m.key === 'my_schedule')) {
+          const idx = parsed.findIndex(m => m.key === 'dashboard');
+          if (idx !== -1) {
+            parsed.splice(idx + 1, 0, { key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
+          } else {
+            parsed.push({ key: 'my_schedule', label: 'My Schedule', icon: 'CalendarDays' });
+          }
+        }
+        setMainMenus(parsed);
+        localStorage.setItem('emr_custom_menu_structure', JSON.stringify(parsed));
+      }
       if (remotePatient) { setPatientMenus(remotePatient); localStorage.setItem('emr_patient_portal_menu_structure', JSON.stringify(remotePatient)); }
     };
     loadMenus();

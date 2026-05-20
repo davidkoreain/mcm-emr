@@ -150,7 +150,7 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchAppSetting('emr_custom_menu_structure').then((remote) => {
       if (remote) {
-        const parsed = Array.isArray(remote) ? remote : [];
+        const parsed = Array.isArray(remote) ? [...remote] : [];
         if (!parsed.some(m => m.key === 'my_schedule')) {
           const idx = parsed.findIndex(m => m.key === 'dashboard');
           if (idx !== -1) {
