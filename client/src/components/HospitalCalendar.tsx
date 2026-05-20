@@ -1049,18 +1049,7 @@ const HospitalCalendar: React.FC = () => {
             ))}
           </div>
 
-          {/* Add schedule button */}
-          <button 
-            onClick={() => setAddModal(true)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '0.35rem',
-              padding: '0.45rem 0.85rem', background: '#3b82f6', color: 'white',
-              border: 'none', borderRadius: '0.5rem', fontSize: '0.78rem', fontWeight: '700',
-              cursor: 'pointer', boxShadow: '0 2px 4px rgba(59, 130, 246, 0.2)'
-            }}
-          >
-            <Plus size={14} /> Add Event
-          </button>
+          {/* Add schedule button removed to make appointments read-only */}
         </div>
       </div>
 

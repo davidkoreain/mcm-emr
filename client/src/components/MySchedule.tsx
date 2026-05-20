@@ -99,13 +99,8 @@ const MySchedule: React.FC = () => {
           if (apt.status === 'Cancelled') return false;
           if (isDoctor) {
             return apt.doctorId === currentStaff.id;
-          } else {
-            // Nurse or Manager: filter by same specialization doctors, or fallback to all if none in dept
-            if (deptDoctorIds.length > 0) {
-              return deptDoctorIds.includes(apt.doctorId);
-            }
-            return true; // Fallback to all appointments if no matching department doctors
           }
+          return true; // Non-doctors (nurses/managers) see all official appointments
         })
         .forEach(apt => {
           const docName = getDoctorName(apt.doctorId);
@@ -132,13 +127,8 @@ const MySchedule: React.FC = () => {
           if (surg.status === 'Cancelled') return false;
           if (isDoctor) {
             return surg.surgeonId === currentStaff.id;
-          } else {
-            // Nurse or Manager: filter by same specialization doctors, or fallback to all if none in dept
-            if (deptDoctorIds.length > 0) {
-              return deptDoctorIds.includes(surg.surgeonId);
-            }
-            return true;
           }
+          return true; // Non-doctors see all official surgeries
         })
         .forEach(surg => {
           const surgName = getDoctorName(surg.surgeonId);
@@ -161,7 +151,16 @@ const MySchedule: React.FC = () => {
     // 3. Hospital Calendar Events (Official or Personal)
     if (calendarEvents) {
       calendarEvents
-        .filter(ev => ev.doctorId === currentStaff.id)
+        .filter(ev => {
+          const isPersonal = ev.category === 'Personal';
+          if (isPersonal) {
+            return ev.doctorId === currentStaff.id; // Personal events are strictly private
+          }
+          if (isDoctor) {
+            return ev.doctorId === currentStaff.id;
+          }
+          return true; // Non-doctors see all official hospital events (meetings, seminars, etc.)
+        })
         .forEach(ev => {
           const isPersonal = ev.category === 'Personal';
           if ((isPersonal && !filters.Personal) || (!isPersonal && !filters.HospitalEvent)) return;
@@ -208,9 +207,8 @@ const MySchedule: React.FC = () => {
         if (admissionDate) {
           const assignedDoc = staff?.find(s => s.name === p.doctor || s.id === p.doctorId);
           const isDocMatch = isDoctor ? (assignedDoc?.id === currentStaff.id) : true;
-          const isDeptMatch = !isDoctor ? (deptDoctorIds.length === 0 || (assignedDoc && deptDoctorIds.includes(assignedDoc.id))) : true;
 
-          if (isDocMatch && isDeptMatch) {
+          if (isDocMatch) {
             eventsList.push({
               id: `admission-${p.mrn}-${admissionDate}`,
               realId: p.mrn,
@@ -234,9 +232,8 @@ const MySchedule: React.FC = () => {
         if (dischargeDate) {
           const assignedDoc = staff?.find(s => s.name === p.doctor || s.id === p.doctorId);
           const isDocMatch = isDoctor ? (assignedDoc?.id === currentStaff.id) : true;
-          const isDeptMatch = !isDoctor ? (deptDoctorIds.length === 0 || (assignedDoc && deptDoctorIds.includes(assignedDoc.id))) : true;
 
-          if (isDocMatch && isDeptMatch) {
+          if (isDocMatch) {
             eventsList.push({
               id: `discharge-${p.mrn}-${dischargeDate}`,
               realId: p.mrn,
