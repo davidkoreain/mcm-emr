@@ -24,6 +24,7 @@ interface ListFilterControlProps {
   onSortChange: (value: string) => void;
   totalCount?: number;
   filteredCount?: number;
+  children?: React.ReactNode;
 }
 
 const chipStyle: React.CSSProperties = {
@@ -57,6 +58,7 @@ const ListFilterControl: React.FC<ListFilterControlProps> = ({
   onSortChange,
   totalCount,
   filteredCount,
+  children,
 }) => {
   return (
     <div style={{ marginBottom: '1.25rem' }}>
@@ -104,6 +106,8 @@ const ListFilterControl: React.FC<ListFilterControlProps> = ({
             ))}
           </select>
         </div>
+
+        {children}
       </div>
 
       {totalCount !== undefined && filteredCount !== undefined && (

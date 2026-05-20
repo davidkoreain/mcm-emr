@@ -21,6 +21,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
   const [ptSearch, setPtSearch] = useState('');
   const [ptFilters, setPtFilters] = useState<Record<string, string>>({ visitType: '', status: '' });
   const [ptSort, setPtSort] = useState('name_asc');
+  const [isInpatientOnly, setIsInpatientOnly] = useState(false);
   const [detailModal, setDetailModal] = useState<Patient | null>(null);
   const [modalTab, setModalTab] = useState<'demographic' | 'identity' | 'history' | 'insurance'>('demographic');
   const [csvImporting, setCsvImporting] = useState(false);
@@ -103,6 +104,7 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
       if (q && !p.name.toLowerCase().includes(q) && !p.amharic.includes(q) && !p.mrn.toLowerCase().includes(q)) return false;
       if (ptFilters.visitType && p.visitType !== ptFilters.visitType) return false;
       if (ptFilters.status && p.status !== ptFilters.status) return false;
+      if (isInpatientOnly && p.visitType !== 'Inpatient') return false;
       return true;
     });
     return [...result].sort((a, b) => {
@@ -475,7 +477,38 @@ const PatientManagement: React.FC<PatientManagementProps> = ({ onViewVitals, onV
         onSortChange={setPtSort}
         totalCount={patients.length}
         filteredCount={filteredPatients.length}
-      />
+      >
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.45rem',
+          background: isInpatientOnly ? '#fef3c7' : '#f1f5f9',
+          padding: '0.4rem 0.75rem',
+          borderRadius: '0.5rem',
+          border: isInpatientOnly ? '1px solid #f59e0b' : '1px solid #e2e8f0',
+          cursor: 'pointer',
+          fontSize: '0.82rem',
+          color: isInpatientOnly ? '#b45309' : '#1e293b',
+          fontWeight: '600',
+          userSelect: 'none',
+          transition: 'all 0.15s ease'
+        }}>
+          <input
+            type="checkbox"
+            checked={isInpatientOnly}
+            onChange={(e) => {
+              setIsInpatientOnly(e.target.checked);
+              setCurrentPage(1);
+            }}
+            style={{
+              cursor: 'pointer',
+              accentColor: '#f59e0b',
+              margin: 0
+            }}
+          />
+          <span style={{ whiteSpace: 'nowrap' }}>Inpatient Only</span>
+        </label>
+      </ListFilterControl>
 
       {viewMode === 'grid' ? (
         <div className="patient-grid" style={{ 
